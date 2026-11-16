@@ -1,0 +1,1208 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (
+          request.auth.token.email is string &&
+          request.auth.token.email.lower() == 'yoftaheyoseph5@gmail.com' &&
+          request.auth.token.email_verified == true
+        ) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isActiveUser() {
+      return !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus != 'suspended';
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true ||
+        (
+          'phone_number' in request.auth.token &&
+          request.auth.token.phone_number is string &&
+          request.auth.token.phone_number.size() >= 7
+        )
+      );
+    }
+
+    function isVerifiedShopOwner(shopId) {
+      return exists(/databases/$(database)/documents/shops/$(shopId))
+        && get(/databases/$(database)/documents/shops/$(shopId)).data.ownerUid == request.auth.uid
+        && get(/databases/$(database)/documents/shops/$(shopId)).data.status == 'approved'
+        && (
+          !('verificationStatus' in get(/databases/$(database)/documents/shops/$(shopId)).data) ||
+          get(/databases/$(database)/documents/shops/$(shopId)).data.verificationStatus == 'approved'
+        );
+    }
+
+    function isValidProductImageUrl(url) {
+      return url is string && (
+        (url.size() >= 1 && url.size() <= 2048 && (url.matches('^https://.*') || url.matches('^/.*'))) ||
+        (url.size() >= 32 && url.size() <= 475000 && url.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$'))
+      );
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isOwner(userId) && isValidId(userId) && (
+        isAdmin() ||
+        (
+          request.resource.data.uid == userId &&
+          request.resource.data.role in ['customer', 'seller'] &&
+          request.resource.data.accountStatus == 'active' &&
+          (!('neighborhood' in request.resource.data) || (request.resource.data.neighborhood is string && request.resource.data.neighborhood.size() <= 100)) &&
+          (!('displayName' in request.resource.data) || (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 100)) &&
+          (!('phoneNumber' in request.resource.data) || (request.resource.data.phoneNumber is string && request.resource.data.phoneNumber.size() <= 30))
+        )
+      );
+      allow update: if isSignedIn() && isValidId(userId) && (
+        (
+          isAdmin() &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid']) &&
+          (!('role' in request.resource.data) || request.resource.data.role in ['customer', 'seller', 'admin']) &&
+          (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus in ['active', 'suspended', 'pending'])
+        ) ||
+        (
+          isOwner(userId) &&
+          isActiveUser() &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accountStatus', 'uid'])
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Shops collection
+    match /shops/{shopId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(shopId) && isActiveUser() && (
+        isAdmin() ||
+        (
+          request.resource.data.ownerUid == request.auth.uid &&
+          request.resource.data.status == 'pending' &&
+          (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus == 'unverified')
+        )
+      );
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (
+          isActiveUser() &&
+          resource.data.ownerUid == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'rating', 'reviewCount', 'featured', 'suspensionReason']) &&
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus']) ||
+            (
+              request.resource.data.verificationStatus == 'pending_review' &&
+              existsAfter(/databases/$(database)/documents/merchant_verifications/$(shopId)) &&
+              getAfter(/databases/$(database)/documents/merchant_verifications/$(shopId)).data.ownerUid == request.auth.uid &&
+              getAfter(/databases/$(database)/documents/merchant_verifications/$(shopId)).data.status == 'pending_review'
+            )
+          )
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 3. Products collection
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isSignedIn()
+        && isValidId(productId)
+        && isActiveUser()
+        && isValidProductImageUrl(request.resource.data.imageUrl)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 140
+        && request.resource.data.price is number
+        && request.resource.data.price > 0
+        && request.resource.data.stock is number
+        && request.resource.data.stock >= 0
+        && (
+          isAdmin() ||
+          isVerifiedShopOwner(request.resource.data.shopId)
+        );
+      allow update: if isSignedIn()
+        && isValidId(productId)
+        && isValidProductImageUrl(request.resource.data.imageUrl)
+        && (
+          isAdmin() ||
+          (
+            isActiveUser() &&
+            isVerifiedShopOwner(resource.data.shopId) &&
+            request.resource.data.shopId == resource.data.shopId &&
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['moderationReason'])
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(productId) && (
+        isAdmin() ||
+        (isActiveUser() && get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerUid == request.auth.uid)
+      );
+    }
+
+    // 4. Categories collection
+    match /categories/{slug} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'orderId',
+          'customerUid',
+          'customerName',
+          'customerPhone',
+          'shopId',
+          'shopName',
+          'items',
+          'subtotal',
+          'deliveryFee',
+          'totalAmount',
+          'currency',
+          'fulfillmentMethod',
+          'paymentMethod',
+          'paymentStatus',
+          'orderStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'orderId',
+          'customerUid',
+          'customerName',
+          'customerPhone',
+          'shopId',
+          'shopOwnerUid',
+          'shopName',
+          'items',
+          'subtotal',
+          'discountAmount',
+          'promoCode',
+          'promoDiscountAmount',
+          'pointsRedeemed',
+          'pointsDiscountAmount',
+          'pointsEarned',
+          'deliveryFee',
+          'totalAmount',
+          'currency',
+          'fulfillmentMethod',
+          'deliveryAddress',
+          'neighborhood',
+          'paymentMethod',
+          'paymentStatus',
+          'paymentReference',
+          'deliveryPin',
+          'deliveryEtaLabel',
+          'orderStatus',
+          'rejectionReason',
+          'adminNote',
+          'notes',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.orderId)
+        && isValidId(data.shopId)
+        && data.customerUid is string
+        && data.customerUid.size() <= 128
+        && data.customerName is string
+        && data.customerName.size() >= 1
+        && data.customerName.size() <= 100
+        && data.customerPhone is string
+        && data.customerPhone.size() >= 5
+        && data.customerPhone.size() <= 30
+        && (!('shopOwnerUid' in data) || (data.shopOwnerUid is string && data.shopOwnerUid.size() <= 128))
+        && data.shopName is string
+        && data.shopName.size() >= 1
+        && data.shopName.size() <= 120
+        && data.items is list
+        && data.items.size() >= 1
+        && data.items.size() <= 50
+        && data.subtotal is number
+        && data.subtotal >= 0
+        && data.deliveryFee is number
+        && data.deliveryFee >= 0
+        && data.totalAmount is number
+        && data.totalAmount >= 0
+        && data.currency == 'ETB'
+        && data.fulfillmentMethod in ['delivery', 'pickup']
+        && (!('deliveryAddress' in data) || (data.deliveryAddress is string && data.deliveryAddress.size() <= 500))
+        && (!('neighborhood' in data) || (data.neighborhood is string && data.neighborhood.size() <= 100))
+        && data.paymentMethod in ['cash_on_delivery', 'pay_at_pickup', 'telebirr', 'cbe_birr', 'chapa', 'telebirr_sandbox', 'cbe_birr_sandbox']
+        && data.paymentStatus in ['pending', 'paid', 'refunded']
+        && (!('paymentReference' in data) || (data.paymentReference is string && data.paymentReference.size() >= 5 && data.paymentReference.size() <= 40))
+        && (!('deliveryPin' in data) || (data.deliveryPin is string && data.deliveryPin.matches('^\\d{4}$')))
+        && (!('deliveryEtaLabel' in data) || (data.deliveryEtaLabel is string && data.deliveryEtaLabel.size() <= 60))
+        && data.orderStatus in ['pending', 'accepted', 'rejected', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'canceled']
+        && (!('rejectionReason' in data) || (data.rejectionReason is string && data.rejectionReason.size() <= 300))
+        && (!('adminNote' in data) || (data.adminNote is string && data.adminNote.size() <= 300))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500))
+        && data.createdAt is string
+        && data.createdAt.size() <= 50
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 50;
+    }
+
+    // 5. Orders collection
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && isValidId(orderId) && (
+        resource.data.customerUid == request.auth.uid ||
+        resource.data.shopOwnerUid == request.auth.uid ||
+        get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.customerUid == request.auth.uid ||
+        resource.data.shopOwnerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn()
+        && isValidId(orderId)
+        && isActiveUser()
+        && isValidOrder(request.resource.data)
+        && request.resource.data.orderId == orderId
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.orderStatus == 'pending'
+        && !('rejectionReason' in request.resource.data)
+        && !('adminNote' in request.resource.data)
+        && (
+          (request.resource.data.paymentMethod in ['cash_on_delivery', 'pay_at_pickup'] && request.resource.data.paymentStatus == 'pending') ||
+          (request.resource.data.paymentMethod in ['telebirr', 'cbe_birr', 'chapa', 'telebirr_sandbox', 'cbe_birr_sandbox'] && 'paymentReference' in request.resource.data && request.resource.data.paymentStatus in ['pending', 'paid'])
+        );
+      allow update: if isSignedIn()
+        && isValidId(orderId)
+        && isValidOrder(request.resource.data)
+        && (
+          isAdmin() ||
+          (
+            isActiveUser() &&
+            resource.data.customerUid == request.auth.uid &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['orderStatus', 'updatedAt']) &&
+            request.resource.data.orderStatus == 'canceled' &&
+            resource.data.orderStatus in ['pending', 'accepted']
+          ) ||
+          (
+            isActiveUser() &&
+            (
+              resource.data.shopOwnerUid == request.auth.uid ||
+              get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerUid == request.auth.uid
+            ) &&
+            request.resource.data.customerUid == resource.data.customerUid &&
+            request.resource.data.shopId == resource.data.shopId &&
+            request.resource.data.totalAmount == resource.data.totalAmount &&
+            (!('deliveryPin' in resource.data) || request.resource.data.deliveryPin == resource.data.deliveryPin) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['orderStatus', 'rejectionReason', 'updatedAt', 'paymentStatus'])
+          )
+        );
+      allow delete: if isAdmin();
+    }
+
+    // 6. Addresses collection
+    match /addresses/{addressId} {
+      allow get, list: if isSignedIn() && resource.data.customerUid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.customerUid == request.auth.uid && isValidId(addressId);
+      allow update, delete: if isSignedIn() && resource.data.customerUid == request.auth.uid;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll([
+          'reviewId',
+          'productId',
+          'shopId',
+          'orderId',
+          'customerUid',
+          'customerName',
+          'rating',
+          'comment',
+          'verifiedPurchase',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'reviewId',
+          'productId',
+          'shopId',
+          'orderId',
+          'customerUid',
+          'customerName',
+          'rating',
+          'comment',
+          'shopRating',
+          'shopComment',
+          'verifiedPurchase',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.reviewId)
+        && isValidId(data.productId)
+        && isValidId(data.shopId)
+        && isValidId(data.orderId)
+        && data.customerUid is string
+        && data.customerUid.size() <= 128
+        && data.customerName is string
+        && data.customerName.size() >= 1
+        && data.customerName.size() <= 100
+        && data.rating is number
+        && data.rating >= 1
+        && data.rating <= 5
+        && data.comment is string
+        && data.comment.size() >= 3
+        && data.comment.size() <= 500
+        && (!('shopRating' in data) || (data.shopRating is number && data.shopRating >= 1 && data.shopRating <= 5))
+        && (!('shopComment' in data) || (data.shopComment is string && data.shopComment.size() <= 500))
+        && data.verifiedPurchase == true
+        && data.createdAt is string
+        && data.createdAt.size() <= 50
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    // 7. Reviews collection
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow create: if isSignedIn()
+        && isActiveUser()
+        && isValidId(reviewId)
+        && isValidReview(request.resource.data)
+        && request.resource.data.reviewId == reviewId
+        && request.resource.data.customerUid == request.auth.uid
+        && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.customerUid == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.orderStatus == 'delivered';
+      allow update: if isSignedIn()
+        && isValidId(reviewId)
+        && isValidReview(request.resource.data)
+        && (
+          isAdmin() ||
+          (
+            resource.data.customerUid == request.auth.uid
+            && request.resource.data.customerUid == resource.data.customerUid
+            && request.resource.data.productId == resource.data.productId
+            && request.resource.data.shopId == resource.data.shopId
+            && request.resource.data.orderId == resource.data.orderId
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.verifiedPurchase == resource.data.verifiedPurchase
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'comment', 'shopRating', 'shopComment', 'updatedAt'])
+          )
+        );
+      allow delete: if isSignedIn() && (resource.data.customerUid == request.auth.uid || isAdmin());
+    }
+
+    // 8. Notifications collection
+    match /notifications/{notificationId} {
+      allow get, list: if isSignedIn() && resource.data.userUid == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.userUid == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow delete: if isSignedIn() && resource.data.userUid == request.auth.uid;
+    }
+
+    function isValidLoyaltyTransaction(data) {
+      return data.keys().hasAll([
+          'transactionId',
+          'customerUid',
+          'orderId',
+          'shopId',
+          'shopName',
+          'type',
+          'points',
+          'orderAmountEtb',
+          'description',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'transactionId',
+          'customerUid',
+          'orderId',
+          'shopId',
+          'shopName',
+          'type',
+          'points',
+          'orderAmountEtb',
+          'description',
+          'createdAt'
+        ])
+        && isValidId(data.transactionId)
+        && isValidId(data.orderId)
+        && isValidId(data.shopId)
+        && data.customerUid is string
+        && data.customerUid.size() <= 128
+        && data.shopName is string
+        && data.shopName.size() >= 1
+        && data.shopName.size() <= 120
+        && data.type in ['earned', 'redeemed', 'refunded', 'reversed']
+        && data.points is int
+        && data.points >= -100000
+        && data.points <= 100000
+        && data.orderAmountEtb is number
+        && data.orderAmountEtb >= 0
+        && data.description is string
+        && data.description.size() >= 1
+        && data.description.size() <= 240
+        && data.createdAt is string
+        && data.createdAt.size() <= 50;
+    }
+
+    // 9. Loyalty Transactions ledger
+    match /loyalty_transactions/{transactionId} {
+      allow get, list: if isSignedIn() && (resource.data.customerUid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && isValidId(transactionId)
+        && isValidLoyaltyTransaction(request.resource.data)
+        && request.resource.data.transactionId == transactionId
+        && request.resource.data.customerUid == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.customerUid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    function isValidSharedWishlist(data) {
+      return data.keys().hasAll([
+          'shareId',
+          'ownerUid',
+          'ownerName',
+          'title',
+          'productIds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'shareId',
+          'ownerUid',
+          'ownerName',
+          'title',
+          'productIds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.shareId)
+        && data.ownerUid is string
+        && data.ownerUid.size() <= 128
+        && data.ownerName is string
+        && data.ownerName.size() >= 1
+        && data.ownerName.size() <= 100
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 120
+        && data.productIds is list
+        && data.productIds.size() >= 1
+        && data.productIds.size() <= 50
+        && data.productIds[0] is string
+        && data.productIds[0].size() <= 128
+        && data.createdAt is string
+        && data.createdAt.size() <= 50
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 50;
+    }
+
+    // 10. Shared Wishlists (public read by unique link ID, owner-only list & mutations)
+    match /shared_wishlists/{shareId} {
+      allow get: if isValidId(shareId);
+      allow list: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && isValidId(shareId)
+        && isValidSharedWishlist(request.resource.data)
+        && request.resource.data.shareId == shareId
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isSignedIn()
+        && isValidId(shareId)
+        && isValidSharedWishlist(request.resource.data)
+        && (
+          isAdmin() ||
+          (
+            resource.data.ownerUid == request.auth.uid
+            && request.resource.data.shareId == resource.data.shareId
+            && request.resource.data.ownerUid == resource.data.ownerUid
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'productIds', 'updatedAt'])
+          )
+        );
+      allow delete: if isSignedIn() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+    }
+
+    function isValidReturnRequest(data) {
+      return data.keys().hasAll([
+          'returnId',
+          'orderId',
+          'productId',
+          'productName',
+          'shopId',
+          'shopName',
+          'customerUid',
+          'customerName',
+          'requestType',
+          'reason',
+          'details',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'returnId',
+          'orderId',
+          'productId',
+          'productName',
+          'variantLabel',
+          'shopId',
+          'shopName',
+          'customerUid',
+          'customerName',
+          'requestType',
+          'reason',
+          'details',
+          'photoDataUrl',
+          'status',
+          'resolutionNote',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.returnId)
+        && isValidId(data.orderId)
+        && isValidId(data.productId)
+        && isValidId(data.shopId)
+        && data.productName is string
+        && data.productName.size() >= 1
+        && data.productName.size() <= 140
+        && (!('variantLabel' in data) || (data.variantLabel is string && data.variantLabel.size() <= 80))
+        && data.shopName is string
+        && data.shopName.size() >= 1
+        && data.shopName.size() <= 120
+        && data.customerUid is string
+        && data.customerUid.size() <= 128
+        && data.customerName is string
+        && data.customerName.size() >= 1
+        && data.customerName.size() <= 100
+        && data.requestType in ['return', 'exchange']
+        && data.reason in ['damaged_item', 'wrong_item', 'quality_issue', 'size_or_fit', 'missing_parts', 'changed_mind']
+        && data.details is string
+        && data.details.size() >= 5
+        && data.details.size() <= 600
+        && (!('photoDataUrl' in data) || (
+          data.photoDataUrl is string &&
+          data.photoDataUrl.size() <= 475000 &&
+          data.photoDataUrl.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$')
+        ))
+        && data.status in ['requested', 'approved', 'rejected', 'completed']
+        && (!('resolutionNote' in data) || (data.resolutionNote is string && data.resolutionNote.size() <= 300))
+        && data.createdAt is string
+        && data.createdAt.size() <= 50
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 50;
+    }
+
+    // 11. Easy Returns & Exchanges collection
+    match /return_requests/{returnId} {
+      allow get: if isSignedIn() && (
+        resource.data.customerUid == request.auth.uid ||
+        get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.customerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn()
+        && isActiveUser()
+        && isValidId(returnId)
+        && isValidReturnRequest(request.resource.data)
+        && request.resource.data.returnId == returnId
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.status == 'requested'
+        && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.customerUid == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.shopId == request.resource.data.shopId
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.orderStatus != 'canceled'
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.orderStatus != 'rejected';
+      allow update: if isSignedIn()
+        && isValidId(returnId)
+        && isValidReturnRequest(request.resource.data)
+        && (
+          isAdmin() ||
+          (
+            get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerUid == request.auth.uid
+            && resource.data.status in ['requested', 'approved']
+            && request.resource.data.returnId == resource.data.returnId
+            && request.resource.data.orderId == resource.data.orderId
+            && request.resource.data.productId == resource.data.productId
+            && request.resource.data.shopId == resource.data.shopId
+            && request.resource.data.customerUid == resource.data.customerUid
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolutionNote', 'updatedAt'])
+          ) ||
+          (
+            resource.data.customerUid == request.auth.uid
+            && resource.data.status == 'requested'
+            && request.resource.data.status == 'requested'
+            && request.resource.data.returnId == resource.data.returnId
+            && request.resource.data.orderId == resource.data.orderId
+            && request.resource.data.productId == resource.data.productId
+            && request.resource.data.shopId == resource.data.shopId
+            && request.resource.data.customerUid == resource.data.customerUid
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['requestType', 'reason', 'details', 'photoDataUrl', 'updatedAt'])
+          )
+        );
+      allow delete: if isAdmin();
+    }
+
+    function isValidPriceAlert(data) {
+      return data.keys().hasAll([
+          'alertId',
+          'productId',
+          'productName',
+          'shopId',
+          'shopName',
+          'customerUid',
+          'baselinePrice',
+          'targetPrice',
+          'pushEnabled',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'alertId',
+          'productId',
+          'productName',
+          'productImageUrl',
+          'shopId',
+          'shopName',
+          'customerUid',
+          'baselinePrice',
+          'targetPrice',
+          'pushEnabled',
+          'status',
+          'triggeredAt',
+          'triggeredPrice',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.alertId)
+        && isValidId(data.productId)
+        && isValidId(data.shopId)
+        && data.productName is string
+        && data.productName.size() >= 1
+        && data.productName.size() <= 140
+        && (!('productImageUrl' in data) || (data.productImageUrl is string && data.productImageUrl.size() <= 500))
+        && data.shopName is string
+        && data.shopName.size() >= 1
+        && data.shopName.size() <= 120
+        && data.customerUid is string
+        && data.customerUid.size() <= 128
+        && data.baselinePrice is number
+        && data.baselinePrice > 0
+        && data.baselinePrice <= 10000000
+        && data.targetPrice is number
+        && data.targetPrice > 0
+        && data.targetPrice <= 10000000
+        && data.pushEnabled is bool
+        && data.status in ['active', 'triggered', 'paused']
+        && (!('triggeredAt' in data) || (data.triggeredAt is string && data.triggeredAt.size() <= 50))
+        && (!('triggeredPrice' in data) || (data.triggeredPrice is number && data.triggeredPrice >= 0 && data.triggeredPrice <= 10000000))
+        && data.createdAt is string
+        && data.createdAt.size() <= 50
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 50;
+    }
+
+    // 12. Price Alerts collection
+    match /price_alerts/{alertId} {
+      allow get: if isSignedIn() && isValidId(alertId) && (
+        resource.data.customerUid == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.customerUid == request.auth.uid || isAdmin()
+      );
+      allow create: if isSignedIn()
+        && isActiveUser()
+        && isValidId(alertId)
+        && isValidPriceAlert(request.resource.data)
+        && request.resource.data.alertId == alertId
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.status == 'active'
+        && request.resource.data.targetPrice < request.resource.data.baselinePrice;
+      allow update: if isSignedIn()
+        && isValidId(alertId)
+        && isValidPriceAlert(request.resource.data)
+        && (
+          isAdmin() ||
+          (
+            resource.data.customerUid == request.auth.uid
+            && request.resource.data.alertId == resource.data.alertId
+            && request.resource.data.productId == resource.data.productId
+            && request.resource.data.shopId == resource.data.shopId
+            && request.resource.data.customerUid == resource.data.customerUid
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'targetPrice',
+              'baselinePrice',
+              'pushEnabled',
+              'status',
+              'triggeredAt',
+              'triggeredPrice',
+              'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(alertId) && (
+        resource.data.customerUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    function isValidMarketplaceConfig(data) {
+      return data.keys().hasAll([
+          'configId',
+          'deliveryFeeEtb',
+          'freeDeliveryThresholdEtb',
+          'maxOrderAmountEtb',
+          'orderingPaused',
+          'strictShopVerification',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'configId',
+          'deliveryFeeEtb',
+          'freeDeliveryThresholdEtb',
+          'maxOrderAmountEtb',
+          'orderingPaused',
+          'maintenanceBanner',
+          'strictShopVerification',
+          'updatedAt',
+          'updatedByUid'
+        ])
+        && isValidId(data.configId)
+        && data.deliveryFeeEtb is number
+        && data.deliveryFeeEtb >= 0
+        && data.deliveryFeeEtb <= 50000
+        && data.freeDeliveryThresholdEtb is number
+        && data.freeDeliveryThresholdEtb >= 0
+        && data.freeDeliveryThresholdEtb <= 1000000
+        && data.maxOrderAmountEtb is number
+        && data.maxOrderAmountEtb >= 100
+        && data.maxOrderAmountEtb <= 10000000
+        && data.orderingPaused is bool
+        && (!('maintenanceBanner' in data) || (data.maintenanceBanner is string && data.maintenanceBanner.size() <= 300))
+        && data.strictShopVerification is bool
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 50
+        && (!('updatedByUid' in data) || (data.updatedByUid is string && data.updatedByUid.size() <= 128));
+    }
+
+    // 13. Marketplace Governance Config
+    match /marketplace_config/{configId} {
+      allow get, list: if true;
+      allow create, update: if isAdmin()
+        && isValidId(configId)
+        && isValidMarketplaceConfig(request.resource.data)
+        && request.resource.data.configId == configId;
+      allow delete: if isAdmin() && isValidId(configId);
+    }
+
+    function isValidAdminAuditLog(data) {
+      return data.keys().hasAll([
+          'logId',
+          'adminUid',
+          'adminEmail',
+          'action',
+          'targetType',
+          'targetId',
+          'targetLabel',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'logId',
+          'adminUid',
+          'adminEmail',
+          'action',
+          'targetType',
+          'targetId',
+          'targetLabel',
+          'reason',
+          'createdAt'
+        ])
+        && isValidId(data.logId)
+        && data.adminUid is string
+        && data.adminUid.size() <= 128
+        && data.adminEmail is string
+        && data.adminEmail.size() >= 1
+        && data.adminEmail.size() <= 150
+        && data.action is string
+        && data.action.size() >= 2
+        && data.action.size() <= 80
+        && data.targetType in ['shop', 'verification', 'product', 'order', 'return_request', 'chat_supervision', 'user', 'review', 'category', 'config']
+        && data.targetId is string
+        && data.targetId.size() >= 1
+        && data.targetId.size() <= 128
+        && data.targetLabel is string
+        && data.targetLabel.size() >= 1
+        && data.targetLabel.size() <= 140
+        && (!('reason' in data) || (data.reason is string && data.reason.size() <= 300))
+        && data.createdAt is string
+        && data.createdAt.size() <= 50;
+    }
+
+    // 14. Immutable Admin Audit Logs
+    match /admin_audit_logs/{logId} {
+      allow get: if isAdmin() && isValidId(logId);
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && isValidId(logId)
+        && isValidAdminAuditLog(request.resource.data)
+        && request.resource.data.logId == logId
+        && request.resource.data.adminUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    function isValidMerchantVerification(data) {
+      return data.keys().hasAll([
+          'verificationId',
+          'shopId',
+          'shopName',
+          'ownerUid',
+          'businessLegalName',
+          'licenseNumber',
+          'issuingAuthority',
+          'licenseImageDataUrl',
+          'status',
+          'submittedAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'verificationId',
+          'shopId',
+          'shopName',
+          'ownerUid',
+          'businessLegalName',
+          'licenseNumber',
+          'tinNumber',
+          'issuingAuthority',
+          'expiryDate',
+          'licenseImageDataUrl',
+          'documentFileName',
+          'status',
+          'reviewNote',
+          'submittedAt',
+          'reviewedAt',
+          'reviewedByUid',
+          'updatedAt'
+        ])
+        && isValidId(data.verificationId)
+        && isValidId(data.shopId)
+        && data.shopName is string
+        && data.shopName.size() >= 1
+        && data.shopName.size() <= 120
+        && data.ownerUid is string
+        && data.ownerUid.size() <= 128
+        && data.businessLegalName is string
+        && data.businessLegalName.size() >= 3
+        && data.businessLegalName.size() <= 140
+        && data.licenseNumber is string
+        && data.licenseNumber.size() >= 4
+        && data.licenseNumber.size() <= 60
+        && (!('tinNumber' in data) || (data.tinNumber is string && data.tinNumber.size() <= 30))
+        && data.issuingAuthority is string
+        && data.issuingAuthority.size() >= 3
+        && data.issuingAuthority.size() <= 140
+        && (!('expiryDate' in data) || (data.expiryDate is string && data.expiryDate.size() <= 30))
+        && data.licenseImageDataUrl is string
+        && data.licenseImageDataUrl.size() >= 32
+        && data.licenseImageDataUrl.size() <= 475000
+        && data.licenseImageDataUrl.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$')
+        && (!('documentFileName' in data) || (data.documentFileName is string && data.documentFileName.size() <= 120))
+        && data.status in ['pending_review', 'approved', 'rejected']
+        && (!('reviewNote' in data) || (data.reviewNote is string && data.reviewNote.size() <= 300))
+        && data.submittedAt is string
+        && data.submittedAt.size() <= 50
+        && (!('reviewedAt' in data) || (data.reviewedAt is string && data.reviewedAt.size() <= 50))
+        && (!('reviewedByUid' in data) || (data.reviewedByUid is string && data.reviewedByUid.size() <= 128))
+        && data.updatedAt is string
+        && data.updatedAt.size() <= 50;
+    }
+
+    // 15. Private Merchant Business License Verifications
+    match /merchant_verifications/{verificationId} {
+      allow get: if isSignedIn() && isValidId(verificationId) && (
+        resource.data.ownerUid == request.auth.uid ||
+        (exists(/databases/$(database)/documents/shops/$(resource.data.shopId)) &&
+          get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerUid == request.auth.uid) ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.ownerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn()
+        && isActiveUser()
+        && isValidId(verificationId)
+        && isValidMerchantVerification(request.resource.data)
+        && request.resource.data.verificationId == verificationId
+        && request.resource.data.shopId == verificationId
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status == 'pending_review'
+        && (!('reviewNote' in request.resource.data))
+        && (!('reviewedAt' in request.resource.data))
+        && (!('reviewedByUid' in request.resource.data));
+      allow update: if isSignedIn()
+        && isValidId(verificationId)
+        && isValidMerchantVerification(request.resource.data)
+        && (
+          isAdmin() ||
+          (
+            isActiveUser()
+            && resource.data.ownerUid == request.auth.uid
+            && request.resource.data.verificationId == resource.data.verificationId
+            && request.resource.data.shopId == resource.data.shopId
+            && request.resource.data.ownerUid == resource.data.ownerUid
+            && request.resource.data.submittedAt == resource.data.submittedAt
+            && request.resource.data.status == 'pending_review'
+            && (!('reviewNote' in request.resource.data))
+            && (!('reviewedAt' in request.resource.data))
+            && (!('reviewedByUid' in request.resource.data))
+          )
+        );
+      allow delete: if isAdmin() && isValidId(verificationId);
+    }
+
+    function isValidTradeChatThread(data) {
+      return data.keys().hasAll([
+          'threadId',
+          'threadType',
+          'shopId',
+          'shopName',
+          'buyerUid',
+          'buyerName',
+          'sellerUid',
+          'sellerName',
+          'lastMessage',
+          'lastSenderUid',
+          'lastSenderRole',
+          'lastMessageAt',
+          'supervisionStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'threadId',
+          'threadType',
+          'orderId',
+          'orderCode',
+          'orderTotalEtb',
+          'orderStatusSnapshot',
+          'shopId',
+          'shopName',
+          'buyerUid',
+          'buyerName',
+          'sellerUid',
+          'sellerName',
+          'lastMessage',
+          'lastSenderUid',
+          'lastSenderRole',
+          'lastMessageAt',
+          'supervisionStatus',
+          'supervisionRequestedByUid',
+          'supervisionRequestedByRole',
+          'supervisionReason',
+          'supervisionRequestedAt',
+          'assignedAdminUid',
+          'assignedAdminName',
+          'resolutionNote',
+          'resolvedAt',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.threadId)
+        && data.threadType in ['order', 'shop']
+        && (!('orderId' in data) || isValidId(data.orderId))
+        && (!('orderCode' in data) || (data.orderCode is string && data.orderCode.size() <= 24))
+        && (!('orderTotalEtb' in data) || (data.orderTotalEtb is number && data.orderTotalEtb >= 0))
+        && (!('orderStatusSnapshot' in data) || (data.orderStatusSnapshot is string && data.orderStatusSnapshot.size() <= 40))
+        && isValidId(data.shopId)
+        && data.shopName is string && data.shopName.size() >= 1 && data.shopName.size() <= 120
+        && data.buyerUid is string && data.buyerUid.size() >= 1 && data.buyerUid.size() <= 128
+        && data.buyerName is string && data.buyerName.size() >= 1 && data.buyerName.size() <= 100
+        && data.sellerUid is string && data.sellerUid.size() >= 1 && data.sellerUid.size() <= 128
+        && data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 100
+        && data.lastMessage is string && data.lastMessage.size() <= 1000
+        && data.lastSenderUid is string && data.lastSenderUid.size() >= 1 && data.lastSenderUid.size() <= 128
+        && data.lastSenderRole in ['buyer', 'seller', 'admin', 'system']
+        && data.lastMessageAt is string && data.lastMessageAt.size() <= 50
+        && data.supervisionStatus in ['none', 'requested', 'active', 'resolved']
+        && (!('supervisionRequestedByUid' in data) || (data.supervisionRequestedByUid is string && data.supervisionRequestedByUid.size() <= 128))
+        && (!('supervisionRequestedByRole' in data) || data.supervisionRequestedByRole in ['buyer', 'seller'])
+        && (!('supervisionReason' in data) || (data.supervisionReason is string && data.supervisionReason.size() <= 300))
+        && (!('supervisionRequestedAt' in data) || (data.supervisionRequestedAt is string && data.supervisionRequestedAt.size() <= 50))
+        && (!('assignedAdminUid' in data) || (data.assignedAdminUid is string && data.assignedAdminUid.size() <= 128))
+        && (!('assignedAdminName' in data) || (data.assignedAdminName is string && data.assignedAdminName.size() <= 100))
+        && (!('resolutionNote' in data) || (data.resolutionNote is string && data.resolutionNote.size() <= 300))
+        && (!('resolvedAt' in data) || (data.resolvedAt is string && data.resolvedAt.size() <= 50))
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && data.updatedAt is string && data.updatedAt.size() <= 50;
+    }
+
+    function isValidTradeChatMessage(data) {
+      return data.keys().hasAll([
+          'messageId',
+          'threadId',
+          'buyerUid',
+          'sellerUid',
+          'senderUid',
+          'senderName',
+          'senderRole',
+          'messageType',
+          'body',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'messageId',
+          'threadId',
+          'buyerUid',
+          'sellerUid',
+          'senderUid',
+          'senderName',
+          'senderRole',
+          'messageType',
+          'body',
+          'createdAt'
+        ])
+        && isValidId(data.messageId)
+        && isValidId(data.threadId)
+        && data.buyerUid is string && data.buyerUid.size() >= 1 && data.buyerUid.size() <= 128
+        && data.sellerUid is string && data.sellerUid.size() >= 1 && data.sellerUid.size() <= 128
+        && data.senderUid is string && data.senderUid.size() >= 1 && data.senderUid.size() <= 128
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 100
+        && data.senderRole in ['buyer', 'seller', 'admin', 'system']
+        && data.messageType in ['text', 'supervision_request', 'mediator_notice', 'supervision_resolved']
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 1000
+        && data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    // 16. Buyer-Seller Trade Chats & Admin Supervision
+    match /trade_chats/{threadId} {
+      allow get: if isSignedIn() && isValidId(threadId) && (
+        resource.data.buyerUid == request.auth.uid ||
+        resource.data.sellerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.buyerUid == request.auth.uid ||
+        resource.data.sellerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn()
+        && isActiveUser()
+        && isValidId(threadId)
+        && isValidTradeChatThread(request.resource.data)
+        && request.resource.data.threadId == threadId
+        && (
+          isAdmin() ||
+          (
+            (request.resource.data.buyerUid == request.auth.uid || request.resource.data.sellerUid == request.auth.uid)
+            && request.resource.data.supervisionStatus == 'none'
+            && !('assignedAdminUid' in request.resource.data)
+            && !('assignedAdminName' in request.resource.data)
+            && !('resolutionNote' in request.resource.data)
+            && !('resolvedAt' in request.resource.data)
+          )
+        );
+      allow update: if isSignedIn()
+        && isValidId(threadId)
+        && isValidTradeChatThread(request.resource.data)
+        && request.resource.data.threadId == resource.data.threadId
+        && request.resource.data.threadType == resource.data.threadType
+        && request.resource.data.shopId == resource.data.shopId
+        && request.resource.data.buyerUid == resource.data.buyerUid
+        && request.resource.data.sellerUid == resource.data.sellerUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (
+          isAdmin() ||
+          (
+            isActiveUser()
+            && (resource.data.buyerUid == request.auth.uid || resource.data.sellerUid == request.auth.uid)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'lastMessage',
+              'lastSenderUid',
+              'lastSenderRole',
+              'lastMessageAt',
+              'orderStatusSnapshot',
+              'supervisionStatus',
+              'supervisionRequestedByUid',
+              'supervisionRequestedByRole',
+              'supervisionReason',
+              'supervisionRequestedAt',
+              'updatedAt'
+            ])
+            && (
+              request.resource.data.supervisionStatus == resource.data.supervisionStatus ||
+              (
+                request.resource.data.supervisionStatus == 'requested'
+                && request.resource.data.supervisionRequestedByUid == request.auth.uid
+              )
+            )
+          )
+        );
+      allow delete: if isAdmin() && isValidId(threadId);
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(threadId) && isValidId(messageId) && (
+          resource.data.buyerUid == request.auth.uid ||
+          resource.data.sellerUid == request.auth.uid ||
+          isAdmin()
+        );
+        allow list: if isSignedIn() && isValidId(threadId) && (
+          resource.data.buyerUid == request.auth.uid ||
+          resource.data.sellerUid == request.auth.uid ||
+          isAdmin()
+        );
+        allow create: if isSignedIn()
+          && isValidId(threadId)
+          && isValidId(messageId)
+          && isValidTradeChatMessage(request.resource.data)
+          && request.resource.data.messageId == messageId
+          && request.resource.data.threadId == threadId
+          && request.resource.data.senderUid == request.auth.uid
+          && existsAfter(/databases/$(database)/documents/trade_chats/$(threadId))
+          && request.resource.data.buyerUid == getAfter(/databases/$(database)/documents/trade_chats/$(threadId)).data.buyerUid
+          && request.resource.data.sellerUid == getAfter(/databases/$(database)/documents/trade_chats/$(threadId)).data.sellerUid
+          && (
+            (
+              isAdmin() &&
+              request.resource.data.senderRole in ['admin', 'system'] &&
+              request.resource.data.messageType in ['text', 'mediator_notice', 'supervision_resolved']
+            ) ||
+            (
+              isActiveUser()
+              && (
+                (request.auth.uid == getAfter(/databases/$(database)/documents/trade_chats/$(threadId)).data.buyerUid &&
+                  request.resource.data.senderRole in ['buyer', 'system']) ||
+                (request.auth.uid == getAfter(/databases/$(database)/documents/trade_chats/$(threadId)).data.sellerUid &&
+                  request.resource.data.senderRole in ['seller', 'system'])
+              )
+              && request.resource.data.messageType in ['text', 'supervision_request']
+            )
+          );
+        allow update, delete: if false;
+      }
+    }
+  }
+}
+

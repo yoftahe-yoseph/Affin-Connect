@@ -1,0 +1,460 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role management and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 150 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "role": { "type": "string", "enum": ["customer", "seller", "admin"] },
+        "accountStatus": { "type": "string", "enum": ["active", "suspended", "pending"] },
+        "preferredLanguage": { "type": "string", "enum": ["en", "am", "om", "sid"] },
+        "preferredTheme": { "type": "string", "enum": ["light", "dark", "system"] },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "shopId": { "type": "string", "maxLength": 128 },
+        "loyaltyPoints": { "type": "number" },
+        "lifetimeLoyaltyPoints": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "role"]
+    },
+    "Shop": {
+      "title": "Shop",
+      "description": "A merchant or local shop profile in Hawassa",
+      "type": "object",
+      "properties": {
+        "shopId": { "type": "string", "maxLength": 128 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 120 },
+        "slug": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "logoUrl": { "type": "string", "maxLength": 500 },
+        "coverImageUrl": { "type": "string", "maxLength": 500 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "city": { "type": "string", "maxLength": 60 },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "address": { "type": "string", "maxLength": 200 },
+        "deliveryAvailable": { "type": "boolean" },
+        "pickupAvailable": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "approved", "suspended"] },
+        "verificationStatus": { "type": "string", "enum": ["unverified", "pending_review", "approved", "rejected"] },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "featured": { "type": "boolean" },
+        "suspensionReason": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["shopId", "ownerUid", "name", "city", "status"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product listed by a shop in Hawassa",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "maxLength": 128 },
+        "shopId": { "type": "string", "maxLength": 128 },
+        "shopName": { "type": "string", "maxLength": 120 },
+        "name": { "type": "string", "maxLength": 140 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "category": { "type": "string", "maxLength": 60 },
+        "price": { "type": "number" },
+        "previousPrice": { "type": "number" },
+        "stock": { "type": "number" },
+        "isAvailable": { "type": "boolean" },
+        "imageUrl": { "type": "string", "maxLength": 475000 },
+        "additionalImages": { "type": "string", "maxLength": 1000 },
+        "pickupAvailable": { "type": "boolean" },
+        "deliveryAvailable": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "archived", "pending_review"] },
+        "moderationReason": { "type": "string", "maxLength": 300 },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "shopId", "name", "category", "price", "stock"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A marketplace product category",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string", "maxLength": 60 },
+        "name": { "type": "string", "maxLength": 80 },
+        "nameAm": { "type": "string", "maxLength": 80 },
+        "nameOm": { "type": "string", "maxLength": 80 },
+        "nameSid": { "type": "string", "maxLength": 80 },
+        "icon": { "type": "string", "maxLength": 50 },
+        "displayOrder": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["slug", "name"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order placed with a local Hawassa shop",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "maxLength": 128 },
+        "customerUid": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "customerPhone": { "type": "string", "maxLength": 30 },
+        "shopId": { "type": "string", "maxLength": 128 },
+        "shopOwnerUid": { "type": "string", "maxLength": 128 },
+        "shopName": { "type": "string", "maxLength": 120 },
+        "items": { "type": "string", "description": "JSON serialized items snapshot" },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "promoCode": { "type": "string", "maxLength": 40 },
+        "promoDiscountAmount": { "type": "number" },
+        "pointsRedeemed": { "type": "number" },
+        "pointsDiscountAmount": { "type": "number" },
+        "pointsEarned": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["ETB"] },
+        "fulfillmentMethod": { "type": "string", "enum": ["delivery", "pickup"] },
+        "deliveryAddress": { "type": "string", "maxLength": 500 },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "paymentMethod": { "type": "string", "enum": ["cash_on_delivery", "pay_at_pickup", "telebirr", "cbe_birr", "chapa", "telebirr_sandbox", "cbe_birr_sandbox"] },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid", "refunded"] },
+        "paymentReference": { "type": "string", "maxLength": 40 },
+        "deliveryPin": { "type": "string", "pattern": "^\\d{4}$" },
+        "deliveryEtaLabel": { "type": "string", "maxLength": 60 },
+        "orderStatus": { "type": "string", "enum": ["pending", "accepted", "rejected", "preparing", "ready_for_pickup", "out_for_delivery", "delivered", "canceled"] },
+        "rejectionReason": { "type": "string", "maxLength": 300 },
+        "adminNote": { "type": "string", "maxLength": 300 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderId", "customerUid", "shopId", "subtotal", "totalAmount", "orderStatus"]
+    },
+    "Address": {
+      "title": "Address",
+      "description": "A saved customer delivery address in Hawassa",
+      "type": "object",
+      "properties": {
+        "addressId": { "type": "string", "maxLength": 128 },
+        "customerUid": { "type": "string", "maxLength": 128 },
+        "label": { "type": "string", "maxLength": 60 },
+        "recipientName": { "type": "string", "maxLength": 100 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "city": { "type": "string", "maxLength": 60 },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "streetOrLandmark": { "type": "string", "maxLength": 200 },
+        "additionalInstructions": { "type": "string", "maxLength": 300 },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["addressId", "customerUid", "recipientName", "phoneNumber", "neighborhood"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Verified-purchase product review submitted by an authenticated customer",
+      "type": "object",
+      "properties": {
+        "reviewId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "productId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "customerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "customerName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "rating": { "type": "number" },
+        "comment": { "type": "string", "minLength": 3, "maxLength": 500 },
+        "shopRating": { "type": "number" },
+        "shopComment": { "type": "string", "maxLength": 500 },
+        "verifiedPurchase": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reviewId", "productId", "shopId", "orderId", "customerUid", "customerName", "rating", "comment", "verifiedPurchase", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app notification for order updates, price drops, or system notifications",
+      "type": "object",
+      "properties": {
+        "notificationId": { "type": "string", "maxLength": 128 },
+        "userUid": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 140 },
+        "message": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "enum": ["order_status", "seller_approval", "promo", "price_alert", "system"] },
+        "orderId": { "type": "string", "maxLength": 128 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["notificationId", "userUid", "title", "message"]
+    },
+    "LoyaltyTransaction": {
+      "title": "LoyaltyTransaction",
+      "description": "Immutable Affin Connect loyalty points ledger entry tied to a customer order",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "customerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "type": { "type": "string", "enum": ["earned", "redeemed", "refunded", "reversed"] },
+        "points": { "type": "number" },
+        "orderAmountEtb": { "type": "number" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionId", "customerUid", "orderId", "shopId", "shopName", "type", "points", "orderAmountEtb", "description", "createdAt"]
+    },
+    "SharedWishlist": {
+      "title": "SharedWishlist",
+      "description": "Publicly shareable snapshot of a customer's saved favorite Hawassa products",
+      "type": "object",
+      "properties": {
+        "shareId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "productIds": { "type": "array", "description": "Bounded list of up to 50 saved product IDs" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["shareId", "ownerUid", "ownerName", "title", "productIds", "createdAt", "updatedAt"]
+    },
+    "ReturnRequest": {
+      "title": "ReturnRequest",
+      "description": "Customer return or exchange request for a purchased item with optional camera proof of damage",
+      "type": "object",
+      "properties": {
+        "returnId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "productId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "productName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "variantLabel": { "type": "string", "maxLength": 80 },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "customerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "customerName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "requestType": { "type": "string", "enum": ["return", "exchange"] },
+        "reason": { "type": "string", "enum": ["damaged_item", "wrong_item", "quality_issue", "size_or_fit", "missing_parts", "changed_mind"] },
+        "details": { "type": "string", "minLength": 5, "maxLength": 600 },
+        "photoDataUrl": { "type": "string", "maxLength": 475000 },
+        "status": { "type": "string", "enum": ["requested", "approved", "rejected", "completed"] },
+        "resolutionNote": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["returnId", "orderId", "productId", "productName", "shopId", "shopName", "customerUid", "customerName", "requestType", "reason", "details", "status", "createdAt", "updatedAt"]
+    },
+    "PriceAlert": {
+      "title": "PriceAlert",
+      "description": "Customer price-drop push notification subscription for a specific Hawassa product",
+      "type": "object",
+      "properties": {
+        "alertId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "productId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "productName": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "productImageUrl": { "type": "string", "maxLength": 500 },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "customerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "baselinePrice": { "type": "number" },
+        "targetPrice": { "type": "number" },
+        "pushEnabled": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "triggered", "paused"] },
+        "triggeredAt": { "type": "string", "format": "date-time" },
+        "triggeredPrice": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["alertId", "productId", "productName", "shopId", "shopName", "customerUid", "baselinePrice", "targetPrice", "pushEnabled", "status", "createdAt", "updatedAt"]
+    },
+    "MarketplaceConfig": {
+      "title": "MarketplaceConfig",
+      "description": "Global marketplace governance settings controlled exclusively by admins",
+      "type": "object",
+      "properties": {
+        "configId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "deliveryFeeEtb": { "type": "number" },
+        "freeDeliveryThresholdEtb": { "type": "number" },
+        "maxOrderAmountEtb": { "type": "number" },
+        "orderingPaused": { "type": "boolean" },
+        "maintenanceBanner": { "type": "string", "maxLength": 300 },
+        "strictShopVerification": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedByUid": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["configId", "deliveryFeeEtb", "freeDeliveryThresholdEtb", "maxOrderAmountEtb", "orderingPaused", "strictShopVerification", "updatedAt"]
+    },
+    "AdminAuditLog": {
+      "title": "AdminAuditLog",
+      "description": "Immutable audit log recording every administrative governance action",
+      "type": "object",
+      "properties": {
+        "logId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "adminUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "adminEmail": { "type": "string", "maxLength": 150 },
+        "action": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "targetType": { "type": "string", "enum": ["shop", "verification", "product", "order", "return_request", "chat_supervision", "user", "review", "category", "config"] },
+        "targetId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "targetLabel": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "reason": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["logId", "adminUid", "adminEmail", "action", "targetType", "targetId", "targetLabel", "createdAt"]
+    },
+    "MerchantVerification": {
+      "title": "MerchantVerification",
+      "description": "Private merchant business license verification submission reviewed manually by marketplace admins",
+      "type": "object",
+      "properties": {
+        "verificationId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "ownerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessLegalName": { "type": "string", "minLength": 3, "maxLength": 140 },
+        "licenseNumber": { "type": "string", "minLength": 4, "maxLength": 60 },
+        "tinNumber": { "type": "string", "maxLength": 30 },
+        "issuingAuthority": { "type": "string", "minLength": 3, "maxLength": 140 },
+        "expiryDate": { "type": "string", "maxLength": 30 },
+        "licenseImageDataUrl": { "type": "string", "maxLength": 475000 },
+        "documentFileName": { "type": "string", "maxLength": 120 },
+        "status": { "type": "string", "enum": ["pending_review", "approved", "rejected"] },
+        "reviewNote": { "type": "string", "maxLength": 300 },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewedByUid": { "type": "string", "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["verificationId", "shopId", "shopName", "ownerUid", "businessLegalName", "licenseNumber", "issuingAuthority", "licenseImageDataUrl", "status", "submittedAt", "updatedAt"]
+    },
+    "TradeChatThread": {
+      "title": "TradeChatThread",
+      "description": "Real-time buyer-seller conversation thread linked to an order or shop with optional admin supervision",
+      "type": "object",
+      "properties": {
+        "threadId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "threadType": { "type": "string", "enum": ["order", "shop"] },
+        "orderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderCode": { "type": "string", "maxLength": 24 },
+        "orderTotalEtb": { "type": "number", "minimum": 0 },
+        "orderStatusSnapshot": { "type": "string", "maxLength": 40 },
+        "shopId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "shopName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "buyerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "buyerName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "sellerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "sellerName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "lastMessage": { "type": "string", "maxLength": 1000 },
+        "lastSenderUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "lastSenderRole": { "type": "string", "enum": ["buyer", "seller", "admin", "system"] },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "supervisionStatus": { "type": "string", "enum": ["none", "requested", "active", "resolved"] },
+        "supervisionRequestedByUid": { "type": "string", "maxLength": 128 },
+        "supervisionRequestedByRole": { "type": "string", "enum": ["buyer", "seller"] },
+        "supervisionReason": { "type": "string", "maxLength": 300 },
+        "supervisionRequestedAt": { "type": "string", "format": "date-time" },
+        "assignedAdminUid": { "type": "string", "maxLength": 128 },
+        "assignedAdminName": { "type": "string", "maxLength": 100 },
+        "resolutionNote": { "type": "string", "maxLength": 300 },
+        "resolvedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["threadId", "threadType", "shopId", "shopName", "buyerUid", "buyerName", "sellerUid", "sellerName", "lastMessage", "lastSenderUid", "lastSenderRole", "lastMessageAt", "supervisionStatus", "createdAt", "updatedAt"]
+    },
+    "TradeChatMessage": {
+      "title": "TradeChatMessage",
+      "description": "Immutable message inside a buyer-seller conversation thread",
+      "type": "object",
+      "properties": {
+        "messageId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "threadId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "buyerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "sellerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "senderUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "senderName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "senderRole": { "type": "string", "enum": ["buyer", "seller", "admin", "system"] },
+        "messageType": { "type": "string", "enum": ["text", "supervision_request", "mediator_notice", "supervision_resolved"] },
+        "body": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["messageId", "threadId", "buyerUid", "sellerUid", "senderUid", "senderName", "senderRole", "messageType", "body", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "User" },
+      "description": "User profile document storing roles and preferences"
+    },
+    "/shops/{shopId}": {
+      "schema": { "$ref": "Shop" },
+      "description": "Hawassa merchant shop profiles"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "Product" },
+      "description": "Products listed for sale by registered shops"
+    },
+    "/categories/{slug}": {
+      "schema": { "$ref": "Category" },
+      "description": "Marketplace product categories"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "Order" },
+      "description": "Marketplace orders placed by customers"
+    },
+    "/addresses/{addressId}": {
+      "schema": { "$ref": "Address" },
+      "description": "Saved delivery addresses for customers"
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "Review" },
+      "description": "Product ratings and reviews"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "Notification" },
+      "description": "User notifications"
+    },
+    "/loyalty_transactions/{transactionId}": {
+      "schema": { "$ref": "LoyaltyTransaction" },
+      "description": "Customer loyalty points earn and redeem ledger"
+    },
+    "/shared_wishlists/{shareId}": {
+      "schema": { "$ref": "SharedWishlist" },
+      "description": "Shareable customer wishlists accessible via unique share links"
+    },
+    "/return_requests/{returnId}": {
+      "schema": { "$ref": "ReturnRequest" },
+      "description": "Customer return and exchange requests for purchased products"
+    },
+    "/price_alerts/{alertId}": {
+      "schema": { "$ref": "PriceAlert" },
+      "description": "Customer price-drop notification subscriptions per product"
+    },
+    "/marketplace_config/{configId}": {
+      "schema": { "$ref": "MarketplaceConfig" },
+      "description": "Global marketplace governance policy and delivery rules"
+    },
+    "/admin_audit_logs/{logId}": {
+      "schema": { "$ref": "AdminAuditLog" },
+      "description": "Immutable administrative governance action logs"
+    },
+    "/merchant_verifications/{verificationId}": {
+      "schema": { "$ref": "MerchantVerification" },
+      "description": "Private merchant business license verification submissions for manual admin approval"
+    },
+    "/trade_chats/{threadId}": {
+      "schema": { "$ref": "TradeChatThread" },
+      "description": "Buyer-seller chat threads linked to orders or shops with admin supervision metadata"
+    },
+    "/trade_chats/{threadId}/messages/{messageId}": {
+      "schema": { "$ref": "TradeChatMessage" },
+      "description": "Immutable real-time messages within a buyer-seller conversation thread"
+    }
+  }
+}

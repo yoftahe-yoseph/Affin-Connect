@@ -1,0 +1,1477 @@
+# PROJECT: HAWASA GEBEYA
+## Complete Mobile Marketplace Rebuild Using React Native, Expo, TypeScript, and Firebase
+
+Act as a senior mobile application architect, senior React Native engineer, Firebase specialist, UI/UX designer, security engineer, and software testing engineer.
+
+Your task is to rebuild my existing application, Affin Gebeya, into a production-oriented mobile marketplace called HAWASA GEBEYA.
+
+Do not simply redesign the old website or create a static prototype. Build a functional mobile application with real Firebase integration, authentication, database operations, image uploads, product discovery, shopping cart, order management, notifications, and a scalable architecture.
+
+The target market is Hawassa, Sidama Region, Ethiopia.
+
+The main goal is to connect customers with local shops in Hawassa, allowing customers to discover nearby products, communicate with shops where appropriate, place orders, and arrange pickup or delivery.
+
+The application must be optimized for Android first while maintaining a clean architecture that supports iOS.
+
+==================================================
+1. EXISTING PROJECT ANALYSIS
+==================================================
+
+If existing Affin Gebeya source code is provided, inspect it before making changes.
+
+Analyze:
+
+- Existing frontend architecture.
+- Existing backend and API endpoints.
+- Existing database schemas and relationships.
+- Existing authentication and authorization.
+- Product and category models.
+- Shop and seller management.
+- Shopping cart and checkout.
+- Orders and delivery workflows.
+- Existing UI components and design system.
+- Existing environment variables and integrations.
+- Existing dependencies and configuration.
+- Existing business rules.
+- Existing error handling and validation.
+- Existing payment integration, if any.
+
+Create a concise migration report.
+
+Identify:
+1. Features that should be preserved.
+2. Features that should be redesigned.
+3. Features that need to be rebuilt.
+4. Missing functionality.
+5. Security problems.
+6. Dependencies that cannot be reused in React Native.
+7. Data that may need migration.
+
+If the existing project uses Next.js, do not attempt to run its web interface directly as a native mobile application.
+
+Build a genuine React Native application using Expo and TypeScript.
+
+Reuse existing business logic, API contracts, validated data structures, and backend functionality when appropriate.
+
+If the old project uses MongoDB or a custom Node.js backend, migrate the relevant data model to Firestore where practical, but do not delete or modify the old database.
+
+Create a separate migration plan and preserve a backup.
+
+If source code is unavailable, build the application from the requirements below without pretending that you inspected files you have not received.
+
+==================================================
+2. PRODUCT IDENTITY AND BRANDING
+==================================================
+
+Official application name: Hawasa Gebeya
+
+Primary spelling: Hawasa Gebeya.
+
+Brand meaning: A local marketplace connecting Hawassa's shops with local customers.
+
+Target audience:
+- Customers in Hawassa.
+- Small and medium-sized local businesses.
+- Retail shops.
+- Clothing stores.
+- Electronics shops.
+- Grocery stores.
+- Cosmetics shops.
+- Household goods stores.
+- Local delivery providers.
+- Marketplace administrators.
+
+Brand personality:
+- Modern.
+- Trustworthy.
+- Local.
+- Fast.
+- Accessible.
+- Professional.
+- Simple to use.
+
+Design a professional logo featuring a marketplace or shopping symbol combined with a subtle Ethiopian local-market identity.
+
+Use a consistent visual system:
+- Primary color: deep green.
+- Secondary color: warm yellow or gold.
+- Background: clean white or a subtle warm neutral.
+- Text: dark charcoal.
+- Cards: rounded corners with subtle shadows.
+- Buttons: accessible touch targets and clear labels.
+- Icons: consistent line-based icons.
+- Typography: modern and readable.
+
+Avoid excessive gradients, excessive animations, and cluttered layouts.
+
+The interface should look like a polished, commercially viable shopping application.
+
+Use a responsive design that works on small Android phones and larger devices.
+
+Prepare reusable components for:
+- Product cards.
+- Shop cards.
+- Search bars.
+- Category icons.
+- Price displays.
+- Ratings.
+- Quantity selectors.
+- Cart items.
+- Address cards.
+- Order status indicators.
+- Loading states.
+- Empty states.
+- Error messages.
+- Confirmation dialogs.
+- Bottom navigation.
+
+==================================================
+3. REQUIRED TECHNOLOGY STACK
+==================================================
+
+Use the following architecture:
+
+Mobile:
+- React Native.
+- Expo.
+- TypeScript.
+- Expo Router.
+- React Native StyleSheet or NativeWind.
+- Zustand for appropriate client-side state.
+- TanStack Query for server-state caching when useful.
+- React Hook Form.
+- Zod.
+- Expo Image Picker.
+- Expo SecureStore for suitable local sensitive data.
+- Expo Notifications where appropriate.
+- Expo Location when location permission is required.
+
+Backend:
+- Firebase Authentication.
+- Cloud Firestore.
+- Firebase Cloud Storage.
+- Firebase Cloud Messaging.
+- Firebase App Check where supported.
+- Firebase Admin SDK for trusted server-side operations.
+- Cloud Functions for Firebase where supported by the chosen plan and deployment environment.
+
+Development:
+- Git.
+- ESLint.
+- Prettier.
+- TypeScript strict mode.
+- Automated testing.
+- Environment-based configuration.
+
+Use compatible stable versions of Expo and its dependencies.
+
+Use Expo-compatible Firebase integration.
+
+Prefer the Firebase JavaScript SDK for supported client-side operations. If a native-only capability is required, evaluate whether Expo development builds and React Native Firebase are necessary.
+
+Do not mix incompatible Firebase integration approaches.
+
+Do not add unnecessary libraries.
+
+==================================================
+4. APPLICATION ARCHITECTURE
+==================================================
+
+Organize the codebase into clear, maintainable modules.
+
+Suggested structure:
+
+hawasa-gebeya/
+  app/
+    _layout.tsx
+    index.tsx
+    onboarding.tsx
+    auth/
+      login.tsx
+      register.tsx
+      forgot-password.tsx
+      verify-email.tsx
+    (customer)/
+      _layout.tsx
+      index.tsx
+      search.tsx
+      categories.tsx
+      cart.tsx
+      favorites.tsx
+      orders.tsx
+      profile.tsx
+    product/
+      [productId].tsx
+    shop/
+      [shopId].tsx
+    checkout/
+      index.tsx
+      address.tsx
+      review.tsx
+      confirmation.tsx
+    order/
+      [orderId].tsx
+    addresses/
+      index.tsx
+      add.tsx
+    notifications/
+      index.tsx
+    seller/
+      index.tsx
+      products.tsx
+      product-create.tsx
+      orders.tsx
+      shop-profile.tsx
+    admin/
+      index.tsx
+  src/
+    components/
+    features/
+      auth/
+      products/
+      shops/
+      categories/
+      cart/
+      checkout/
+      orders/
+      favorites/
+      addresses/
+      notifications/
+      seller/
+    services/
+      firebase/
+      auth/
+      firestore/
+      storage/
+      notifications/
+      payments/
+    hooks/
+    stores/
+    schemas/
+    types/
+    constants/
+    utils/
+    theme/
+  assets/
+    images/
+    icons/
+  tests/
+  app.config.ts
+  package.json
+  tsconfig.json
+  .env.example
+  README.md
+
+Adapt this structure when necessary.
+
+Keep screens, business logic, Firebase access, and reusable components separate.
+
+Create a dedicated Firebase initialization module.
+
+Do not duplicate Firebase initialization across screens.
+
+Use environment configuration for Firebase project settings.
+
+Create clear TypeScript interfaces and validation schemas.
+
+==================================================
+5. USER ROLES AND PERMISSIONS
+==================================================
+
+Implement three primary roles:
+
+A. CUSTOMER
+B. SELLER
+C. ADMINISTRATOR
+
+Customer permissions:
+- Browse products and shops.
+- Search products.
+- View shop details.
+- Add products to favorites.
+- Add products to a cart.
+- Place orders.
+- Manage addresses.
+- View order history.
+- Track order status.
+- Receive notifications.
+- Submit reviews after eligible purchases.
+- Manage their own profile.
+
+Seller permissions:
+- Create and manage their own shop.
+- Upload product images.
+- Create and edit their own products.
+- Manage inventory.
+- Set prices.
+- Mark products as available or unavailable.
+- View orders assigned to their shop.
+- Accept or reject orders with a reason.
+- Update preparation and fulfillment status.
+- View basic sales summaries.
+- Manage their shop information.
+
+Administrator permissions:
+- Review seller applications.
+- Approve, suspend, or reject shops.
+- Manage categories.
+- Moderate product listings.
+- Suspend accounts when justified.
+- Investigate reported products.
+- View authorized marketplace metrics.
+- Review orders for support purposes.
+- Manage marketplace configuration.
+- View audit logs.
+
+Enforce permissions in Firebase Security Rules and trusted server-side code.
+
+Never rely exclusively on hiding buttons or screens to enforce authorization.
+
+Customers must never be able to grant themselves seller or administrator privileges.
+
+Seller accounts must be approved before receiving seller privileges.
+
+Administrator privileges must be granted only through a trusted administrative process.
+
+==================================================
+6. CUSTOMER AUTHENTICATION
+==================================================
+
+Implement:
+
+- Customer registration.
+- Email and password login.
+- Google sign-in if correctly configured.
+- Logout.
+- Password reset.
+- Email verification.
+- Authentication state persistence.
+- Protected routes.
+- Profile creation.
+- Account deactivation workflow.
+- Appropriate authentication error messages.
+
+Support phone-number authentication only if it is correctly configured for the target market.
+
+Do not assume that Firebase phone authentication is automatically free or available without setup.
+
+Use secure session handling.
+
+Do not store passwords in Firestore.
+
+Create a user document after successful registration.
+
+Suggested users document:
+
+users/{uid}
+
+Fields:
+- uid
+- displayName
+- email
+- phoneNumber
+- photoURL
+- role
+- accountStatus
+- preferredLanguage
+- createdAt
+- updatedAt
+
+The role and account status must be protected from unauthorized client-side changes.
+
+Use server-side validation for privileged role changes.
+
+==================================================
+7. CUSTOMER HOME SCREEN
+==================================================
+
+Build a complete mobile home screen.
+
+Header:
+- Hawasa Gebeya logo.
+- Delivery or shopping location.
+- Notifications icon.
+- Profile shortcut.
+
+Search:
+- Search by product name.
+- Search by shop name.
+- Search by category.
+- Search by relevant keywords.
+- Show recent searches.
+- Show useful suggestions.
+
+Main content:
+- Promotional banner.
+- Product categories.
+- Featured shops.
+- Popular products.
+- Recently added products.
+- Recommended products when sufficient data exists.
+- Products from shops near the selected location.
+- Limited-time offers only when genuine offer data exists.
+
+Product cards must show:
+- Product image.
+- Product name.
+- Price in Ethiopian birr.
+- Shop name.
+- Availability.
+- Rating when genuine ratings exist.
+- Favorite button.
+- Add-to-cart button when appropriate.
+
+Do not generate fake ratings, fake discounts, fake reviews, or fake order counts.
+
+If the database is empty, show a polished empty state and provide an administrator or seller workflow for adding real products.
+
+==================================================
+8. PRODUCT CATEGORIES
+==================================================
+
+Create manageable categories such as:
+
+- Clothing and Fashion.
+- Electronics.
+- Phones and Accessories.
+- Shoes and Bags.
+- Groceries.
+- Food and Beverages.
+- Beauty and Cosmetics.
+- Home and Furniture.
+- Household Items.
+- Books and Stationery.
+- Sports and Fitness.
+- Other Products.
+
+Allow administrators to create, edit, disable, and reorder categories.
+
+Do not permanently hardcode the complete category list in UI components.
+
+Use Firestore category documents.
+
+Each category should support:
+- Name.
+- Slug.
+- Description.
+- Image or icon.
+- Active status.
+- Display order.
+- Created timestamp.
+- Updated timestamp.
+
+Use a consistent approach to category references across products.
+
+==================================================
+9. PRODUCT MANAGEMENT
+==================================================
+
+Create a product detail screen containing:
+
+- Product image gallery.
+- Product name.
+- Current price.
+- Previous price only when a genuine previous price exists.
+- Description.
+- Category.
+- Stock availability.
+- Shop information.
+- Shop location.
+- Pickup availability.
+- Delivery availability.
+- Quantity selector.
+- Favorite button.
+- Add-to-cart button.
+- Customer reviews.
+- Related products.
+
+Sellers must be able to:
+
+- Create products.
+- Edit their own products.
+- Upload and replace product images.
+- Set a price in ETB.
+- Set stock quantity.
+- Set availability.
+- Select a category.
+- Add descriptions.
+- Set pickup and delivery availability.
+- Archive products.
+
+Validate all product data.
+
+Prevent unauthorized sellers from modifying another seller's products.
+
+Use Cloud Storage for images and Firestore for product metadata.
+
+Validate image type and size.
+
+Do not store large image binaries directly inside Firestore documents.
+
+==================================================
+10. SHOP MANAGEMENT
+==================================================
+
+Every seller should have a shop profile.
+
+Suggested shops document:
+
+shops/{shopId}
+
+Fields:
+- shopId
+- ownerUid
+- name
+- slug
+- description
+- logoUrl
+- coverImageUrl
+- phoneNumber
+- address
+- city
+- neighborhood
+- latitude
+- longitude
+- businessHours
+- deliveryAvailable
+- pickupAvailable
+- status
+- createdAt
+- updatedAt
+
+Support:
+- Shop profile.
+- Shop products.
+- Contact information.
+- Business hours.
+- Pickup information.
+- Delivery availability.
+- Shop location.
+- Shop verification status.
+
+Use Hawassa as the primary marketplace location.
+
+Support neighborhoods and recognizable local landmarks where relevant.
+
+Do not invent precise shop coordinates.
+
+Request location permission only when needed.
+
+Allow customers to select an address manually if they do not want to share their device location.
+
+==================================================
+11. SEARCH AND FILTERING
+==================================================
+
+Implement:
+
+- Product search.
+- Shop search.
+- Category filtering.
+- Minimum and maximum price.
+- Availability filtering.
+- Shop filtering.
+- Pickup availability.
+- Delivery availability.
+- Sorting by price.
+- Sorting by newest.
+- Sorting by popularity when real metrics exist.
+
+Use appropriate Firestore queries and indexes.
+
+Firestore does not provide unrestricted full-text search automatically.
+
+For a basic MVP, implement normalized searchable fields and a clearly documented search strategy.
+
+If advanced full-text search is needed, design an optional integration with a suitable search service.
+
+Do not claim that arbitrary substring search is fully supported by Firestore queries.
+
+Add pagination or incremental loading.
+
+Avoid loading the entire product database into the mobile application.
+
+==================================================
+12. SHOPPING CART
+==================================================
+
+Implement a functional shopping cart.
+
+Customers must be able to:
+
+- Add products.
+- Remove products.
+- Increase quantities.
+- Decrease quantities.
+- See product prices.
+- See subtotal.
+- See delivery fee when applicable.
+- See the total.
+- Continue shopping.
+- Proceed to checkout.
+
+Validate stock and availability again before creating an order.
+
+Do not trust prices, delivery fees, or totals calculated by the mobile client.
+
+Recalculate order totals in trusted server-side code or another appropriately secured backend.
+
+Handle unavailable products and stock changes gracefully.
+
+For the MVP, support one shop per order unless multi-shop checkout is deliberately implemented with appropriate order splitting and fulfillment logic.
+
+If the cart contains products from multiple shops, clearly explain the limitation and offer a safe way to separate the orders.
+
+Persist the cart appropriately for authenticated users.
+
+Use local persistence for a guest cart if supported by the implementation.
+
+==================================================
+13. CHECKOUT AND ORDER CREATION
+==================================================
+
+Build a complete checkout process.
+
+Step 1:
+Select delivery or pickup.
+
+Step 2:
+Select or create a delivery address if delivery is selected.
+
+Step 3:
+Validate products, stock, and shop availability.
+
+Step 4:
+Calculate the order subtotal.
+
+Step 5:
+Calculate the applicable delivery fee.
+
+Step 6:
+Display the payment method and total.
+
+Step 7:
+Require customer confirmation.
+
+Step 8:
+Create the order through a trusted and secure operation.
+
+Step 9:
+Display the confirmation screen.
+
+Step 10:
+Allow the customer to view the order details.
+
+Suggested order fields:
+
+orders/{orderId}
+
+- orderId
+- customerUid
+- shopId
+- items
+- subtotal
+- deliveryFee
+- totalAmount
+- currency
+- fulfillmentMethod
+- deliveryAddress
+- paymentMethod
+- paymentStatus
+- orderStatus
+- sellerNotes
+- createdAt
+- updatedAt
+
+Use ETB as the default display currency.
+
+Store monetary amounts using integer minor units or another consistent, precisely documented representation.
+
+Never trust client-submitted totals.
+
+Use a transaction or secure server-side operation to validate stock and create the order safely.
+
+Prevent accidental duplicate order creation.
+
+Do not mark an order as paid simply because the customer pressed a button.
+
+==================================================
+14. PAYMENT ARCHITECTURE
+==================================================
+
+Design payment functionality so that legitimate Ethiopian payment providers can be integrated.
+
+Possible integrations to investigate include:
+
+- Telebirr.
+- Commercial Bank of Ethiopia payment services.
+- Chapa.
+- Other legitimate providers with appropriate merchant APIs.
+
+Do not assume that every provider offers a suitable public API or that an account is already available.
+
+For the initial MVP, support clearly labeled payment methods such as:
+
+- Cash on delivery, if enabled by the administrator.
+- Pay at shop or pickup, if enabled by the seller and administrator.
+- Online payment, only after a real payment gateway is configured.
+
+Create a payment service abstraction.
+
+Keep provider-specific code separate from checkout screens.
+
+For online payments:
+- Create payment requests on a trusted backend.
+- Keep secret credentials on the server.
+- Verify payment status through trusted provider responses or webhooks.
+- Validate transaction references.
+- Prevent duplicate payment processing.
+- Record payment attempts and results.
+- Handle canceled and failed payments.
+- Never store payment card details.
+- Never accept a client-side claim of successful payment as proof of payment.
+
+Use test or sandbox mode when supported.
+
+If no gateway credentials are available, implement a clearly labeled development placeholder and document the configuration steps.
+
+Do not fabricate successful transactions.
+
+==================================================
+15. ORDER MANAGEMENT AND TRACKING
+==================================================
+
+Implement these order states:
+
+- pending
+- accepted
+- rejected
+- preparing
+- ready_for_pickup
+- out_for_delivery
+- delivered
+- canceled
+
+Define and enforce valid status transitions.
+
+The seller should be able to accept or reject a pending order.
+
+A rejection must include a reason.
+
+The customer should see:
+- Order reference.
+- Shop name.
+- Products ordered.
+- Quantity.
+- Price breakdown.
+- Payment status.
+- Fulfillment method.
+- Current order status.
+- Relevant timestamps.
+- Cancellation options when permitted.
+
+Do not describe a basic order-status timeline as GPS delivery tracking.
+
+Real-time GPS tracking can be added later if a delivery-partner application and the necessary location infrastructure are implemented.
+
+Handle canceled orders and inventory restoration through secure, well-defined business logic.
+
+==================================================
+16. DELIVERY AND PICKUP
+==================================================
+
+Design a delivery workflow suitable for Hawassa.
+
+Support:
+- Customer-selected delivery address.
+- Neighborhood or area.
+- Optional delivery instructions.
+- Shop pickup.
+- Delivery fee calculation.
+- Estimated delivery window when configured.
+- Seller acceptance.
+- Fulfillment status.
+- Delivery completion.
+
+For the MVP, use configurable delivery fees.
+
+Do not invent a universal delivery price.
+
+Allow administrators to configure delivery policies.
+
+If distance-based pricing is implemented, use a documented distance calculation or a legitimate routing service.
+
+Do not require continuous background location tracking.
+
+Collect only location information necessary for the chosen functionality.
+
+==================================================
+17. SELLER EXPERIENCE
+==================================================
+
+Build a seller section inside the same mobile application.
+
+A seller dashboard should display:
+
+- Shop status.
+- Total active products.
+- Pending orders.
+- Orders in progress.
+- Completed orders.
+- Basic sales summaries.
+- Inventory warnings.
+
+Provide screens for:
+- Seller application.
+- Shop profile.
+- Product listing.
+- Create product.
+- Edit product.
+- Inventory.
+- Incoming orders.
+- Order details.
+- Sales overview.
+
+Seller registration should collect the information required for the marketplace's actual verification process.
+
+An administrator must approve seller access.
+
+Do not grant seller permissions merely because a user selects a seller option during registration.
+
+Keep the seller experience simple enough for local shop owners who may have limited technical experience.
+
+==================================================
+18. ADMINISTRATION
+==================================================
+
+Create an administrative workflow.
+
+If a secure administrative mobile interface is practical, include it as a protected section.
+
+Otherwise, document a separate administrative dashboard architecture while ensuring the mobile application integrates with the same Firebase project.
+
+Administrator features:
+- Seller application review.
+- Shop approval and suspension.
+- Product moderation.
+- Category management.
+- User account moderation.
+- Order support.
+- Marketplace configuration.
+- Delivery settings.
+- Payment method configuration.
+- Audit logs.
+- Basic business analytics.
+
+Do not expose administrator operations to ordinary users.
+
+Prefer a separate administrative interface for sensitive operations.
+
+Use Firebase Admin SDK and trusted server-side functions for privileged operations where appropriate.
+
+Never embed Firebase Admin credentials in the mobile app.
+
+==================================================
+19. CUSTOMER ADDRESSES
+==================================================
+
+Implement saved addresses.
+
+Suggested structure:
+
+users/{uid}/addresses/{addressId}
+
+Fields:
+- addressId
+- label
+- recipientName
+- phoneNumber
+- city
+- neighborhood
+- streetOrLandmark
+- additionalInstructions
+- latitude
+- longitude
+- isDefault
+- createdAt
+- updatedAt
+
+Support:
+- Add address.
+- Edit address.
+- Delete address.
+- Select default address.
+- Choose address during checkout.
+
+Validate required fields.
+
+Do not require latitude and longitude when a manual address is sufficient.
+
+Ensure users can access only their own saved addresses.
+
+==================================================
+20. FAVORITES AND REVIEWS
+==================================================
+
+Favorites:
+- Add a product to favorites.
+- Remove a product from favorites.
+- View the favorites list.
+- Handle deleted or unavailable products gracefully.
+
+Reviews:
+- Submit a rating.
+- Add optional review text.
+- Display verified purchase status when it can be established.
+- Prevent unauthorized review modification.
+- Prevent repeated reviews where the business rules prohibit them.
+- Allow moderation of abusive or fraudulent content.
+
+Do not display fake ratings or reviews.
+
+Suggested structure:
+
+users/{uid}/favorites/{productId}
+
+reviews/{reviewId}
+
+Review fields:
+- reviewId
+- productId
+- shopId
+- customerUid
+- orderId
+- rating
+- comment
+- status
+- createdAt
+- updatedAt
+
+Validate ratings on the server or through appropriately enforced rules.
+
+==================================================
+21. NOTIFICATIONS
+==================================================
+
+Implement in-app notifications and push notifications where supported.
+
+Notification events:
+- Order placed.
+- Order accepted.
+- Order rejected.
+- Order preparation started.
+- Order ready for pickup.
+- Order dispatched.
+- Order delivered.
+- Payment status changed.
+- Seller application approved.
+- Seller application rejected.
+- Relevant product or marketplace announcements.
+
+Use Firebase Cloud Messaging for push notifications.
+
+Create notification records in Firestore when appropriate.
+
+Store device tokens securely and associate them with authenticated users.
+
+Handle token refresh and notification permission denial.
+
+Do not send notifications directly from arbitrary client-side code when the operation requires trusted server-side authorization.
+
+Implement notifications in a way that works when the application is foregrounded, backgrounded, or reopened, subject to Expo and Firebase platform requirements.
+
+==================================================
+22. LOCALIZATION AND ACCESSIBILITY
+==================================================
+
+Prepare the application for:
+- English.
+- Amharic.
+- Afaan Oromo.
+
+Use a centralized translation system rather than scattering hardcoded text across screens.
+
+English may be the initial default language.
+
+Allow customers to change their preferred language.
+
+Ensure the interface supports Unicode text correctly.
+
+Design for accessibility:
+- Readable font sizes.
+- Sufficient contrast.
+- Screen-reader labels.
+- Accessible touch targets.
+- Clear error messages.
+- Keyboard-aware forms.
+- Appropriate loading indicators.
+
+Use Ethiopian birr as the default currency.
+
+Display prices consistently, for example ETB 1,250.
+
+Do not assume that every user has a high-end phone or fast internet.
+
+==================================================
+23. OFFLINE AND LOW-CONNECTIVITY EXPERIENCE
+==================================================
+
+Design for unreliable or slow internet connectivity.
+
+Implement:
+- Clear connectivity indicators.
+- Loading skeletons.
+- Cached data where appropriate.
+- Graceful error handling.
+- Retry actions.
+- Optimistic updates only where safe.
+- Local persistence for appropriate non-sensitive data.
+- Offline-friendly browsing where practical.
+
+Clearly distinguish cached information from confirmed current stock or order status.
+
+Do not promise successful order placement while offline.
+
+Do not use local cached data as proof of payment or inventory availability.
+
+==================================================
+24. FIREBASE DATABASE DESIGN
+==================================================
+
+Design a consistent Firestore data model.
+
+Suggested collections:
+
+users
+shops
+products
+categories
+orders
+reviews
+notifications
+sellerApplications
+paymentTransactions
+appConfiguration
+auditLogs
+
+Use subcollections when they simplify access patterns and authorization.
+
+For each collection, document:
+- Field names.
+- Field types.
+- Required fields.
+- Optional fields.
+- Ownership.
+- Access permissions.
+- Index requirements.
+- Validation requirements.
+- Expected query patterns.
+
+Create appropriate indexes.
+
+Use server timestamps for important audit and transaction timestamps.
+
+Define how products reference shops and categories.
+
+Define how orders preserve a snapshot of product names, prices, and quantities at purchase time.
+
+Do not depend on a live product document to reconstruct historical orders.
+
+Use pagination for large collections.
+
+Consider document size limits, query limitations, and read costs.
+
+Avoid unnecessarily duplicating rapidly changing information.
+
+Where denormalization is necessary, document how updates remain consistent.
+
+==================================================
+25. FIREBASE SECURITY
+==================================================
+
+Create a production-oriented Firestore Security Rules file.
+
+Create appropriate Cloud Storage Security Rules.
+
+Apply least-privilege access.
+
+Required security principles:
+
+1. Customers may read and update only permitted fields of their own profiles.
+2. Customers cannot grant themselves seller or administrator roles.
+3. Sellers can modify only their own shops and products.
+4. Seller access is conditional on approval.
+5. Customers cannot alter another customer's orders.
+6. Order creation must validate ownership and permitted fields.
+7. Order totals and payment states must not be trusted when submitted by clients.
+8. Reviews must follow the defined review policy.
+9. Users may read only notifications they are authorized to access.
+10. Sensitive payment information must not be exposed to unauthorized clients.
+11. Audit logs must not be editable by ordinary users.
+12. Public product and shop reads must respect publication and moderation status.
+13. Storage uploads must enforce reasonable size and file-type restrictions.
+14. Administrative actions must use trusted authorization.
+15. Deny access by default when no explicit rule permits it.
+
+Where possible, restrict updates to specific allowed fields.
+
+Remember that Firebase Admin SDK operations bypass Firestore Security Rules, so trusted backend functions must enforce their own authorization and validation.
+
+Create automated tests for critical Security Rules.
+
+Do not leave the database publicly writable.
+
+Do not use insecure rules such as allowing every authenticated user to read and write every document.
+
+==================================================
+26. APPLICATION PERFORMANCE
+==================================================
+
+Optimize for low-cost Android devices.
+
+Requirements:
+- Efficient image rendering.
+- Image resizing and compression.
+- Paginated product lists.
+- Reusable components.
+- Minimal unnecessary rerenders.
+- Appropriate caching.
+- Lazy loading where useful.
+- Small application bundle.
+- Efficient Firestore queries.
+- Avoid duplicate listeners.
+- Clean up subscriptions.
+- Handle network failures.
+- Avoid excessive background operations.
+
+Do not load every image at full resolution.
+
+Do not subscribe to entire collections when a limited query is sufficient.
+
+Document the expected Firebase read and write patterns.
+
+==================================================
+27. ENVIRONMENT CONFIGURATION
+==================================================
+
+Create a .env.example file containing the names of required configuration variables.
+
+Use placeholders rather than real secrets.
+
+Example public Firebase configuration names:
+
+EXPO_PUBLIC_FIREBASE_API_KEY=
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+EXPO_PUBLIC_FIREBASE_APP_ID=
+
+These public configuration values are not a replacement for security rules and authorization.
+
+Never place these values in the client:
+- Firebase Admin private keys.
+- Service-account credentials.
+- Payment gateway secrets.
+- Webhook signing secrets.
+- Private API tokens.
+
+Document the required configuration for:
+- Firebase.
+- Authentication providers.
+- Firestore.
+- Cloud Storage.
+- Push notifications.
+- Google Maps, if enabled.
+- Payment providers, if enabled.
+
+Do not claim that an integration works until it has been configured and tested.
+
+==================================================
+28. USER INTERFACE SCREENS
+==================================================
+
+Build the following screens.
+
+ONBOARDING:
+1. Welcome screen.
+2. Marketplace introduction.
+3. Location selection.
+4. Language selection.
+5. Get started.
+
+AUTHENTICATION:
+6. Login.
+7. Registration.
+8. Forgot password.
+9. Email verification.
+10. Authentication loading state.
+
+CUSTOMER:
+11. Home.
+12. Product search.
+13. Search results.
+14. Category listing.
+15. Product details.
+16. Shop details.
+17. Shopping cart.
+18. Checkout.
+19. Address selection.
+20. Add address.
+21. Order confirmation.
+22. Order details.
+23. Order history.
+24. Favorites.
+25. Notifications.
+26. Customer profile.
+27. Edit profile.
+28. Settings.
+29. Language settings.
+30. Help and support.
+
+SELLER:
+31. Seller application.
+32. Seller dashboard.
+33. Shop profile.
+34. Product management.
+35. Create product.
+36. Edit product.
+37. Inventory management.
+38. Incoming orders.
+39. Seller order details.
+40. Sales summary.
+
+ADMINISTRATION:
+41. Seller application review.
+42. Shop moderation.
+43. Product moderation.
+44. Category management.
+45. Order support.
+46. Marketplace configuration.
+
+Do not create empty placeholder screens merely to claim these screens exist.
+
+Prioritize a functional MVP first and then complete the remaining screens.
+
+==================================================
+29. TESTING REQUIREMENTS
+==================================================
+
+Write automated tests for:
+
+Authentication:
+- Registration validation.
+- Login validation.
+- Unauthorized route protection.
+- Role-based access.
+
+Products:
+- Product creation.
+- Product editing.
+- Product visibility.
+- Stock validation.
+- Price validation.
+
+Cart:
+- Quantity updates.
+- Item removal.
+- Total calculations.
+- Unavailable products.
+
+Checkout:
+- Invalid addresses.
+- Stock changes.
+- Duplicate order prevention.
+- Correct server-side totals.
+
+Orders:
+- Valid state transitions.
+- Unauthorized status changes.
+- Cancellation rules.
+- Seller ownership.
+
+Security:
+- Customer cannot become an administrator.
+- Seller cannot modify another seller's product.
+- Customer cannot read unauthorized orders.
+- Unauthorized clients cannot change payment status.
+- Storage upload restrictions.
+
+Use appropriate unit tests, component tests, and integration tests.
+
+Use Firebase Emulator Suite where suitable for Firestore, Authentication, Storage, and Security Rules testing.
+
+Document any tests that require external credentials or services.
+
+==================================================
+30. DEVELOPMENT WORKFLOW
+==================================================
+
+Work in manageable stages.
+
+STAGE 1: ANALYSIS
+Inspect the existing project, produce a migration report, and identify reusable features.
+
+STAGE 2: FOUNDATION
+Create the Expo application, TypeScript configuration, routing, theme, reusable components, and Firebase initialization.
+
+STAGE 3: AUTHENTICATION
+Implement registration, login, session persistence, profile creation, and route protection.
+
+STAGE 4: MARKETPLACE
+Implement the home screen, product catalog, categories, search, shops, and product details.
+
+STAGE 5: CART
+Implement cart management, price validation, and checkout preparation.
+
+STAGE 6: ORDERS
+Implement secure order creation, order history, seller order management, and order status transitions.
+
+STAGE 7: SELLER FEATURES
+Implement seller applications, product management, inventory, and shop management.
+
+STAGE 8: NOTIFICATIONS
+Implement in-app notifications and push notifications.
+
+STAGE 9: SECURITY
+Create Firestore and Storage Security Rules and test authorization.
+
+STAGE 10: LOCALIZATION AND POLISH
+Implement translations, accessibility, error handling, loading states, and responsive layouts.
+
+STAGE 11: TESTING
+Run linting, type checks, tests, and appropriate build checks.
+
+STAGE 12: DEPLOYMENT
+Prepare the Android application build and document the release process.
+
+After every stage:
+- Summarize the work completed.
+- List created and modified files.
+- Identify remaining issues.
+- Run the relevant tests.
+- Fix discovered errors before continuing.
+
+If your execution environment supports editing the complete repository, make the changes directly.
+
+If it does not, provide complete files in manageable batches with exact file paths.
+
+Do not repeatedly regenerate working files unnecessarily.
+
+Do not delete existing features without documenting the reason.
+
+Do not report tests as passed unless they were actually executed successfully.
+
+==================================================
+31. ANDROID BUILD AND DEPLOYMENT
+==================================================
+
+Prepare the application for Android.
+
+Requirements:
+- Correct app name: Hawasa Gebeya.
+- Appropriate Android package identifier.
+- App icon.
+- Splash screen.
+- Environment configuration.
+- Production Firebase project.
+- Android permissions limited to actual application requirements.
+- Correct notification configuration.
+- Release build instructions.
+
+Use Expo Application Services when appropriate for Android builds.
+
+Provide the exact commands for:
+- Installing dependencies.
+- Starting the development server.
+- Running on an Android emulator.
+- Running on a physical Android device.
+- Building an Android development build.
+- Creating a production Android package.
+- Testing the release build.
+
+Use current commands compatible with the generated Expo project.
+
+Document any additional configuration required for push notifications, Google sign-in, maps, and payment providers.
+
+Do not claim that an APK has been produced unless the build was actually completed.
+
+==================================================
+32. DOCUMENTATION
+==================================================
+
+Create a detailed README.md explaining:
+
+- Project overview.
+- Features.
+- Technology stack.
+- Folder structure.
+- Prerequisites.
+- Installation.
+- Environment variables.
+- Firebase project setup.
+- Authentication configuration.
+- Firestore configuration.
+- Storage configuration.
+- Security Rules deployment.
+- Index deployment.
+- Test execution.
+- Android development.
+- Android release builds.
+- Payment gateway configuration.
+- Notification configuration.
+- Troubleshooting.
+- Production deployment checklist.
+
+Also provide a Firebase setup checklist that a developer can follow without guessing.
+
+==================================================
+33. ACCEPTANCE CRITERIA
+==================================================
+
+The MVP is considered functional only when:
+
+1. The application runs using Expo.
+2. The branding displays Hawasa Gebeya.
+3. Authentication works with a configured Firebase project.
+4. Users can browse real Firestore products.
+5. Product details load correctly.
+6. Product images load from configured storage or valid image URLs.
+7. Customers can manage their cart.
+8. Checkout validates product availability.
+9. Orders are created through an appropriately secured workflow.
+10. Customers can view their own orders.
+11. Approved sellers can manage their own products.
+12. Sellers can process authorized orders.
+13. Unauthorized role changes are blocked.
+14. Firestore and Storage rules have been tested.
+15. Critical application flows have automated tests.
+16. Loading, empty, and error states are implemented.
+17. The README contains working setup instructions.
+18. The Android application can be built using the documented process.
+
+Do not use fake Firebase integration or hardcoded success responses to satisfy these criteria.
+
+==================================================
+34. FINAL INSTRUCTIONS
+==================================================
+
+Begin by inspecting the available source code and the development environment.
+
+If source files are available, analyze them before modifying anything.
+
+If the old source code is unavailable, proceed with a new application scaffold.
+
+Do not attempt to generate the entire application in a single enormous, unverified file.
+
+Build the application incrementally with reusable components and maintainable modules.
+
+Prioritize a working Android MVP with Firebase Authentication, Firestore products, shops, cart, secure checkout, and order management.
+
+Keep the architecture extensible so seller features, notifications, payment integrations, and administration can be added without rewriting the entire application.
+
+Make sensible technical decisions and document them.
+
+When credentials are missing, provide clear setup instructions instead of fabricating working integrations.
+
+Start with Stage 1: inspect the project, explain the architecture, identify the migration requirements, and prepare the implementation plan. Then proceed to Stage 2.

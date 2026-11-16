@@ -1,0 +1,1025 @@
+import React, { useEffect, useState } from 'react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Inbox,
+  Loader2,
+  Lock,
+  LogIn,
+  LogOut,
+  Mail,
+  MailCheck,
+  MapPin,
+  Phone,
+  RotateCcw,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  User,
+  UserPlus,
+  X,
+} from 'lucide-react';
+import { useMarketplace } from '../context/MarketplaceContext';
+import { getLocalizedNeighborhood } from '../constants/translations';
+import {
+  HAWASSA_NEIGHBORHOODS,
+  normalizePhoneToE164,
+} from '../utils/marketplaceLogic';
+
+type AuthTab = 'signin' | 'register' | 'phone';
+
+interface AuthSignInPanelProps {
+  variant?: 'onboarding' | 'card' | 'compact';
+  onSuccess?: () => void;
+  defaultTab?: AuthTab;
+}
+
+const GoogleGIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <path
+      fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
+    />
+  </svg>
+);
+
+export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
+  variant = 'card',
+  onSuccess,
+  defaultTab = 'signin',
+}) => {
+  const {
+    firebaseUser,
+    userProfile,
+    needsEmailVerification,
+    emailVerificationCooldown,
+    emailVerificationNotice,
+    clearEmailVerificationNotice,
+    resendVerificationEmail,
+    checkEmailVerificationStatus,
+    welcomeBackNotice,
+    clearWelcomeBackNotice,
+    signOutUser,
+    continueAsGuest,
+    signInWithGoogle,
+    signInWithEmailPassword,
+    registerWithEmailPassword,
+    phoneOtpState,
+    sendPhoneOtp,
+    verifyPhoneOtp,
+    resetPhoneOtp,
+    selectedNeighborhood,
+    language,
+    authError,
+    clearAuthError,
+    t,
+  } = useMarketplace();
+
+  const [activeTab, setActiveTab] = useState<AuthTab>(
+    phoneOtpState.step === 'code_sent' || phoneOtpState.step === 'verifying'
+      ? 'phone'
+      : defaultTab
+  );
+
+  // Email Verification Card State
+  const [checkingVerify, setCheckingVerify] = useState(false);
+  const [resendingVerify, setResendingVerify] = useState(false);
+  const [verifyPromptMsg, setVerifyPromptMsg] = useState<string | null>(null);
+
+  // Sign In Tab State
+  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [signInPassword, setSignInPassword] = useState('');
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [signInBusy, setSignInBusy] = useState(false);
+
+  // Register Tab State
+  const [fullName, setFullName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regNeighborhood, setRegNeighborhood] = useState<string>(
+    selectedNeighborhood !== 'All Hawassa' ? selectedNeighborhood : HAWASSA_NEIGHBORHOODS[0]
+  );
+  const [accountType, setAccountType] = useState<'customer' | 'seller'>('customer');
+  const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [regBusy, setRegBusy] = useState(false);
+
+  // Phone OTP Tab State
+  const [displayName, setDisplayName] = useState(phoneOtpState.pendingDisplayName || '');
+  const [phoneInput, setPhoneInput] = useState(phoneOtpState.formattedPhone || '');
+  const [otpInput, setOtpInput] = useState('');
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  const isCodeSent =
+    phoneOtpState.step === 'code_sent' || phoneOtpState.step === 'verifying';
+  const isSending = phoneOtpState.step === 'sending';
+  const isVerifying = phoneOtpState.step === 'verifying';
+  const isCompact = variant === 'compact';
+
+  const normalizedPhonePreview = normalizePhoneToE164(phoneInput);
+  const normalizedRegPhonePreview = normalizePhoneToE164(regPhone);
+
+  useEffect(() => {
+    if (selectedNeighborhood !== 'All Hawassa') {
+      setRegNeighborhood(selectedNeighborhood);
+    }
+  }, [selectedNeighborhood]);
+
+  useEffect(() => {
+    if (phoneOtpState.step === 'code_sent' || phoneOtpState.step === 'verifying') {
+      setActiveTab('phone');
+    }
+    if (phoneOtpState.step === 'code_sent' && resendCooldown === 0) {
+      setResendCooldown(30);
+    }
+  }, [phoneOtpState.step]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
+
+  const switchTab = (next: AuthTab) => {
+    setActiveTab(next);
+    clearAuthError();
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleBusy(true);
+    try {
+      const ok = await signInWithGoogle();
+      if (ok) {
+        onSuccess?.();
+      }
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignInBusy(true);
+    try {
+      const res = await signInWithEmailPassword({
+        emailOrPhone,
+        password: signInPassword,
+      });
+      if (res.switchToPhoneOtp) {
+        setPhoneInput(res.switchToPhoneOtp);
+        setActiveTab('phone');
+        return;
+      }
+      if (res.ok) {
+        onSuccess?.();
+      }
+    } finally {
+      setSignInBusy(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegBusy(true);
+    try {
+      const res = await registerWithEmailPassword({
+        fullName,
+        email: regEmail,
+        phoneNumber: regPhone,
+        neighborhood: regNeighborhood,
+        accountType,
+        password: regPassword,
+      });
+      if (res.ok) {
+        onSuccess?.();
+      }
+    } finally {
+      setRegBusy(false);
+    }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await sendPhoneOtp(phoneInput, displayName);
+    if (res.ok) {
+      setOtpInput('');
+      setResendCooldown(30);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await verifyPhoneOtp(otpInput, displayName);
+    if (res.ok) {
+      setOtpInput('');
+      onSuccess?.();
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || isSending) return;
+    const targetPhone = phoneOtpState.formattedPhone || phoneInput;
+    const res = await sendPhoneOtp(targetPhone, displayName);
+    if (res.ok) {
+      setOtpInput('');
+      setResendCooldown(30);
+    }
+  };
+
+  const handleShortcutToPhoneOtp = () => {
+    const trimmed = emailOrPhone.trim();
+    if (trimmed && !trimmed.includes('@')) {
+      setPhoneInput(trimmed);
+    }
+    switchTab('phone');
+  };
+
+  const handleCheckEmailVerified = async () => {
+    setVerifyPromptMsg(null);
+    clearAuthError();
+    setCheckingVerify(true);
+    try {
+      const res = await checkEmailVerificationStatus();
+      if (res.verified) {
+        onSuccess?.();
+      } else {
+        setVerifyPromptMsg(res.error ?? t('emailVerifyNotYetPrompt'));
+      }
+    } finally {
+      setCheckingVerify(false);
+    }
+  };
+
+  const handleResendVerificationEmail = async () => {
+    if (resendingVerify || emailVerificationCooldown > 0) return;
+    setVerifyPromptMsg(null);
+    clearEmailVerificationNotice();
+    clearAuthError();
+    setResendingVerify(true);
+    try {
+      await resendVerificationEmail();
+    } finally {
+      setResendingVerify(false);
+    }
+  };
+
+  const handleChangeEmailOrSignOut = async () => {
+    setVerifyPromptMsg(null);
+    clearAuthError();
+    clearEmailVerificationNotice();
+    await signOutUser();
+  };
+
+  const inputBaseClass =
+    'w-full min-h-[44px] rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-medium text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981] transition-colors';
+
+  const primaryGradientBtnClass =
+    'w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#0D9488] hover:from-[#065F46] hover:to-[#047857] disabled:opacity-85 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer';
+
+  if (firebaseUser && needsEmailVerification) {
+    const resolvedDisplayName =
+      userProfile?.displayName?.trim() ||
+      firebaseUser.displayName?.trim() ||
+      'Hawassa Shopper';
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center text-center space-y-2.5 pt-1">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#047857] to-[#059669] text-white flex items-center justify-center shadow-lg shadow-emerald-900/20 ring-4 ring-[#FFFBEB] dark:ring-[#F59E0B]/20">
+            <MailCheck className="w-7 h-7" />
+          </div>
+
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFFBEB] dark:bg-[#2A2418] border border-[#FDE68A] dark:border-[#78350F] text-[10px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#FBBF24]">
+            {t('emailVerifySubtitle')}
+          </span>
+
+          <div className="space-y-1.5">
+            <h2 className="text-base font-display font-bold text-stone-900 dark:text-stone-100">
+              {t('emailVerifyWelcomeTitle')}
+            </h2>
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed max-w-[320px] mx-auto">
+              {t('emailVerifyGreeting', {
+                name: resolvedDisplayName,
+                email: firebaseUser.email || '',
+              })}
+            </p>
+          </div>
+        </div>
+
+        {emailVerificationNotice && (
+          <div
+            role="status"
+            className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/25 dark:border-[#10B981]/30 text-[11px] text-[#047857] dark:text-[#10B981] flex items-start gap-2 leading-relaxed font-medium"
+          >
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{emailVerificationNotice}</span>
+          </div>
+        )}
+
+        {verifyPromptMsg && (
+          <div
+            role="status"
+            className="p-2.5 rounded-xl bg-[#FFFBEB] dark:bg-[#2A2418] border border-[#FDE68A] dark:border-[#78350F] text-[11px] text-[#9A3412] dark:text-[#FCD34D] flex items-start gap-2 leading-relaxed font-medium"
+          >
+            <Inbox className="w-4 h-4 text-[#D97706] dark:text-[#FBBF24] shrink-0 mt-0.5" />
+            <span>{verifyPromptMsg}</span>
+          </div>
+        )}
+
+        {authError && (
+          <div
+            role="alert"
+            className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200 flex items-start gap-2 leading-relaxed"
+          >
+            <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <span>{authError}</span>
+          </div>
+        )}
+
+        <div className="space-y-2.5">
+          <button
+            type="button"
+            disabled={checkingVerify}
+            onClick={handleCheckEmailVerified}
+            className={primaryGradientBtnClass}
+          >
+            {checkingVerify ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{t('emailVerifyCheckingBtn')}</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-4 h-4" />
+                <span>{t('emailVerifyContinueBtn')}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            disabled={resendingVerify || emailVerificationCooldown > 0}
+            onClick={handleResendVerificationEmail}
+            className="w-full min-h-[44px] px-4 rounded-xl bg-white dark:bg-[#232D28] border border-[#E7E5E4] dark:border-[#34423B] hover:border-[#047857] dark:hover:border-[#10B981] text-stone-800 dark:text-stone-100 text-xs font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-60 cursor-pointer"
+          >
+            {resendingVerify ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#047857] dark:text-[#10B981]" />
+            ) : (
+              <RotateCcw className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
+            )}
+            <span>
+              {emailVerificationCooldown > 0
+                ? t('emailVerifyResendCooldown', { seconds: emailVerificationCooldown })
+                : t('emailVerifyResendBtn')}
+            </span>
+          </button>
+        </div>
+
+        <div className="pt-2 border-t border-[#E7E5E4] dark:border-[#2A3630] flex flex-wrap items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={handleChangeEmailOrSignOut}
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-stone-600 dark:text-stone-300 hover:text-[#C2410C] dark:hover:text-[#FB923C] py-1 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>{t('emailVerifyChangeEmailBtn')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={continueAsGuest}
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#B45309] dark:text-[#FBBF24] hover:underline py-1 cursor-pointer"
+          >
+            <span>{t('browseAsGuest')}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3.5">
+      {/* Interactive Segmented Tab Switcher */}
+      <div
+        role="tablist"
+        aria-label="Authentication methods"
+        className="grid grid-cols-3 gap-1.5 bg-[#F3EFEA] dark:bg-[#141A17] p-1.5 rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630]"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'signin'}
+          onClick={() => switchTab('signin')}
+          className={`min-h-[40px] px-2 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all duration-200 whitespace-nowrap ${
+            activeTab === 'signin'
+              ? 'bg-gradient-to-r from-[#047857] to-[#059669] text-white shadow-md shadow-emerald-900/20 ring-1 ring-[#F59E0B]/45 font-semibold'
+              : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white/60 dark:hover:bg-[#1C2420]/70 font-medium'
+          }`}
+        >
+          <LogIn
+            className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+              activeTab === 'signin' ? 'text-[#FDE68A] scale-105' : ''
+            }`}
+          />
+          <span className="truncate">{t('authTabSignIn')}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'register'}
+          onClick={() => switchTab('register')}
+          className={`min-h-[40px] px-2 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all duration-200 whitespace-nowrap ${
+            activeTab === 'register'
+              ? 'bg-gradient-to-r from-[#047857] to-[#059669] text-white shadow-md shadow-emerald-900/20 ring-1 ring-[#F59E0B]/45 font-semibold'
+              : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white/60 dark:hover:bg-[#1C2420]/70 font-medium'
+          }`}
+        >
+          <UserPlus
+            className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+              activeTab === 'register' ? 'text-[#FDE68A] scale-105' : ''
+            }`}
+          />
+          <span className="truncate">{t('authTabRegister')}</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'phone'}
+          onClick={() => switchTab('phone')}
+          className={`min-h-[40px] px-2 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all duration-200 whitespace-nowrap ${
+            activeTab === 'phone'
+              ? 'bg-gradient-to-r from-[#047857] to-[#059669] text-white shadow-md shadow-emerald-900/20 ring-1 ring-[#F59E0B]/45 font-semibold'
+              : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white/60 dark:hover:bg-[#1C2420]/70 font-medium'
+          }`}
+        >
+          <Phone
+            className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+              activeTab === 'phone' ? 'text-[#FDE68A] scale-105' : ''
+            }`}
+          />
+          <span className="truncate">{t('authTabPhoneOtp')}</span>
+        </button>
+      </div>
+
+      {/* Error Alert */}
+      {authError && (
+        <div
+          role="alert"
+          className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200 flex items-start gap-2 leading-relaxed"
+        >
+          <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          <span>{authError}</span>
+        </div>
+      )}
+
+      {/* TAB 1: STANDARD SIGN IN */}
+      {activeTab === 'signin' && (
+        <form onSubmit={handleEmailSignIn} className="space-y-3" noValidate>
+          <div>
+            <label
+              htmlFor={`signin-id-${variant}`}
+              className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+            >
+              {t('authEmailOrPhoneLabel')}
+            </label>
+            <div className="relative">
+              <Mail className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id={`signin-id-${variant}`}
+                type="text"
+                autoComplete="username"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                placeholder={t('authEmailOrPhonePlaceholder')}
+                className={`${inputBaseClass} pl-9 pr-3`}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor={`signin-password-${variant}`}
+              className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+            >
+              {t('authPasswordLabel')}
+            </label>
+            <div className="relative">
+              <Lock className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id={`signin-password-${variant}`}
+                type={showSignInPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={signInPassword}
+                onChange={(e) => setSignInPassword(e.target.value)}
+                placeholder={t('authPasswordPlaceholder')}
+                className={`${inputBaseClass} pl-9 pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSignInPassword((v) => !v)}
+                aria-label={
+                  showSignInPassword ? t('authHidePassword') : t('authShowPassword')
+                }
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-[#047857] dark:hover:text-[#10B981] transition-colors"
+              >
+                {showSignInPassword ? (
+                  <EyeOff className="w-3.5 h-3.5" />
+                ) : (
+                  <Eye className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={signInBusy}
+            className={primaryGradientBtnClass}
+          >
+            {signInBusy ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{t('authSigningIn')}</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4" />
+                <span>{t('authSignInBtn')}</span>
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={handleShortcutToPhoneOtp}
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#047857] dark:text-[#10B981] hover:text-[#D97706] dark:hover:text-[#FBBF24] transition-colors py-1"
+            >
+              <Phone className="w-3 h-3" />
+              <span>{t('authUsePhoneOtpShortcut')}</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* TAB 2: CREATE ACCOUNT (REGISTER) */}
+      {activeTab === 'register' && (
+        <form onSubmit={handleRegister} className="space-y-2.5" noValidate>
+          <div>
+            <label
+              htmlFor={`reg-name-${variant}`}
+              className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+            >
+              {t('authFullNameLabel')}
+            </label>
+            <div className="relative">
+              <User className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id={`reg-name-${variant}`}
+                type="text"
+                autoComplete="name"
+                maxLength={100}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder={t('authFullNamePlaceholder')}
+                className={`${inputBaseClass} pl-9 pr-3`}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label
+                htmlFor={`reg-email-${variant}`}
+                className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+              >
+                {t('authEmailLabel')}
+              </label>
+              <div className="relative">
+                <Mail className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  id={`reg-email-${variant}`}
+                  type="email"
+                  autoComplete="email"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  placeholder={t('authEmailPlaceholder')}
+                  className={`${inputBaseClass} pl-9 pr-3`}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <label
+                  htmlFor={`reg-phone-${variant}`}
+                  className="text-[11px] font-semibold text-stone-700 dark:text-stone-300 truncate"
+                >
+                  {t('phoneAuthNumberLabel')}
+                </label>
+                {normalizedRegPhonePreview.valid && (
+                  <span className="text-[10px] font-mono font-semibold text-[#047857] dark:text-[#10B981] tabular-nums shrink-0">
+                    {normalizedRegPhonePreview.e164}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Phone className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  id={`reg-phone-${variant}`}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={regPhone}
+                  onChange={(e) => setRegPhone(e.target.value)}
+                  placeholder="0911 234 567"
+                  className={`${inputBaseClass} pl-9 pr-3 tabular-nums`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Hawassa Neighborhood Selector */}
+          <div>
+            <label
+              htmlFor={`reg-neighborhood-${variant}`}
+              className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+            >
+              {t('selectNeighborhood')}
+            </label>
+            <div className="relative">
+              <MapPin className="w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                id={`reg-neighborhood-${variant}`}
+                value={regNeighborhood}
+                onChange={(e) => setRegNeighborhood(e.target.value)}
+                className={`${inputBaseClass} pl-9 pr-3`}
+              >
+                {HAWASSA_NEIGHBORHOODS.map((n) => (
+                  <option
+                    key={n}
+                    value={n}
+                    className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                  >
+                    {getLocalizedNeighborhood(n, language)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Account Type: Customer vs Merchant / Seller */}
+          <div>
+            <div className="text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              {t('authAccountTypeLabel')}
+            </div>
+            <div
+              role="radiogroup"
+              aria-label={t('authAccountTypeLabel')}
+              className="grid grid-cols-2 gap-2"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={accountType === 'customer'}
+                onClick={() => setAccountType('customer')}
+                className={`p-2.5 rounded-xl border-2 text-left transition-all duration-200 ${
+                  accountType === 'customer'
+                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
+                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300 hover:border-[#047857]/40'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold">
+                  <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{t('authAccountTypeCustomer')}</span>
+                </div>
+                <div className="text-[10px] opacity-80 mt-0.5 leading-snug line-clamp-2">
+                  {t('authAccountTypeCustomerHint')}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={accountType === 'seller'}
+                onClick={() => setAccountType('seller')}
+                className={`p-2.5 rounded-xl border-2 text-left transition-all duration-200 ${
+                  accountType === 'seller'
+                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
+                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300 hover:border-[#047857]/40'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold">
+                  <Store className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{t('authAccountTypeSeller')}</span>
+                </div>
+                <div className="text-[10px] opacity-80 mt-0.5 leading-snug line-clamp-2">
+                  {t('authAccountTypeSellerHint')}
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Password */}
+          <div>
+            <label
+              htmlFor={`reg-password-${variant}`}
+              className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+            >
+              {t('authPasswordLabel')}
+            </label>
+            <div className="relative">
+              <Lock className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                id={`reg-password-${variant}`}
+                type={showRegPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                placeholder={t('authPasswordPlaceholder')}
+                className={`${inputBaseClass} pl-9 pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowRegPassword((v) => !v)}
+                aria-label={showRegPassword ? t('authHidePassword') : t('authShowPassword')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-400 hover:text-[#047857] dark:hover:text-[#10B981] transition-colors"
+              >
+                {showRegPassword ? (
+                  <EyeOff className="w-3.5 h-3.5" />
+                ) : (
+                  <Eye className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+            <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1">
+              {t('authPasswordRegisterHint')}
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={regBusy}
+            className={primaryGradientBtnClass}
+          >
+            {regBusy ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{t('authCreatingAccount')}</span>
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4" />
+                <span>{t('authCreateAccountBtn')}</span>
+              </>
+            )}
+          </button>
+        </form>
+      )}
+
+      {/* TAB 3: PHONE OTP */}
+      {activeTab === 'phone' &&
+        (isCodeSent ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-3">
+            <div className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/25 dark:border-[#10B981]/30 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                <span className="text-[11px] font-semibold text-[#047857] dark:text-[#10B981] truncate">
+                  {t('phoneAuthOtpSentTo', { phone: phoneOtpState.formattedPhone })}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  resetPhoneOtp();
+                  setOtpInput('');
+                  setResendCooldown(0);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#047857] dark:text-[#10B981] hover:underline shrink-0"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>{t('phoneAuthChangeNumber')}</span>
+              </button>
+            </div>
+
+            <div>
+              <label
+                htmlFor={`otp-code-${variant}`}
+                className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+              >
+                {t('phoneAuthOtpLabel')}
+              </label>
+              <input
+                id={`otp-code-${variant}`}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder={t('phoneAuthOtpPlaceholder')}
+                className="w-full min-h-[46px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-center text-base font-mono font-bold tracking-[0.35em] text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isVerifying || otpInput.length !== 6}
+              className={primaryGradientBtnClass}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{t('phoneAuthVerifying')}</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{t('phoneAuthVerifyBtn')}</span>
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center justify-center pt-0.5">
+              <button
+                type="button"
+                disabled={resendCooldown > 0 || isSending}
+                onClick={handleResend}
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-stone-600 dark:text-stone-300 hover:text-[#047857] dark:hover:text-[#10B981] disabled:opacity-50"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>
+                  {resendCooldown > 0
+                    ? t('phoneAuthResendIn', { seconds: resendCooldown })
+                    : t('phoneAuthResendBtn')}
+                </span>
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleSendOtp} className="space-y-3">
+            {!isCompact && (
+              <div>
+                <label
+                  htmlFor={`phone-name-${variant}`}
+                  className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+                >
+                  {t('phoneAuthNameLabel')}
+                </label>
+                <div className="relative">
+                  <User className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    id={`phone-name-${variant}`}
+                    type="text"
+                    maxLength={100}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder={t('phoneAuthNamePlaceholder')}
+                    className={`${inputBaseClass} pl-9 pr-3`}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <label
+                  htmlFor={`phone-number-${variant}`}
+                  className="text-[11px] font-semibold text-stone-700 dark:text-stone-300"
+                >
+                  {t('phoneAuthNumberLabel')}
+                </label>
+                {normalizedPhonePreview.valid && (
+                  <span className="text-[10px] font-mono font-semibold text-[#047857] dark:text-[#10B981] tabular-nums">
+                    {normalizedPhonePreview.e164}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Phone className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  id={`phone-number-${variant}`}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder={t('phoneAuthNumberPlaceholder')}
+                  className={`${inputBaseClass} pl-9 pr-3 tabular-nums`}
+                />
+              </div>
+              {!isCompact && (
+                <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1 leading-relaxed">
+                  {t('phoneAuthHint')}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSending}
+              className={primaryGradientBtnClass}
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{t('phoneAuthSendingOtp')}</span>
+                </>
+              ) : (
+                <>
+                  <Phone className="w-4 h-4" />
+                  <span>{t('phoneAuthSendOtpBtn')}</span>
+                </>
+              )}
+            </button>
+          </form>
+        ))}
+
+      {/* Elevated Continue with Google Card Button */}
+      {!(activeTab === 'phone' && isCodeSent) && (
+        <div className="space-y-2.5 pt-1">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+            <span className="flex-1 h-px bg-[#E7E5E4] dark:bg-[#2A3630]" />
+            <span>{t('authOrDivider')}</span>
+            <span className="flex-1 h-px bg-[#E7E5E4] dark:bg-[#2A3630]" />
+          </div>
+          <button
+            type="button"
+            disabled={googleBusy}
+            onClick={handleGoogleSignIn}
+            className="w-full min-h-[46px] px-4 rounded-xl bg-white dark:bg-[#232D28] border-2 border-[#E7E5E4] dark:border-[#34423B] hover:border-[#D97706] dark:hover:border-[#F59E0B] hover:bg-[#FFFDF9] dark:hover:bg-[#29342E] text-stone-900 dark:text-stone-100 text-xs font-semibold flex items-center justify-center gap-2.5 shadow-sm hover:shadow-md hover:shadow-amber-900/10 transition-all duration-200 cursor-pointer"
+          >
+            {googleBusy ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#D97706] dark:text-[#F59E0B]" />
+            ) : (
+              <GoogleGIcon className="w-4 h-4 shrink-0" />
+            )}
+            <span>{t('signInWithGoogle')}</span>
+          </button>
+
+          {activeTab === 'signin' && (
+            <p className="flex items-center justify-center gap-1.5 text-[10px] text-stone-500 dark:text-stone-400 text-center pt-0.5">
+              <ShieldCheck className="w-3 h-3 text-[#047857] dark:text-[#10B981] shrink-0" />
+              <span>{t('welcomeBackSecurityHint')}</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {welcomeBackNotice && (
+        <div
+          role="status"
+          className="p-3 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/30 dark:border-[#10B981]/30 flex items-start justify-between gap-2"
+        >
+          <div className="flex items-start gap-2 min-w-0">
+            <MailCheck className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold text-[#047857] dark:text-[#10B981]">
+                {t('welcomeBackSubtitle', { name: welcomeBackNotice.displayName })}
+              </div>
+              <div className="text-[10px] text-stone-600 dark:text-stone-300 mt-0.5 leading-relaxed">
+                {t('welcomeBackBannerDetail', {
+                  neighborhood: getLocalizedNeighborhood(
+                    welcomeBackNotice.neighborhood,
+                    language
+                  ),
+                  email: welcomeBackNotice.email,
+                })}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={clearWelcomeBackNotice}
+            aria-label="Dismiss welcome notice"
+            className="p-1 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};

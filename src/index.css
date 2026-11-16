@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --hg-canvas: #FAF8F5;
+  --hg-surface: #FFFFFF;
+  --hg-border: #E7E5E4;
+  --hg-emerald: #047857;
+  --hg-emerald-hover: #065F46;
+  --hg-sage-tint: #ECFDF5;
+  --hg-honey: #D97706;
+  --hg-terracotta: #C2410C;
+  --hg-terracotta-tint: #FFF7ED;
+}
+
+html.dark {
+  color-scheme: dark;
+  --hg-canvas: #141A17;
+  --hg-surface: #1C2420;
+  --hg-border: #2A3630;
+  --hg-emerald: #10B981;
+  --hg-emerald-hover: #059669;
+  --hg-sage-tint: rgba(16, 185, 129, 0.14);
+  --hg-honey: #F59E0B;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: #FAF8F5;
+    color: #1C1917;
+  }
+
+  html.dark body {
+    background-color: #141A17;
+    color: #F5F5F4;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Custom thin scrollbar for mobile simulator viewport */
+.mobile-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.mobile-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mobile-scroll::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.25);
+  border-radius: 9999px;
+}
+html.dark .mobile-scroll::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.22);
+}

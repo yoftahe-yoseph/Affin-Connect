@@ -1,0 +1,1519 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  AlertCircle,
+  Camera,
+  Check,
+  CheckCircle2,
+  Clock,
+  FileCheck2,
+  Lock,
+  MessageSquare,
+  Package,
+  Plus,
+  ShieldAlert,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  Trash2,
+  Upload,
+  Video,
+  X,
+  XCircle,
+} from 'lucide-react';
+import { useMarketplace } from '../context/MarketplaceContext';
+import { BRAND_ASSETS } from '../data/seedData';
+import { EmptyState, OrderStatusBadge, ResilientImage } from '../components/SharedUI';
+import { getLocalizedNeighborhood } from '../constants/translations';
+import {
+  canShopListProducts,
+  formatETB,
+  getEffectiveShopVerificationStatus,
+  HAWASSA_ISSUING_AUTHORITIES,
+  HAWASSA_NEIGHBORHOODS,
+  validateMerchantVerificationInput,
+  validateProductImageUrl,
+  validateProductInput,
+} from '../utils/marketplaceLogic';
+import {
+  compressImageSourceToDataUrl,
+  estimateDataUrlByteSize,
+  formatImageByteSize,
+  processUploadedPhotoFile,
+} from '../utils/imageUpload';
+import type { OrderStatus, Product } from '../types';
+
+type SellerTabId = 'dashboard' | 'orders' | 'products' | 'verification' | 'shop';
+
+export const SellerPortalScreen: React.FC<{
+  tab?: SellerTabId;
+}> = ({ tab = 'dashboard' }) => {
+  const {
+    navigate,
+    firebaseUser,
+    shops,
+    products,
+    categories,
+    sellerOrders,
+    activeSellerShopId,
+    setActiveSellerShopId,
+    getShopVerification,
+    submitMerchantVerification,
+    updateOrderStatus,
+    saveSellerProduct,
+    saveSellerShop,
+    openOrderChat,
+    openTradeChatInbox,
+    tradeChats,
+    language,
+    t,
+  } = useMarketplace();
+
+  const [activeTab, setActiveTab] = useState<SellerTabId>(tab);
+  useEffect(() => {
+    if (tab) setActiveTab(tab);
+  }, [tab]);
+
+  const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [pinInputs, setPinInputs] = useState<Record<string, string>>({});
+  const [pinErrors, setPinErrors] = useState<Record<string, string>>({});
+
+  // Product Form State
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [prodName, setProdName] = useState('');
+  const [prodPrice, setProdPrice] = useState('');
+  const [prodStock, setProdStock] = useState('10');
+  const [prodCategory, setProdCategory] = useState(categories[0]?.slug ?? 'groceries');
+  const [prodDesc, setProdDesc] = useState('');
+  const [prodImageUrl, setProdImageUrl] = useState('');
+  const [prodErrors, setProdErrors] = useState<Record<string, string>>({});
+  const [prodSubmitError, setProdSubmitError] = useState<string | null>(null);
+
+  // Shop Application State
+  const [newShopName, setNewShopName] = useState('');
+  const [newShopNeighborhood, setNewShopNeighborhood] = useState<string>(HAWASSA_NEIGHBORHOODS[0]);
+  const [newShopAddress, setNewShopAddress] = useState('');
+  const [newShopPhone, setNewShopPhone] = useState('');
+  const [shopSavedMsg, setShopSavedMsg] = useState<string | null>(null);
+
+  const currentShop = shops.find((s) => s.shopId === activeSellerShopId) ?? shops[0];
+  const currentVerification = currentShop ? getShopVerification(currentShop.shopId) : null;
+  const docStatus = getEffectiveShopVerificationStatus(currentShop, currentVerification);
+  const isListingUnlocked = canShopListProducts(currentShop, currentVerification);
+
+  // Document Verification Form State
+  const [businessLegalName, setBusinessLegalName] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [tinNumber, setTinNumber] = useState('');
+  const [issuingAuthority, setIssuingAuthority] = useState<string>(HAWASSA_ISSUING_AUTHORITIES[0]);
+  const [expiryDate, setExpiryDate] = useState('');
+  const [licenseImageDataUrl, setLicenseImageDataUrl] = useState<string | undefined>(undefined);
+  const [documentFileName, setDocumentFileName] = useState<string | undefined>(undefined);
+  const [docErrors, setDocErrors] = useState<Record<string, string>>({});
+  const [docSubmitError, setDocSubmitError] = useState<string | null>(null);
+  const [docSubmitSuccess, setDocSubmitSuccess] = useState<string | null>(null);
+  const [docSubmitting, setDocSubmitting] = useState(false);
+
+  // Camera state for business license capture
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const stopCameraStream = () => {
+    if (streamRef.current) {
+      for (const track of streamRef.current.getTracks()) {
+        track.stop();
+      }
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraOpen(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        for (const track of streamRef.current.getTracks()) {
+          track.stop();
+        }
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      void videoRef.current.play().catch(() => {});
+    }
+  }, [cameraOpen]);
+
+  // Sync verification form values when switching active shop or loading record
+  useEffect(() => {
+    setDocErrors({});
+    setDocSubmitError(null);
+    setDocSubmitSuccess(null);
+    stopCameraStream();
+    if (currentVerification) {
+      setBusinessLegalName(currentVerification.businessLegalName);
+      setLicenseNumber(currentVerification.licenseNumber);
+      setTinNumber(currentVerification.tinNumber ?? '');
+      setIssuingAuthority(currentVerification.issuingAuthority);
+      setExpiryDate(currentVerification.expiryDate ?? '');
+      setLicenseImageDataUrl(currentVerification.licenseImageDataUrl);
+      setDocumentFileName(currentVerification.documentFileName);
+    } else {
+      setBusinessLegalName(currentShop?.name ?? '');
+      setLicenseNumber('');
+      setTinNumber('');
+      setIssuingAuthority(HAWASSA_ISSUING_AUTHORITIES[0]);
+      setExpiryDate('');
+      setLicenseImageDataUrl(undefined);
+      setDocumentFileName(undefined);
+    }
+    setShowProductForm(false);
+    setProdSubmitError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentShop?.shopId, currentVerification?.verificationId, currentVerification?.updatedAt]);
+
+  const shopProducts = products.filter((p) => p.shopId === currentShop?.shopId);
+  const activeProductsCount = shopProducts.filter((p) => p.status === 'active').length;
+  const lowStockCount = shopProducts.filter((p) => p.stock <= 5 && p.status === 'active').length;
+  const pendingOrders = sellerOrders.filter((o) => o.orderStatus === 'pending');
+  const totalSales = sellerOrders
+    .filter((o) => o.orderStatus !== 'rejected' && o.orderStatus !== 'canceled')
+    .reduce((acc, o) => acc + o.totalAmount, 0);
+
+  const openCreateForm = () => {
+    if (!isListingUnlocked) {
+      setActiveTab('verification');
+      return;
+    }
+    setEditingProductId(null);
+    setProdName('');
+    setProdPrice('');
+    setProdStock('10');
+    setProdCategory(categories[0]?.slug ?? 'groceries');
+    setProdDesc('');
+    setProdImageUrl(currentShop?.logoUrl ?? BRAND_ASSETS.coffee);
+    setProdErrors({});
+    setProdSubmitError(null);
+    setShowProductForm(true);
+  };
+
+  const openEditForm = (p: Product) => {
+    if (!isListingUnlocked) {
+      setActiveTab('verification');
+      return;
+    }
+    setEditingProductId(p.productId);
+    setProdName(p.name);
+    setProdPrice(String(p.price));
+    setProdStock(String(p.stock));
+    setProdCategory(p.category);
+    setProdDesc(p.description);
+    setProdImageUrl(p.imageUrl);
+    setProdErrors({});
+    setProdSubmitError(null);
+    setShowProductForm(true);
+  };
+
+  const handleProductPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setProdSubmitError(null);
+    try {
+      const processed = await processUploadedPhotoFile(file);
+      setProdImageUrl(processed);
+    } catch (err) {
+      setProdSubmitError(
+        err instanceof Error ? err.message : t('imageSizeTooLargeError')
+      );
+    }
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentShop) return;
+    setProdSubmitError(null);
+
+    if (!isListingUnlocked) {
+      setProdSubmitError(t('docVerifyGateDesc'));
+      return;
+    }
+
+    const parsedPrice = Number(prodPrice);
+    const parsedStock = Number(prodStock);
+    const errs = validateProductInput({
+      name: prodName,
+      price: parsedPrice,
+      stock: parsedStock,
+      category: prodCategory,
+      description: prodDesc,
+    });
+    if (Object.keys(errs).length > 0) {
+      setProdErrors(errs);
+      return;
+    }
+
+    const existing = editingProductId
+      ? products.find((p) => p.productId === editingProductId)
+      : undefined;
+
+    const finalImageUrl =
+      prodImageUrl.trim() || existing?.imageUrl || currentShop.logoUrl || BRAND_ASSETS.coffee;
+    if (!validateProductImageUrl(finalImageUrl)) {
+      setProdSubmitError(t('imageSizeTooLargeError'));
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const product: Product = {
+      productId: existing?.productId ?? `prod-${Date.now()}`,
+      shopId: currentShop.shopId,
+      shopName: currentShop.name,
+      name: prodName.trim(),
+      description: prodDesc.trim(),
+      category: prodCategory,
+      price: Math.round(parsedPrice),
+      previousPrice:
+        existing && Math.round(parsedPrice) < existing.price
+          ? existing.price
+          : existing?.previousPrice,
+      stock: Math.floor(parsedStock),
+      isAvailable: Math.floor(parsedStock) > 0,
+      imageUrl: finalImageUrl,
+      pickupAvailable: currentShop.pickupAvailable,
+      deliveryAvailable: currentShop.deliveryAvailable,
+      status: 'active',
+      rating: existing?.rating,
+      reviewCount: existing?.reviewCount,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+
+    try {
+      await saveSellerProduct(product);
+      setShowProductForm(false);
+    } catch (err) {
+      setProdSubmitError(
+        err instanceof Error ? err.message : 'Unable to save product listing.'
+      );
+    }
+  };
+
+  const handleApplyNewShop = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newShopName.trim() || !newShopAddress.trim() || !newShopPhone.trim()) return;
+    const id = `shop-${Date.now()}`;
+    const now = new Date().toISOString();
+    await saveSellerShop({
+      shopId: id,
+      ownerUid: firebaseUser?.uid ?? 'seller-applicant',
+      name: newShopName.trim(),
+      slug: newShopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      description: `Verified local merchant located in ${newShopNeighborhood}, Hawassa.`,
+      logoUrl: BRAND_ASSETS.logo,
+      coverImageUrl: BRAND_ASSETS.banner,
+      phoneNumber: newShopPhone.trim(),
+      city: 'Hawassa',
+      neighborhood: newShopNeighborhood,
+      address: newShopAddress.trim(),
+      deliveryAvailable: true,
+      pickupAvailable: true,
+      status: 'pending',
+      verificationStatus: 'unverified',
+      rating: 5.0,
+      reviewCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    setActiveSellerShopId(id);
+    setNewShopName('');
+    setNewShopAddress('');
+    setNewShopPhone('');
+    setShopSavedMsg(
+      'Shop registered as pending. Upload your business license on the Verification tab to unlock product listings.'
+    );
+    setActiveTab('verification');
+  };
+
+  const handleOpenCamera = async () => {
+    setCameraError(null);
+    setDocSubmitError(null);
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices ||
+      typeof navigator.mediaDevices.getUserMedia !== 'function'
+    ) {
+      setCameraError(t('returnCameraUnavailable'));
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+    } catch {
+      setCameraError(t('returnCameraUnavailable'));
+    }
+  };
+
+  const handleCaptureCameraFrame = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      const width = video.videoWidth || 800;
+      const height = video.videoHeight || 600;
+      const captured = compressImageSourceToDataUrl(video, width, height);
+      setLicenseImageDataUrl(captured);
+      setDocumentFileName('camera-license-scan.jpg');
+      setDocErrors((prev) => {
+        const next = { ...prev };
+        delete next.licenseImageDataUrl;
+        return next;
+      });
+      setDocSubmitError(null);
+      stopCameraStream();
+    } catch {
+      setCameraError(t('returnCameraUnavailable'));
+      stopCameraStream();
+    }
+  };
+
+  const handleLicenseFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setCameraError(null);
+    setDocSubmitError(null);
+    try {
+      const processed = await processUploadedPhotoFile(file);
+      setLicenseImageDataUrl(processed);
+      setDocumentFileName(file.name.slice(0, 120));
+      setDocErrors((prev) => {
+        const next = { ...prev };
+        delete next.licenseImageDataUrl;
+        return next;
+      });
+    } catch (err) {
+      setDocSubmitError(
+        err instanceof Error ? err.message : 'Could not load business license image.'
+      );
+    }
+  };
+
+  const handleSubmitVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentShop) return;
+    setDocErrors({});
+    setDocSubmitError(null);
+    setDocSubmitSuccess(null);
+
+    const errs = validateMerchantVerificationInput({
+      businessLegalName,
+      licenseNumber,
+      tinNumber,
+      issuingAuthority,
+      expiryDate,
+      licenseImageDataUrl,
+    });
+    if (Object.keys(errs).length > 0) {
+      setDocErrors(errs);
+      return;
+    }
+
+    setDocSubmitting(true);
+    try {
+      await submitMerchantVerification({
+        shopId: currentShop.shopId,
+        businessLegalName,
+        licenseNumber,
+        tinNumber: tinNumber || undefined,
+        issuingAuthority,
+        expiryDate: expiryDate || undefined,
+        licenseImageDataUrl: licenseImageDataUrl!,
+        documentFileName,
+      });
+      setDocSubmitSuccess(t('docVerifySubmittedToast'));
+      stopCameraStream();
+    } catch (err) {
+      setDocSubmitError(
+        err instanceof Error ? err.message : 'Unable to submit business license.'
+      );
+    } finally {
+      setDocSubmitting(false);
+    }
+  };
+
+  const getNextSellerStatus = (
+    orderStatus: OrderStatus,
+    fulfillment: 'delivery' | 'pickup'
+  ): { next: OrderStatus; label: string } | null => {
+    switch (orderStatus) {
+      case 'accepted':
+        return { next: 'preparing', label: 'Start Preparing' };
+      case 'preparing':
+        return fulfillment === 'delivery'
+          ? { next: 'out_for_delivery', label: 'Dispatch for Delivery' }
+          : { next: 'ready_for_pickup', label: 'Mark Ready for Pickup' };
+      case 'out_for_delivery':
+      case 'ready_for_pickup':
+        return { next: 'delivered', label: 'Mark Delivered' };
+      default:
+        return null;
+    }
+  };
+
+  const renderVerificationStatusLabel = () => {
+    switch (docStatus) {
+      case 'approved':
+        return t('docVerifyStatusApproved');
+      case 'pending_review':
+        return t('docVerifyStatusPending');
+      case 'rejected':
+        return t('docVerifyStatusRejected');
+      default:
+        return t('docVerifyStatusUnverified');
+    }
+  };
+
+  return (
+    <div className="pb-8">
+      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-4 pt-3 pb-2 space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Store className="w-5 h-5 text-[#047857] dark:text-[#10B981] shrink-0" />
+            <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100 truncate">
+              {t('sellerPortalShort')}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => openTradeChatInbox()}
+              aria-label={t('tradeChatInboxTitle')}
+              className="min-h-[38px] px-2.5 rounded-lg border border-[#047857]/30 dark:border-[#10B981]/30 bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] text-xs font-bold inline-flex items-center gap-1.5 hover:bg-[#D1FAE5] dark:hover:bg-[#10B981]/25 transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="tabular-nums">
+                {tradeChats.filter((th) => th.shopId === currentShop?.shopId).length}
+              </span>
+            </button>
+
+            <select
+              aria-label="Select Active Shop"
+              value={currentShop?.shopId}
+              onChange={(e) => setActiveSellerShopId(e.target.value)}
+              className="max-w-[150px] px-2.5 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-800 dark:text-stone-100 bg-[#FAF8F5] dark:bg-[#141A17] truncate focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+            >
+              {shops.map((s) => (
+                <option
+                  key={s.shopId}
+                  value={s.shopId}
+                  className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                >
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Navigation Segmented Bar */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] rounded-xl text-[11px] font-semibold">
+          {(
+            [
+              { id: 'dashboard', label: t('sellerDashboard') },
+              { id: 'orders', label: `${t('navOrders')} (${pendingOrders.length})` },
+              { id: 'products', label: t('productsManagement') },
+              {
+                id: 'verification',
+                label: t('docVerifyTab'),
+                needsAttention: docStatus !== 'approved',
+              },
+              { id: 'shop', label: t('shopLabel') },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.id)}
+              className={`min-h-[36px] flex-1 min-w-fit px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
+                activeTab === item.id
+                  ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+              }`}
+            >
+              <span>{item.label}</span>
+              {'needsAttention' in item && item.needsAttention && (
+                <span
+                  aria-hidden="true"
+                  className="w-2 h-2 rounded-full bg-[#D97706] dark:bg-[#F59E0B] shrink-0"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="p-4 space-y-4">
+        {activeTab === 'dashboard' && currentShop && (
+          <>
+            <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">
+                  {currentShop.name}
+                </div>
+                <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  {getLocalizedNeighborhood(currentShop.neighborhood, language)} · Status:{' '}
+                  <span
+                    className={`font-semibold capitalize ${
+                      currentShop.status === 'approved'
+                        ? 'text-[#047857] dark:text-[#10B981]'
+                        : currentShop.status === 'suspended'
+                        ? 'text-rose-700 dark:text-rose-400'
+                        : 'text-[#D97706] dark:text-[#F59E0B]'
+                    }`}
+                  >
+                    {currentShop.status}
+                  </span>
+                </div>
+              </div>
+              {isListingUnlocked ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('products');
+                    openCreateForm();
+                  }}
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center gap-1 shadow-sm transition-colors shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Product</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('verification')}
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] dark:bg-[#F59E0B] dark:hover:bg-[#D97706] text-white dark:text-[#141A17] text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors shrink-0"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{t('docVerifyTab')}</span>
+                </button>
+              )}
+            </div>
+
+            {!isListingUnlocked && (
+              <section className="rounded-2xl border border-[#FDE68A] dark:border-[#F59E0B]/30 bg-[#FFFBEB] dark:bg-[#F59E0B]/10 p-4 space-y-2.5 shadow-sm">
+                <div className="flex items-start gap-2.5">
+                  <ShieldAlert className="w-5 h-5 text-[#D97706] dark:text-[#F59E0B] shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                      {t('docVerifyGateTitle')}
+                    </div>
+                    <p className="text-[11px] text-stone-600 dark:text-stone-300 mt-0.5 leading-relaxed">
+                      {currentShop.status === 'suspended'
+                        ? currentShop.suspensionReason || 'This shop is currently suspended by administrators.'
+                        : t('docVerifyGateDesc')}
+                    </p>
+                    <div className="text-[11px] font-semibold text-[#B45309] dark:text-[#F59E0B] mt-1">
+                      {renderVerificationStatusLabel()}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('verification')}
+                  className="w-full min-h-[44px] px-3 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#F59E0B] dark:hover:bg-[#D97706] text-white dark:text-[#141A17] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <FileCheck2 className="w-4 h-4 shrink-0" />
+                  <span>{t('docVerifyGateBtn')}</span>
+                </button>
+              </section>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+                <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Total Sales</div>
+                <div className="text-lg font-bold text-[#047857] dark:text-[#10B981] mt-1 tabular-nums">
+                  {formatETB(totalSales)}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+                <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Pending Orders</div>
+                <div className="text-lg font-bold text-[#D97706] dark:text-[#F59E0B] mt-1 tabular-nums">
+                  {pendingOrders.length}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+                <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Active Products</div>
+                <div className="text-lg font-bold text-stone-900 dark:text-stone-100 mt-1 tabular-nums">
+                  {activeProductsCount}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+                <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Low Stock Alerts</div>
+                <div className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-1 tabular-nums">
+                  {lowStockCount}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate({ name: 'video' })}
+              className="w-full p-4 rounded-2xl bg-[#1C2420] border border-[#2A3630] text-white flex items-center justify-between hover:bg-[#242F29] shadow-sm transition-colors"
+            >
+              <div className="text-left">
+                <div className="text-xs font-bold">Photo-to-Video Promo Studio</div>
+                <div className="text-[11px] text-stone-300 dark:text-stone-400 mt-0.5">
+                  Turn product photos into 16:9 or 9:16 shop reels
+                </div>
+              </div>
+              <Video className="w-5 h-5 text-[#F59E0B] shrink-0" />
+            </button>
+          </>
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="space-y-3">
+            {sellerOrders.length === 0 ? (
+              <EmptyState
+                icon={<ShoppingBag className="w-6 h-6" />}
+                title="No orders for this shop yet"
+                description="Place a test order as a customer and switch back here to accept or fulfill it."
+              />
+            ) : (
+              sellerOrders.map((order) => {
+                const nextAction = getNextSellerStatus(
+                  order.orderStatus,
+                  order.fulfillmentMethod
+                );
+                return (
+                  <div
+                    key={order.orderId}
+                    className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-mono font-bold text-stone-900 dark:text-stone-100">
+                        #{order.orderId.slice(-6).toUpperCase()}
+                      </span>
+                      <OrderStatusBadge status={order.orderStatus} />
+                    </div>
+
+                    <div className="text-xs text-stone-700 dark:text-stone-300">
+                      <div className="font-semibold text-stone-900 dark:text-stone-100">
+                        {order.customerName} · {order.customerPhone}
+                      </div>
+                      <div className="text-stone-500 dark:text-stone-400 mt-0.5">
+                        {order.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
+                      </div>
+                      <div className="font-bold text-[#047857] dark:text-[#10B981] mt-1 tabular-nums">
+                        {formatETB(order.totalAmount)} ({order.fulfillmentMethod})
+                        {order.paymentReference ? ` · Ref: ${order.paymentReference}` : ''}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openOrderChat(order)}
+                      className="w-full min-h-[40px] px-3 rounded-xl bg-[#ECFDF5] dark:bg-[#064E3B]/40 border border-[#047857]/25 dark:border-[#10B981]/30 hover:bg-[#D1FAE5] dark:hover:bg-[#064E3B]/60 text-[#047857] dark:text-[#34D399] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                      <span>
+                        {t('tradeChatMessageBuyerBtn')} · #{order.orderId.slice(-6).toUpperCase()}
+                      </span>
+                    </button>
+
+                    {order.orderStatus === 'pending' && (
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => updateOrderStatus(order.orderId, 'accepted')}
+                          className="flex-1 min-h-[40px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>{t('acceptOrder')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRejectingOrderId(order.orderId)}
+                          className="min-h-[40px] px-3 rounded-xl border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>{t('rejectOrder')}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {rejectingOrderId === order.orderId && (
+                      <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 space-y-2">
+                        <input
+                          type="text"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          placeholder="Reason for rejection (required)"
+                          className="w-full p-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={!rejectReason.trim()}
+                            onClick={() => {
+                              updateOrderStatus(order.orderId, 'rejected', rejectReason.trim());
+                              setRejectingOrderId(null);
+                              setRejectReason('');
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold disabled:opacity-50"
+                          >
+                            Confirm Reject
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRejectingOrderId(null)}
+                            className="px-3 py-1.5 text-xs text-stone-600 dark:text-stone-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {nextAction && nextAction.next === 'delivered' ? (
+                      <div className="p-3 rounded-xl bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border border-[#FDE68A] dark:border-[#F59E0B]/30 space-y-2">
+                        <label
+                          htmlFor={`seller-pin-${order.orderId}`}
+                          className="block text-[11px] font-bold text-stone-900 dark:text-stone-100"
+                        >
+                          {t('deliveryPinVerifyTitle')}
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            id={`seller-pin-${order.orderId}`}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            value={pinInputs[order.orderId] ?? ''}
+                            onChange={(e) => {
+                              const cleaned = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              setPinInputs((prev) => ({ ...prev, [order.orderId]: cleaned }));
+                              setPinErrors((prev) => {
+                                const next = { ...prev };
+                                delete next[order.orderId];
+                                return next;
+                              });
+                            }}
+                            placeholder={t('deliveryPinInputPlaceholder')}
+                            className="w-28 min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-mono font-bold tracking-widest text-center text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                          />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await updateOrderStatus(
+                                  order.orderId,
+                                  'delivered',
+                                  undefined,
+                                  pinInputs[order.orderId] ?? ''
+                                );
+                              } catch (err) {
+                                setPinErrors((prev) => ({
+                                  ...prev,
+                                  [order.orderId]:
+                                    err instanceof Error
+                                      ? err.message
+                                      : t('deliveryPinInvalidError'),
+                                }));
+                              }
+                            }}
+                            className="flex-1 min-h-[40px] px-3 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold transition-colors"
+                          >
+                            {t('deliveryPinVerifyBtn')}
+                          </button>
+                        </div>
+                        {pinErrors[order.orderId] && (
+                          <p className="text-[11px] font-medium text-rose-700 dark:text-rose-400">
+                            {pinErrors[order.orderId]}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      nextAction && (
+                        <button
+                          type="button"
+                          onClick={() => updateOrderStatus(order.orderId, nextAction.next)}
+                          className="w-full min-h-[40px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold transition-colors"
+                        >
+                          {nextAction.label}
+                        </button>
+                      )
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {activeTab === 'products' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
+                Shop Inventory ({shopProducts.length})
+              </h2>
+              <button
+                type="button"
+                disabled={!isListingUnlocked}
+                onClick={openCreateForm}
+                className="min-h-[44px] px-3 py-2 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:bg-stone-300 dark:disabled:bg-[#2A3630] disabled:text-stone-500 dark:disabled:text-stone-500 text-white dark:text-[#0B1410] text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors whitespace-nowrap"
+              >
+                {isListingUnlocked ? (
+                  <Plus className="w-3.5 h-3.5" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5" />
+                )}
+                <span>{t('addProduct')}</span>
+              </button>
+            </div>
+
+            {!isListingUnlocked && currentShop && (
+              <div className="rounded-2xl border border-[#FDE68A] dark:border-[#F59E0B]/30 bg-[#FFFBEB] dark:bg-[#F59E0B]/10 p-4 space-y-3 shadow-sm">
+                <div className="flex items-start gap-2.5">
+                  <ShieldAlert className="w-5 h-5 text-[#D97706] dark:text-[#F59E0B] shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                      {t('docVerifyGateTitle')}
+                    </div>
+                    <p className="text-[11px] text-stone-600 dark:text-stone-300 mt-0.5 leading-relaxed">
+                      {t('docVerifyGateDesc')}
+                    </p>
+                    <div className="mt-1.5 text-[11px] font-semibold text-[#B45309] dark:text-[#F59E0B]">
+                      Current status: {renderVerificationStatusLabel()}
+                    </div>
+                    {currentVerification?.status === 'rejected' && currentVerification.reviewNote && (
+                      <div className="mt-1.5 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200">
+                        Admin feedback: {currentVerification.reviewNote}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('verification')}
+                  className="w-full min-h-[44px] px-3 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#F59E0B] dark:hover:bg-[#D97706] text-white dark:text-[#141A17] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <FileCheck2 className="w-4 h-4 shrink-0" />
+                  <span>{t('docVerifyGateBtn')}</span>
+                </button>
+              </div>
+            )}
+
+            {showProductForm && isListingUnlocked && (
+              <form
+                onSubmit={handleSaveProduct}
+                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                    {editingProductId ? t('editProduct') : t('addProduct')}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowProductForm(false)}
+                    className="text-xs text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
+                  >
+                    {t('cancel')}
+                  </button>
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    value={prodName}
+                    onChange={(e) => setProdName(e.target.value)}
+                    placeholder="Product Name"
+                    className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  />
+                  {prodErrors.name && <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.name}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      type="number"
+                      value={prodPrice}
+                      onChange={(e) => setProdPrice(e.target.value)}
+                      placeholder="Price (ETB)"
+                      className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    />
+                    {prodErrors.price && (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.price}</p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      value={prodStock}
+                      onChange={(e) => setProdStock(e.target.value)}
+                      placeholder="Stock Quantity"
+                      className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    />
+                    {prodErrors.stock && (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.stock}</p>
+                    )}
+                  </div>
+                </div>
+
+                <select
+                  value={prodCategory}
+                  onChange={(e) => setProdCategory(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                >
+                  {categories.map((c) => (
+                    <option key={c.slug} value={c.slug} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
+                      {language === 'am'
+                        ? c.nameAm
+                        : language === 'om'
+                        ? c.nameOm
+                        : language === 'sid'
+                        ? c.nameSid || c.name
+                        : c.name}
+                    </option>
+                  ))}
+                </select>
+
+                <div>
+                  <textarea
+                    rows={3}
+                    value={prodDesc}
+                    onChange={(e) => setProdDesc(e.target.value)}
+                    placeholder="Describe product quality, weight, or sizing..."
+                    className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  />
+                  {prodErrors.description && (
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.description}</p>
+                  )}
+                </div>
+
+                {/* Product Catalog Photo Upload with < 350 KB Compression */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
+                      {t('productPhotoUploadLabel')}
+                    </span>
+                    <label className="min-h-[36px] px-3 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
+                      <span>{t('uploadProductPhoto')}</span>
+                      <input
+                        id="seller-product-photo-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProductPhotoChange}
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
+                  {prodImageUrl && (
+                    <div className="flex items-center gap-3 p-2 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17]">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-[#1C2420] shrink-0">
+                        <ResilientImage src={prodImageUrl} alt={prodName || 'Product preview'} />
+                      </div>
+                      <div className="min-w-0 flex-1 text-[11px] text-stone-600 dark:text-stone-300">
+                        {prodImageUrl.startsWith('data:image/') ? (
+                          <span className="text-[#047857] dark:text-[#10B981] font-semibold tabular-nums">
+                            {t('imageSizeLimitHint', {
+                              size: formatImageByteSize(estimateDataUrlByteSize(prodImageUrl)),
+                            })}
+                          </span>
+                        ) : (
+                          <span className="truncate block">{prodImageUrl}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {prodSubmitError && (
+                  <p className="text-[11px] font-medium text-rose-700 dark:text-rose-400">
+                    {prodSubmitError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold shadow-sm transition-colors"
+                >
+                  Save Product
+                </button>
+              </form>
+            )}
+
+            {shopProducts.length === 0 ? (
+              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center space-y-1.5">
+                <Package className="w-6 h-6 text-stone-400 mx-auto" />
+                <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                  No products listed for {currentShop?.name}
+                </div>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                  {isListingUnlocked
+                    ? 'Tap Add New Product above to publish your first Hawassa listing.'
+                    : 'Complete document verification to publish products.'}
+                </p>
+              </div>
+            ) : (
+              shopProducts.map((p) => (
+                <div
+                  key={p.productId}
+                  className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm hover:shadow-md p-3 flex items-center gap-3 transition-all"
+                >
+                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] shrink-0">
+                    <ResilientImage src={p.imageUrl} alt={p.name} fallbackTitle={p.name} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">{p.name}</div>
+                    <div className="text-[11px] text-stone-600 dark:text-stone-400 tabular-nums mt-0.5">
+                      {formatETB(p.price)} · Stock: {p.stock} ·{' '}
+                      <span className={p.status === 'active' ? 'text-[#047857] dark:text-[#10B981]' : 'text-stone-400 dark:text-stone-500'}>
+                        {p.status}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!isListingUnlocked}
+                    onClick={() => openEditForm(p)}
+                    className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] disabled:opacity-40 transition-colors"
+                  >
+                    {t('edit')}
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === 'verification' && currentShop && (
+          <div className="space-y-4">
+            {/* Verification Status Banner Card */}
+            <section
+              className={`rounded-2xl border p-4 space-y-2 shadow-sm ${
+                docStatus === 'approved'
+                  ? 'bg-[#ECFDF5] dark:bg-[#10B981]/10 border-[#A7F3D0] dark:border-[#10B981]/30'
+                  : docStatus === 'rejected'
+                  ? 'bg-rose-50/70 dark:bg-rose-950/35 border-rose-200 dark:border-rose-800'
+                  : 'bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border-[#FDE68A] dark:border-[#F59E0B]/30'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  {docStatus === 'approved' ? (
+                    <ShieldCheck className="w-5 h-5 text-[#047857] dark:text-[#10B981] shrink-0 mt-0.5" />
+                  ) : docStatus === 'rejected' ? (
+                    <XCircle className="w-5 h-5 text-rose-700 dark:text-rose-400 shrink-0 mt-0.5" />
+                  ) : docStatus === 'pending_review' ? (
+                    <Clock className="w-5 h-5 text-[#D97706] dark:text-[#F59E0B] shrink-0 mt-0.5" />
+                  ) : (
+                    <FileCheck2 className="w-5 h-5 text-[#D97706] dark:text-[#F59E0B] shrink-0 mt-0.5" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                      {t('docVerifyTitle')} · {currentShop.name}
+                    </div>
+                    <div
+                      className={`text-[11px] font-bold mt-0.5 ${
+                        docStatus === 'approved'
+                          ? 'text-[#047857] dark:text-[#10B981]'
+                          : docStatus === 'rejected'
+                          ? 'text-rose-800 dark:text-rose-300'
+                          : 'text-[#B45309] dark:text-[#F59E0B]'
+                      }`}
+                    >
+                      {renderVerificationStatusLabel()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
+                {t('docVerifySubtitle')}
+              </p>
+
+              {currentVerification?.submittedAt && (
+                <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums">
+                  Submitted: {new Date(currentVerification.submittedAt).toLocaleString()}
+                  {currentVerification.reviewedAt
+                    ? ` · Reviewed: ${new Date(currentVerification.reviewedAt).toLocaleString()}`
+                    : ''}
+                </div>
+              )}
+
+              {currentVerification?.status === 'rejected' && currentVerification.reviewNote && (
+                <div className="p-2.5 rounded-xl bg-white/80 dark:bg-[#141A17]/80 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200">
+                  <span className="font-bold">Admin review note:</span> {currentVerification.reviewNote}
+                </div>
+              )}
+
+              {docStatus === 'approved' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('products')}
+                  className="min-h-[40px] px-3.5 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{t('productsManagement')}</span>
+                </button>
+              )}
+            </section>
+
+            {/* Business License Upload Form */}
+            <form
+              onSubmit={handleSubmitVerification}
+              className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3.5"
+            >
+              <div>
+                <label
+                  htmlFor="doc-legal-name"
+                  className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+                >
+                  {t('docVerifyLegalNameLabel')}
+                </label>
+                <input
+                  id="doc-legal-name"
+                  type="text"
+                  maxLength={140}
+                  value={businessLegalName}
+                  onChange={(e) => setBusinessLegalName(e.target.value)}
+                  placeholder={t('docVerifyLegalNamePlaceholder')}
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                />
+                {docErrors.businessLegalName && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
+                    {t(docErrors.businessLegalName)}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="doc-license-number"
+                    className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+                  >
+                    {t('docVerifyLicenseNumLabel')}
+                  </label>
+                  <input
+                    id="doc-license-number"
+                    type="text"
+                    maxLength={60}
+                    value={licenseNumber}
+                    onChange={(e) => setLicenseNumber(e.target.value)}
+                    placeholder={t('docVerifyLicenseNumPlaceholder')}
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  />
+                  {docErrors.licenseNumber && (
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
+                      {t(docErrors.licenseNumber)}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="doc-tin-number"
+                    className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+                  >
+                    {t('docVerifyTinLabel')}
+                  </label>
+                  <input
+                    id="doc-tin-number"
+                    type="text"
+                    maxLength={30}
+                    value={tinNumber}
+                    onChange={(e) => setTinNumber(e.target.value)}
+                    placeholder={t('docVerifyTinPlaceholder')}
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  />
+                  {docErrors.tinNumber && (
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
+                      {t(docErrors.tinNumber)}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="doc-issuing-authority"
+                    className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+                  >
+                    {t('docVerifyAuthorityLabel')}
+                  </label>
+                  <select
+                    id="doc-issuing-authority"
+                    value={issuingAuthority}
+                    onChange={(e) => setIssuingAuthority(e.target.value)}
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  >
+                    {HAWASSA_ISSUING_AUTHORITIES.map((auth) => (
+                      <option
+                        key={auth}
+                        value={auth}
+                        className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                      >
+                        {auth}
+                      </option>
+                    ))}
+                  </select>
+                  {docErrors.issuingAuthority && (
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
+                      {t(docErrors.issuingAuthority)}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="doc-expiry-date"
+                    className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1"
+                  >
+                    {t('docVerifyExpiryLabel')}
+                  </label>
+                  <input
+                    id="doc-expiry-date"
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  />
+                  {docErrors.expiryDate && (
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
+                      {t(docErrors.expiryDate)}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* License Document Camera & File Upload */}
+              <div className="space-y-2 pt-1">
+                <div>
+                  <div className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
+                    {t('docVerifyUploadLabel')}
+                  </div>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                    {t('docVerifyUploadHint')}
+                  </p>
+                </div>
+
+                {cameraOpen ? (
+                  <div className="space-y-2">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-48 object-cover rounded-xl bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630]"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCaptureCameraFrame}
+                        className="min-h-[44px] px-3 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Camera className="w-4 h-4 shrink-0" />
+                        <span>{t('returnCapturePhoto')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCameraStream}
+                        className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                      >
+                        {t('returnCancelCamera')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenCamera}
+                      className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                    >
+                      <Camera className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                      <span>{t('docVerifyTakePhoto')}</span>
+                    </button>
+
+                    <label className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                      <Upload className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                      <span>{t('docVerifyUploadFile')}</span>
+                      <input
+                        id="license-document-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLicenseFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {cameraError && (
+                  <p className="text-[11px] text-[#B45309] dark:text-[#F59E0B] bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border border-[#FDE68A] dark:border-[#F59E0B]/30 rounded-xl px-3 py-2">
+                    {cameraError}
+                  </p>
+                )}
+
+                {licenseImageDataUrl && (
+                  <div className="p-2.5 rounded-xl border border-[#A7F3D0] dark:border-[#10B981]/30 bg-[#ECFDF5]/60 dark:bg-[#10B981]/10 space-y-2">
+                    <img
+                      src={licenseImageDataUrl}
+                      alt="Uploaded business license preview"
+                      className="w-full max-h-48 object-contain rounded-lg bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630]"
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-semibold text-[#047857] dark:text-[#10B981] truncate flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {documentFileName || 'business-license.jpg'}
+                          </span>
+                        </span>
+                        <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums mt-0.5">
+                          {t('imageSizeLimitHint', {
+                            size: formatImageByteSize(estimateDataUrlByteSize(licenseImageDataUrl)),
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLicenseImageDataUrl(undefined);
+                          setDocumentFileName(undefined);
+                        }}
+                        className="min-h-[40px] px-2.5 rounded-lg text-[11px] font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 flex items-center gap-1 shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('returnRemovePhoto')}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {docErrors.licenseImageDataUrl && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                    {t(docErrors.licenseImageDataUrl)}
+                  </p>
+                )}
+              </div>
+
+              {docSubmitError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-[11px] font-medium text-rose-800 dark:text-rose-200">
+                  {docSubmitError}
+                </div>
+              )}
+
+              {docSubmitSuccess && (
+                <div className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#A7F3D0] dark:border-[#10B981]/30 text-[11px] font-medium text-[#047857] dark:text-[#10B981] flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{docSubmitSuccess}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={docSubmitting}
+                className="w-full min-h-[44px] px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:bg-stone-300 dark:disabled:bg-[#2A3630] text-white dark:text-[#0B1410] text-xs font-semibold shadow-sm transition-colors"
+              >
+                {docSubmitting
+                  ? t('saving')
+                  : currentVerification
+                  ? t('docVerifyResubmitBtn')
+                  : t('docVerifySubmitBtn')}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {activeTab === 'shop' && (
+          <div className="space-y-4">
+            <form
+              onSubmit={handleApplyNewShop}
+              className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+            >
+              <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                Apply to Open a New Hawassa Shop
+              </h2>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                New merchant applications start in pending status. Upload your trade license on the
+                Verification tab for manual admin approval before listing products.
+              </p>
+
+              {shopSavedMsg && (
+                <div className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#A7F3D0] dark:border-[#10B981]/30 text-[#047857] dark:text-[#10B981] text-xs font-medium flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{shopSavedMsg}</span>
+                </div>
+              )}
+
+              <input
+                type="text"
+                required
+                value={newShopName}
+                onChange={(e) => setNewShopName(e.target.value)}
+                placeholder="Shop Business Name"
+                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              />
+              <select
+                value={newShopNeighborhood}
+                onChange={(e) => setNewShopNeighborhood(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              >
+                {HAWASSA_NEIGHBORHOODS.map((n) => (
+                  <option
+                    key={n}
+                    value={n}
+                    className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                  >
+                    {getLocalizedNeighborhood(n, language)}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                required
+                value={newShopAddress}
+                onChange={(e) => setNewShopAddress(e.target.value)}
+                placeholder="Street / Market Stall Location"
+                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              />
+              <input
+                type="tel"
+                required
+                value={newShopPhone}
+                onChange={(e) => setNewShopPhone(e.target.value)}
+                placeholder="Shop Contact Phone"
+                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              />
+              <button
+                type="submit"
+                className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold shadow-sm transition-colors"
+              >
+                Submit Seller Application
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

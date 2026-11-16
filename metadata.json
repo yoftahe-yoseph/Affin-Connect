@@ -1,0 +1,6 @@
+{
+  "name": "Hawasa Gebeya",
+  "description": "Hawasa Gebeya - A modern, reliable mobile marketplace connecting local shops and customers in Hawassa, Sidama Region, Ethiopia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

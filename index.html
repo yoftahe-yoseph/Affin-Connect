@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Affin Connect - Local Marketplace in Hawassa, Ethiopia</title>
+    <meta name="description" content="Affin Connect - A modern, reliable mobile marketplace connecting local shops and customers in Hawassa, Sidama Region, Ethiopia." />
+    <meta property="og:title" content="Affin Connect - Local Marketplace in Hawassa, Ethiopia" />
+    <meta property="og:description" content="Affin Connect - A modern, reliable mobile marketplace connecting local shops and customers in Hawassa, Sidama Region, Ethiopia." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:image" content="/assets/aistudio/image_703e5fa8.png" />
+    <meta name="twitter:image" content="/assets/aistudio/image_703e5fa8.png" />
+    <link rel="icon" type="image/png" href="/assets/aistudio/image_703e5fa8.png" />
+    <link rel="apple-touch-icon" href="/assets/aistudio/image_703e5fa8.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('hg_theme_v1');
+          var pref = raw ? JSON.parse(raw) : 'system';
+          var sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var resolved = pref === 'dark' || (pref !== 'light' && sysDark) ? 'dark' : 'light';
+          if (resolved === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 antialiased selection:bg-emerald-600 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
