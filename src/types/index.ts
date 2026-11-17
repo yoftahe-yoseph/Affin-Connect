@@ -18,6 +18,7 @@ export interface UserProfile {
   shopId?: string;
   loyaltyPoints?: number;
   lifetimeLoyaltyPoints?: number;
+  favoriteShopIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +48,7 @@ export interface Shop {
   rating: number;
   reviewCount: number;
   featured?: boolean;
+  operatingHours?: string;
   suspensionReason?: string;
   createdAt: string;
   updatedAt: string;

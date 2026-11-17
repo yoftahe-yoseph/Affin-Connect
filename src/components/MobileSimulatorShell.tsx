@@ -3,16 +3,14 @@ import {
   Bell,
   CheckCircle2,
   Home,
+  LayoutGrid,
   LogIn,
   LogOut,
   MapPin,
   MessageSquare,
-  PackageCheck,
-  Search,
   ShieldCheck,
   ShoppingBag,
   Store,
-  User,
   Video,
   Wifi,
   WifiOff,
@@ -23,7 +21,6 @@ import { getLocalizedNeighborhood } from '../constants/translations';
 import { HAWASSA_NEIGHBORHOODS } from '../utils/marketplaceLogic';
 import { BRAND_ASSETS } from '../data/seedData';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { ThemeSwitcher } from './ThemeSwitcher';
 import type { UserRole } from '../types';
 
 export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -53,8 +50,14 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
   } = useMarketplace();
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const showBottomTabs = !authLoading && !isAuthGateActive && route.name !== 'onboarding';
-  const showDesktopSidebar = !authLoading && !isAuthGateActive && route.name !== 'onboarding';
+  const isFullPageAuth = authLoading || isAuthGateActive || route.name === 'onboarding';
+  const showBottomTabs = !isFullPageAuth;
+  const showDesktopSidebar = !isFullPageAuth;
+  const isEmeraldHome =
+    route.name === 'home' ||
+    route.name === 'shops' ||
+    route.name === 'cart' ||
+    route.name === 'search';
 
   const handleRoleSwitch = (role: UserRole) => {
     setActiveRoleView(role);
@@ -67,18 +70,37 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
+  if (isFullPageAuth) {
+    return (
+      <div className="min-h-dvh w-full bg-[#031719] text-[#F5FAFA] flex flex-col">
+        <div id="hg-phone-recaptcha-container" className="sr-only" aria-hidden="true" />
+        <main className="flex-1 flex flex-col">{children}</main>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F3EFE9] dark:bg-[#0E1310] text-stone-900 dark:text-stone-100 flex flex-col md:flex-row items-center md:items-stretch justify-center md:gap-8 md:p-6 lg:p-8 transition-colors">
+    <div className="min-h-screen bg-[#0E1310] text-stone-100 flex flex-col md:flex-row items-center md:items-stretch justify-center md:gap-8 md:p-6 lg:p-8">
       <div id="hg-phone-recaptcha-container" className="sr-only" aria-hidden="true" />
       {/* Android / Expo Mobile Viewport Frame */}
-      <div className="w-full md:w-[404px] md:max-w-[404px] h-dvh md:h-[824px] bg-[#FAF8F5] dark:bg-[#141A17] md:rounded-[40px] md:border-[7px] md:border-stone-900 dark:md:border-[#232D28] md:shadow-2xl flex flex-col overflow-hidden relative shrink-0">
+      <div
+        className={`w-full md:w-[404px] md:max-w-[404px] h-dvh md:h-[824px] md:rounded-[40px] md:border-[7px] md:border-stone-900 dark:md:border-[#232D28] md:shadow-2xl flex flex-col overflow-hidden relative shrink-0 ${
+          isEmeraldHome ? 'bg-[#031719]' : 'bg-[#FAF8F5] dark:bg-[#141A17]'
+        }`}
+      >
         {/* Android Status Bar (visible on desktop simulator frame) */}
-        <div className="hidden md:flex items-center justify-between px-6 pt-2.5 pb-1.5 bg-white dark:bg-[#1C2420] text-[11px] font-semibold text-stone-700 dark:text-stone-300 border-b border-[#E7E5E4] dark:border-[#2A3630] shrink-0 select-none">
+        <div
+          className={`hidden md:flex items-center justify-between px-6 pt-2.5 pb-1.5 text-[11px] font-semibold border-b shrink-0 select-none ${
+            isEmeraldHome
+              ? 'bg-[#031719] text-[#A9C0BD] border-white/10'
+              : 'bg-white dark:bg-[#1C2420] text-stone-700 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+          }`}
+        >
           <span className="tabular-nums">12:50</span>
           <div className="w-16 h-3.5 bg-stone-900 dark:bg-[#0E1310] rounded-full" aria-hidden="true" />
           <div className="flex items-center gap-1.5">
             {firebaseConnected ? (
-              <Wifi className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
+              <Wifi className={`w-3.5 h-3.5 ${isEmeraldHome ? 'text-[#00D68F]' : 'text-[#047857] dark:text-[#10B981]'}`} />
             ) : (
               <WifiOff className="w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B]" />
             )}
@@ -121,7 +143,11 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
         )}
 
         {/* Main Scrollable Screen Area */}
-        <main className="flex-1 overflow-y-auto mobile-scroll bg-[#FAF8F5] dark:bg-[#141A17] flex flex-col">
+        <main
+          className={`flex-1 overflow-y-auto overflow-x-hidden mobile-scroll flex flex-col ${
+            isEmeraldHome ? 'bg-[#031719]' : 'bg-[#FAF8F5] dark:bg-[#141A17]'
+          }`}
+        >
           {children}
         </main>
 
@@ -162,11 +188,15 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
           </div>
         )}
 
-        {/* Bottom Tab Navigation (Expo Router Customer / Role Tabs) */}
+        {/* Bottom Tab Navigation (Safe-area-aware 4-Tab Mobile Bar: Home, Shops, Cart, More) */}
         {showBottomTabs && (
           <nav
             aria-label="Primary Marketplace Navigation"
-            className="bg-white/95 dark:bg-[#1C2420]/95 backdrop-blur-md border-t border-[#E7E5E4] dark:border-[#2A3630] px-2 py-1.5 grid grid-cols-5 gap-1 items-center shrink-0"
+            className={`backdrop-blur-md border-t px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] grid grid-cols-4 gap-1 items-center shrink-0 ${
+              isEmeraldHome
+                ? 'bg-[#041D1F]/95 border-[#123E39]'
+                : 'bg-white/95 dark:bg-[#051B1C]/95 border-[#E7E5E4] dark:border-[#123E39]'
+            }`}
           >
             <button
               type="button"
@@ -175,10 +205,13 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
                 navigate({ name: 'home' });
               }}
               aria-label={t('navHome')}
-              className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
+              aria-current={route.name === 'home' ? 'page' : undefined}
+              className={`min-h-[48px] flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
                 route.name === 'home'
-                  ? 'bg-[#ECFDF5] text-[#047857] dark:bg-[#10B981]/15 dark:text-[#10B981] font-semibold'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
+                  ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                  : isEmeraldHome
+                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
+                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
               }`}
             >
               <Home className="w-5 h-5" />
@@ -187,32 +220,42 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
 
             <button
               type="button"
-              onClick={() => navigate({ name: 'search' })}
-              aria-label={t('navSearch')}
-              className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
-                route.name === 'search' || route.name === 'categories'
-                  ? 'bg-[#ECFDF5] text-[#047857] dark:bg-[#10B981]/15 dark:text-[#10B981] font-semibold'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
+              onClick={() => navigate({ name: 'shops' })}
+              aria-label={t('navShops')}
+              aria-current={route.name === 'shops' || route.name === 'map' || route.name === 'shop' ? 'page' : undefined}
+              className={`min-h-[48px] flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
+                route.name === 'shops' || route.name === 'map' || route.name === 'shop'
+                  ? isEmeraldHome
+                    ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                    : 'bg-[#ECFDF5] text-[#047857] dark:bg-[#00D68F]/15 dark:text-[#00D68F] font-semibold'
+                  : isEmeraldHome
+                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
+                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
               }`}
             >
-              <Search className="w-5 h-5" />
-              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('navSearch')}</span>
+              <Store className="w-5 h-5" />
+              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('navShops')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => navigate({ name: 'cart' })}
               aria-label={t('cart')}
-              className={`min-h-[48px] relative flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
+              aria-current={route.name === 'cart' || route.name === 'checkout' ? 'page' : undefined}
+              className={`min-h-[48px] relative flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
                 route.name === 'cart' || route.name === 'checkout'
-                  ? 'bg-[#ECFDF5] text-[#047857] dark:bg-[#10B981]/15 dark:text-[#10B981] font-semibold'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
+                  ? isEmeraldHome
+                    ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                    : 'bg-[#ECFDF5] text-[#047857] dark:bg-[#00D68F]/15 dark:text-[#00D68F] font-semibold'
+                  : isEmeraldHome
+                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
+                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
               }`}
             >
               <div className="relative">
                 <ShoppingBag className="w-5 h-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#D97706] text-white dark:bg-[#F59E0B] dark:text-[#141A17] text-[10px] font-bold flex items-center justify-center tabular-nums shadow-xs">
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums shadow-xs">
                     {cartCount}
                   </span>
                 )}
@@ -222,42 +265,58 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
 
             <button
               type="button"
-              onClick={() => navigate({ name: 'orders' })}
-              aria-label={t('orders')}
-              className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
-                route.name === 'orders'
-                  ? 'bg-[#ECFDF5] text-[#047857] dark:bg-[#10B981]/15 dark:text-[#10B981] font-semibold'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
-              }`}
-            >
-              <PackageCheck className="w-5 h-5" />
-              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('navOrders')}</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => navigate({ name: 'profile' })}
-              aria-label={t('accountAndPortals')}
-              className={`min-h-[48px] relative flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
-                route.name === 'profile' || route.name === 'seller' || route.name === 'admin'
-                  ? 'bg-[#ECFDF5] text-[#047857] dark:bg-[#10B981]/15 dark:text-[#10B981] font-semibold'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
+              aria-label={t('navMore')}
+              aria-current={
+                route.name === 'profile' ||
+                route.name === 'orders' ||
+                route.name === 'favorites' ||
+                route.name === 'notifications' ||
+                route.name === 'loyalty' ||
+                route.name === 'seller' ||
+                route.name === 'admin'
+                  ? 'page'
+                  : undefined
+              }
+              className={`min-h-[48px] relative flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
+                route.name === 'profile' ||
+                route.name === 'orders' ||
+                route.name === 'favorites' ||
+                route.name === 'notifications' ||
+                route.name === 'loyalty' ||
+                route.name === 'seller' ||
+                route.name === 'admin'
+                  ? isEmeraldHome
+                    ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                    : 'bg-[#ECFDF5] text-[#047857] dark:bg-[#00D68F]/15 dark:text-[#00D68F] font-semibold'
+                  : isEmeraldHome
+                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
+                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
               }`}
             >
               <div className="relative">
-                <User className="w-5 h-5" />
+                <LayoutGrid className="w-5 h-5" />
                 {unreadNotificationCount > 0 && (
-                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-[#D97706] dark:bg-[#F59E0B]" />
+                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-[#00D68F]" />
                 )}
               </div>
-              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('navAccount')}</span>
+              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('navMore')}</span>
             </button>
           </nav>
         )}
 
         {/* Android Gesture Home Pill (desktop simulator frame only) */}
-        <div className="hidden md:flex justify-center py-1.5 bg-white dark:bg-[#1C2420] shrink-0">
-          <div className="w-28 h-1 rounded-full bg-stone-300 dark:bg-[#2A3630]" aria-hidden="true" />
+        <div
+          className={`hidden md:flex justify-center py-1.5 shrink-0 ${
+            isEmeraldHome ? 'bg-[#041D1F]' : 'bg-white dark:bg-[#051B1C]'
+          }`}
+        >
+          <div
+            className={`w-28 h-1 rounded-full ${
+              isEmeraldHome ? 'bg-[#174D47]' : 'bg-stone-300 dark:bg-[#174D47]'
+            }`}
+            aria-hidden="true"
+          />
         </div>
       </div>
 
@@ -335,18 +394,10 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
 
           {/* Language Switcher */}
           <div>
-            <div className="block text-[11px] font-semibold text-stone-500 dark:text-stone-400 mb-1.5">
+            <div className="block text-[11px] font-semibold text-stone-400 mb-1.5">
               {t('selectLanguage')}
             </div>
             <LanguageSwitcher variant="segmented" />
-          </div>
-
-          {/* Theme Switcher */}
-          <div>
-            <div className="block text-[11px] font-semibold text-stone-500 dark:text-stone-400 mb-1.5">
-              {t('themePreferenceLabel')}
-            </div>
-            <ThemeSwitcher variant="segmented" />
           </div>
 
           {/* Hawassa Neighborhood Selector */}

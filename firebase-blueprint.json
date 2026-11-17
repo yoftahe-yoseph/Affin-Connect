@@ -18,6 +18,7 @@
         "shopId": { "type": "string", "maxLength": 128 },
         "loyaltyPoints": { "type": "number" },
         "lifetimeLoyaltyPoints": { "type": "number" },
+        "favoriteShopIds": { "type": "array", "items": { "type": "string", "maxLength": 128 } },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

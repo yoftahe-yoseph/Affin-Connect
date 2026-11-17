@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Award,
@@ -16,15 +16,13 @@ import {
   Mail,
   MapPin,
   MessageSquare,
-  Monitor,
-  Moon,
+  PackageCheck,
   Phone,
   Share2,
   ShieldCheck,
   Sparkles,
   Star,
   Store,
-  Sun,
   Trash2,
   Video,
   X,
@@ -32,7 +30,6 @@ import {
 import { useMarketplace } from '../context/MarketplaceContext';
 import { CategoryIcon, EmptyState, ProductCard, ResilientImage } from '../components/SharedUI';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { AuthSignInPanel } from '../components/AuthSignInPanel';
 import { getLocalizedNeighborhood, LANGUAGE_OPTIONS } from '../constants/translations';
 import {
@@ -713,8 +710,6 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
     openAuthScreen,
     signOutUser,
     language,
-    themePreference,
-    resolvedTheme,
     addresses,
     saveAddress,
     deleteAddress,
@@ -737,14 +732,11 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
   } = useMarketplace();
   const activeLanguageLabel =
     LANGUAGE_OPTIONS.find((opt) => opt.code === language)?.label ?? language.toUpperCase();
-  const activeThemeLabel =
-    themePreference === 'light'
-      ? t('themeLight')
-      : themePreference === 'dark'
-        ? t('themeDark')
-        : t('themeSystem');
 
   const [subView, setSubView] = useState<'main' | 'addresses' | 'settings' | 'help'>(section);
+  useEffect(() => {
+    setSubView(section);
+  }, [section]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [label, setLabel] = useState('Home');
   const [recipientName, setRecipientName] = useState('');
@@ -922,16 +914,6 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
         <div className="p-4 space-y-3">
           <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
             <div>
-              <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">{t('appearanceSettings')}</h2>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 leading-relaxed">
-                {t('themeSwitchHint')}
-              </p>
-            </div>
-            <ThemeSwitcher variant="cards" />
-          </div>
-
-          <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
-            <div>
               <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">{t('displayLanguage')}</h2>
               <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 leading-relaxed">
                 {t('languageSwitchHint')}
@@ -1003,7 +985,7 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
 
         <div className="p-4 space-y-3 text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
           <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2">
-            <h2 className="font-bold text-stone-900 dark:text-stone-100">Hawasa Gebeya Marketplace Support</h2>
+            <h2 className="font-bold text-stone-900 dark:text-stone-100">Affin Connect · Support Local Business</h2>
             <p>
               Every order is fulfilled directly by verified local merchants in Hawassa (Piazza,
               Menhariya, Gebeya Dar, Datto, Tabor, Arab Sefer).
@@ -1018,9 +1000,6 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
       </div>
     );
   }
-
-  const ThemeStatusIcon =
-    themePreference === 'system' ? Monitor : resolvedTheme === 'dark' ? Moon : Sun;
 
   return (
     <div className="pb-8">
@@ -1151,20 +1130,6 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
           )}
         </section>
 
-        {/* Quick Appearance / Dark Mode Card */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-900 dark:text-stone-100">
-              <ThemeStatusIcon className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
-              <span>{t('appearanceSettings')}</span>
-            </span>
-            <span className="text-[11px] font-semibold text-[#047857] dark:text-[#10B981]">
-              {activeThemeLabel}
-            </span>
-          </div>
-          <ThemeSwitcher variant="segmented" />
-        </section>
-
         {/* Quick Language Switcher Card */}
         <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5">
           <div className="flex items-center justify-between gap-2">
@@ -1181,6 +1146,18 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
 
         {/* Customer Links */}
         <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm divide-y divide-[#E7E5E4]/80 dark:divide-[#2A3630] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => navigate({ name: 'orders' })}
+            className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] text-left transition-colors"
+          >
+            <span className="flex items-center gap-3 text-xs font-semibold text-stone-800 dark:text-stone-200">
+              <PackageCheck className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
+              {t('orders')}
+            </span>
+            <ChevronRight className="w-4 h-4 text-stone-400 dark:text-stone-500" />
+          </button>
+
           <button
             type="button"
             onClick={() => openTradeChatInbox()}
@@ -1263,7 +1240,7 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
           >
             <span className="flex items-center gap-3 text-xs font-semibold text-stone-800 dark:text-stone-200">
               <Globe className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
-              {t('languageSettings')} ({activeThemeLabel} · {activeLanguageLabel})
+              {t('languageSettings')} ({activeLanguageLabel})
             </span>
             <ChevronRight className="w-4 h-4 text-stone-400 dark:text-stone-500" />
           </button>

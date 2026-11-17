@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   getAdditionalUserInfo,
   GoogleAuthProvider,
@@ -7,6 +9,8 @@ import {
   RecaptchaVerifier,
   reload,
   sendEmailVerification,
+  sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPhoneNumber,
   signInWithPopup,
@@ -25,6 +29,7 @@ import {
   deleteProductInFirestore,
   deleteReviewInFirestore,
   deleteShopInFirestore,
+  fetchCatalogSnapshotFromFirestore,
   findUserByEmailInFirestore,
   getSharedWishlistFromFirestore,
   markNotificationReadInFirestore,
@@ -106,12 +111,10 @@ import {
   isSuperAdminEmail,
   isUserPendingEmailVerification,
   isValidOtpCode,
-  isValidThemePreference,
   normalizePhoneToE164,
   parseSharedWishlistFallbackIds,
   rankShopsByProximity,
   resolveClosestNeighborhood,
-  resolveThemePreference,
   sanitizeWishlistProductIds,
   shouldTriggerPriceAlert,
   validateEmailSignInInput,
@@ -131,6 +134,9 @@ import {
   validateSupervisionReason,
   sortTradeChatThreads,
   countSupervisionAttentionThreads,
+  mergeUniqueIds,
+  toggleUniqueId,
+  reconcileCartWithCatalog,
 } from '../utils/marketplaceLogic';
 import { getLocalizedNeighborhood, translations } from '../constants/translations';
 import {
@@ -197,6 +203,7 @@ export type AppRoute =
   | { name: 'categories' }
   | { name: 'product'; productId: string }
   | { name: 'shop'; shopId: string }
+  | { name: 'shops'; initialCategory?: string; showAll?: boolean }
   | { name: 'cart' }
   | { name: 'checkout' }
   | { name: 'order_confirmation'; orderId: string }
@@ -211,6 +218,36 @@ export type AppRoute =
   | { name: 'map'; shopId?: string }
   | { name: 'chat' }
   | { name: 'video' };
+
+export interface SearchSessionState {
+  queryText: string;
+  searchType: 'all' | 'shops' | 'products';
+  category: string;
+  selectedNeighborhoods: string[];
+  minPrice: string;
+  maxPrice: string;
+  minShopRating: number | null;
+  inStockOnly: boolean;
+  deliveryOnly: boolean;
+  pickupOnly: boolean;
+  verifiedOnly: boolean;
+  sortBy: 'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'rating' | 'nearest';
+}
+
+const DEFAULT_SEARCH_SESSION: SearchSessionState = {
+  queryText: '',
+  searchType: 'all',
+  category: 'all',
+  selectedNeighborhoods: [],
+  minPrice: '',
+  maxPrice: '',
+  minShopRating: null,
+  inStockOnly: false,
+  deliveryOnly: false,
+  pickupOnly: false,
+  verifiedOnly: false,
+  sortBy: 'relevance',
+};
 
 const STORAGE_KEYS = {
   ONBOARDED: 'hg_onboarded_v1',
@@ -309,7 +346,9 @@ interface MarketplaceContextValue {
   signInWithEmailPassword: (params: {
     emailOrPhone: string;
     password: string;
+    rememberMe?: boolean;
   }) => Promise<{ ok: boolean; switchToPhoneOtp?: string; error?: string }>;
+  resetPasswordByEmail: (email: string) => Promise<{ ok: boolean; error?: string }>;
   registerWithEmailPassword: (params: {
     fullName: string;
     email: string;
@@ -365,6 +404,9 @@ interface MarketplaceContextValue {
   reviews: ReviewItem[];
   recentSearches: string[];
   addRecentSearch: (q: string) => void;
+  searchSession: SearchSessionState;
+  setSearchSession: React.Dispatch<React.SetStateAction<SearchSessionState>>;
+  refreshCatalogFromFirestore: () => Promise<void>;
 
   // Cart, Favorites, Recently Viewed & Followed Shops
   cart: CartItem[];
@@ -372,6 +414,7 @@ interface MarketplaceContextValue {
   updateCartQuantity: (productId: string, quantity: number, variantId?: string) => void;
   removeFromCart: (productId: string, variantId?: string) => void;
   clearCart: (shopId?: string) => void;
+  syncCartWithLiveCatalog: (shopId?: string) => void;
   promoCode: string;
   setPromoCode: (code: string) => void;
   cartToast: {
@@ -643,14 +686,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [language, setLanguageState] = useState<SupportedLanguage>(() =>
     readStorage<SupportedLanguage>(STORAGE_KEYS.LANGUAGE, 'en')
   );
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
-    const stored = readStorage<unknown>(STORAGE_KEYS.THEME, 'system');
-    return isValidThemePreference(stored) ? stored : 'system';
-  });
-  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const themePreference: ThemePreference = 'dark';
   const [selectedNeighborhood, setSelectedNeighborhoodState] = useState<string>(() =>
     readStorage<string>(STORAGE_KEYS.NEIGHBORHOOD, 'All Hawassa')
   );
@@ -693,7 +729,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     readStorage<string[]>(STORAGE_KEYS.FAVORITES, [])
   );
   const [followedShops, setFollowedShops] = useState<string[]>(() =>
-    readStorage<string[]>(STORAGE_KEYS.FOLLOWED_SHOPS, [])
+    mergeUniqueIds(readStorage<string[]>(STORAGE_KEYS.FOLLOWED_SHOPS, []), [])
   );
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() =>
     readStorage<string[]>(STORAGE_KEYS.RECENTLY_VIEWED, [])
@@ -701,6 +737,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [recentSearches, setRecentSearches] = useState<string[]>(() =>
     readStorage<string[]>(STORAGE_KEYS.RECENT_SEARCHES, ['Sidama Coffee', 'Netela', 'Berbere', 'Honey'])
   );
+  const [searchSession, setSearchSession] = useState<SearchSessionState>(DEFAULT_SEARCH_SESSION);
 
   const [orders, setOrders] = useState<Order[]>(() =>
     readStorage<Order[]>(STORAGE_KEYS.LOCAL_ORDERS, [])
@@ -814,30 +851,20 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const resolvedTheme = useMemo(
-    () => resolveThemePreference(themePreference, systemPrefersDark),
-    [themePreference, systemPrefersDark]
-  );
+  const resolvedTheme: ResolvedTheme = 'dark';
 
-  // Sync system dark mode preference
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setSystemPrefersDark(mq.matches);
-    const handler = (event: MediaQueryListEvent) => {
-      setSystemPrefersDark(event.matches);
-    };
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  // Apply resolved dark class & browser colorScheme to <html>
+  // Enforce permanent dark obsidian class & colorScheme on <html>
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
-      document.documentElement.style.colorScheme = resolvedTheme;
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
     }
-  }, [resolvedTheme]);
+    try {
+      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify('dark'));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
   // Persist local states cleanly
   useEffect(() => {
@@ -931,6 +958,16 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           const userSnap = await getDoc(doc(db, 'users', user.uid));
           if (userSnap.exists()) {
             const loaded = userSnap.data() as UserProfile;
+            const localFollowed = mergeUniqueIds(
+              readStorage<string[]>(STORAGE_KEYS.FOLLOWED_SHOPS, []),
+              []
+            );
+            const cloudFollowed = Array.isArray(loaded.favoriteShopIds)
+              ? loaded.favoriteShopIds
+              : [];
+            const mergedFollowed = mergeUniqueIds(cloudFollowed, localFollowed);
+            setFollowedShops(mergedFollowed);
+
             let syncedProfile = loaded;
             const needsPhoneSync = Boolean(user.phoneNumber && !loaded.phoneNumber);
             const needsNameSync = Boolean(
@@ -940,7 +977,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
             const needsAdminUpgrade = Boolean(
               isAdminEmail && (loaded.role !== 'admin' || loaded.accountStatus !== 'active')
             );
-            if (needsPhoneSync || needsNameSync || needsAdminUpgrade) {
+            const needsFavoriteShopsSync =
+              mergedFollowed.length > cloudFollowed.length ||
+              mergedFollowed.some((id, idx) => cloudFollowed[idx] !== id);
+            if (needsPhoneSync || needsNameSync || needsAdminUpgrade || needsFavoriteShopsSync) {
               syncedProfile = {
                 ...loaded,
                 ...(needsPhoneSync ? { phoneNumber: user.phoneNumber || undefined } : {}),
@@ -950,6 +990,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 ...(needsAdminUpgrade
                   ? { role: 'admin' as UserRole, accountStatus: 'active' as AccountStatus }
                   : {}),
+                ...(needsFavoriteShopsSync ? { favoriteShopIds: mergedFollowed } : {}),
                 updatedAt: new Date().toISOString(),
               };
               await saveUserProfileInFirestore(syncedProfile);
@@ -962,14 +1003,11 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 JSON.stringify(syncedProfile.neighborhood)
               );
             }
-            if (isValidThemePreference(syncedProfile.preferredTheme)) {
-              setThemePreferenceState(syncedProfile.preferredTheme);
-              localStorage.setItem(
-                STORAGE_KEYS.THEME,
-                JSON.stringify(syncedProfile.preferredTheme)
-              );
-            }
           } else {
+            const localFollowed = mergeUniqueIds(
+              readStorage<string[]>(STORAGE_KEYS.FOLLOWED_SHOPS, []),
+              []
+            );
             const resolvedRole: UserRole = isAdminEmail
               ? 'admin'
               : pendingReg?.role === 'seller'
@@ -986,6 +1024,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
               ...(resolvedPhone ? { phoneNumber: resolvedPhone } : {}),
               ...(resolvedNeighborhood ? { neighborhood: resolvedNeighborhood } : {}),
               ...(user.photoURL ? { photoURL: user.photoURL } : {}),
+              ...(localFollowed.length > 0 ? { favoriteShopIds: localFollowed } : {}),
               role: resolvedRole,
               accountStatus: 'active',
               preferredLanguage: language,
@@ -1172,11 +1211,24 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [firebaseUser, isCloudAdmin, adminSupervisedThreadId]);
 
   const navigate = (next: AppRoute) => {
+    if (next.name === 'search') {
+      setSearchSession({
+        ...DEFAULT_SEARCH_SESSION,
+        queryText: next.initialQuery ?? '',
+        category: next.initialCategory ?? 'all',
+      });
+    }
     setHistory((prev) => {
       const current = prev[prev.length - 1];
       if (JSON.stringify(current) === JSON.stringify(next)) return prev;
       return [...prev.slice(-20), next];
     });
+  };
+
+  const refreshCatalogFromFirestore = async () => {
+    const snapshot = await fetchCatalogSnapshotFromFirestore();
+    setShops(snapshot.shops);
+    setProducts(snapshot.products);
   };
 
   const goBack = () => {
@@ -1197,6 +1249,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return `/product/${route.productId}`;
       case 'shop':
         return `/shop/${route.shopId}`;
+      case 'shops':
+        return '/(customer)/shops';
       case 'cart':
         return '/(customer)/cart';
       case 'checkout':
@@ -1562,6 +1616,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const signInWithEmailPassword = async (params: {
     emailOrPhone: string;
     password: string;
+    rememberMe?: boolean;
   }): Promise<{ ok: boolean; switchToPhoneOtp?: string; error?: string }> => {
     setAuthError(null);
     setEmailVerificationNotice(null);
@@ -1580,6 +1635,16 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return { ok: false, error: msg };
     }
     try {
+      if (typeof params.rememberMe === 'boolean') {
+        try {
+          await setPersistence(
+            auth,
+            params.rememberMe ? browserLocalPersistence : browserSessionPersistence
+          );
+        } catch (persistErr) {
+          console.warn('Auth persistence update skipped:', persistErr);
+        }
+      }
       const cred = await signInWithEmailAndPassword(
         auth,
         check.normalizedEmail,
@@ -1600,6 +1665,27 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return { ok: true };
     } catch (err) {
       const msg = mapFirebaseAuthError(err, 'Sign-in failed.', 'email');
+      setAuthError(msg);
+      return { ok: false, error: msg };
+    }
+  };
+
+  const resetPasswordByEmail = async (
+    emailInput: string
+  ): Promise<{ ok: boolean; error?: string }> => {
+    setAuthError(null);
+    const cleanEmail = (emailInput ?? '').trim().toLowerCase();
+    if (!isEmailFormat(cleanEmail)) {
+      const msg = t('authErrorInvalidEmail');
+      setAuthError(msg);
+      return { ok: false, error: msg };
+    }
+    try {
+      auth.languageCode = language === 'am' ? 'am' : 'en';
+      await sendPasswordResetEmail(auth, cleanEmail);
+      return { ok: true };
+    } catch (err) {
+      const msg = mapFirebaseAuthError(err, 'Could not send password reset email.', 'email');
       setAuthError(msg);
       return { ok: false, error: msg };
     }
@@ -1842,19 +1928,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const setThemePreference = (theme: ThemePreference) => {
-    setThemePreferenceState(theme);
-    localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(theme));
-    if (firebaseUser && userProfile) {
-      const updatedProfile: UserProfile = {
-        ...userProfile,
-        preferredTheme: theme,
-        updatedAt: new Date().toISOString(),
-      };
-      setUserProfile(updatedProfile);
-      saveUserProfileInFirestore(updatedProfile).catch((err) => {
-        console.warn('Could not sync preferredTheme to Firestore:', err);
-      });
+  const setThemePreference = (_theme: ThemePreference) => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    }
+    try {
+      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify('dark'));
+    } catch {
+      // ignore storage errors
     }
   };
 
@@ -1993,6 +2075,40 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
+  const syncCartWithLiveCatalog = (shopId?: string) => {
+    setCart((prev) => {
+      const targetItems = shopId ? prev.filter((i) => i.shopId === shopId) : prev;
+      const { entries } = reconcileCartWithCatalog(
+        targetItems,
+        products,
+        shopsById,
+        governanceConfig.strictShopVerification
+      );
+      const entryByKey = new Map(
+        entries.map((e) => [getCartItemKey(e.item.product.productId, e.item.variantId), e])
+      );
+      let changed = false;
+      const next = prev.map((item) => {
+        const key = getCartItemKey(item.product.productId, item.variantId);
+        const match = entryByKey.get(key);
+        if (!match) return item;
+        const clampedQty = match.isUnavailable
+          ? item.quantity
+          : Math.min(item.quantity, Math.max(1, match.availableStock));
+        if (
+          match.priceChanged ||
+          clampedQty !== item.quantity ||
+          match.reconciledItem.product.updatedAt !== item.product.updatedAt
+        ) {
+          changed = true;
+          return { ...match.reconciledItem, quantity: clampedQty };
+        }
+        return item;
+      });
+      return changed ? next : prev;
+    });
+  };
+
   const toggleFavorite = (productId: string) => {
     setFavorites((prev) =>
       prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
@@ -2110,9 +2226,30 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const toggleFollowShop = (shopId: string) => {
-    setFollowedShops((prev) =>
-      prev.includes(shopId) ? prev.filter((id) => id !== shopId) : [...prev, shopId]
-    );
+    const cleanId = shopId.trim();
+    if (!cleanId) return;
+    const wasFollowed = followedShops.includes(cleanId);
+    const next = toggleUniqueId(followedShops, cleanId);
+    const shopName = shops.find((s) => s.shopId === cleanId)?.name ?? 'Shop';
+    setFollowedShops(next);
+    setCartToast({
+      id: Date.now(),
+      message: t(wasFollowed ? 'favoriteShopRemovedToast' : 'favoriteShopAddedToast', {
+        shop: shopName,
+      }),
+      actionRoute: null,
+    });
+    if (firebaseUser && userProfile) {
+      const updatedProfile: UserProfile = {
+        ...userProfile,
+        favoriteShopIds: next,
+        updatedAt: new Date().toISOString(),
+      };
+      setUserProfile(updatedProfile);
+      void saveUserProfileInFirestore(updatedProfile).catch((err) => {
+        console.warn('Could not sync favorite shops to Firestore:', err);
+      });
+    }
   };
 
   const recordProductView = (productId: string) => {
@@ -2165,11 +2302,22 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     promoCode?: string;
     pointsToRedeem?: number;
   }): Promise<Order> => {
-    const shopItems = cart.filter((c) => c.shopId === shopId);
+    const rawShopItems = cart.filter((c) => c.shopId === shopId);
     const shop = shopsById[shopId];
-    if (!shop || shopItems.length === 0) {
+    if (!shop || rawShopItems.length === 0) {
       throw new Error('No valid items for this shop in your cart.');
     }
+
+    const reconciled = reconcileCartWithCatalog(
+      rawShopItems,
+      products,
+      shopsById,
+      governanceConfig.strictShopVerification
+    );
+    if (reconciled.hasBlockingIssues) {
+      throw new Error(t('removeUnavailableHint'));
+    }
+    const shopItems = reconciled.reconciledCart;
 
     const refValidation = validatePaymentReference(paymentMethod, paymentReference);
     if (!refValidation.valid) {
@@ -4814,6 +4962,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         clearAuthError,
         signInWithGoogle,
         signInWithEmailPassword,
+        resetPasswordByEmail,
         registerWithEmailPassword,
         phoneOtpState,
         sendPhoneOtp,
@@ -4849,11 +4998,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         reviews,
         recentSearches,
         addRecentSearch,
+        searchSession,
+        setSearchSession,
+        refreshCatalogFromFirestore,
         cart,
         addToCart,
         updateCartQuantity,
         removeFromCart,
         clearCart,
+        syncCartWithLiveCatalog,
         promoCode,
         setPromoCode,
         cartToast,

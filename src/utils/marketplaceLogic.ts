@@ -1,5 +1,6 @@
 import type {
   CartItem,
+  Category,
   DocumentVerificationStatus,
   LoyaltyTransaction,
   MarketplaceGovernanceConfig,
@@ -481,9 +482,39 @@ export interface ProductFilterOptions {
   inStockOnly?: boolean;
   deliveryOnly?: boolean;
   pickupOnly?: boolean;
+  verifiedOnly?: boolean;
   strictShopVerification?: boolean;
-  sortBy?: 'newest' | 'price_asc' | 'price_desc' | 'rating' | 'nearest';
+  sortBy?: 'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'rating' | 'nearest';
   shopDistanceById?: Record<string, number>;
+  categoryNamesBySlug?: Record<string, string>;
+  localizedNeighborhoodByArea?: Record<string, string>;
+}
+
+function scoreProductSearchRelevance(
+  product: Product,
+  shop: Shop | undefined,
+  q: string,
+  categoryLabel: string,
+  localizedNeighborhood: string
+): number {
+  if (!q) return 0;
+  const name = product.name.toLowerCase();
+  const shopName = product.shopName.toLowerCase();
+  const categoryText = `${product.category} ${categoryLabel}`.toLowerCase();
+  const desc = product.description.toLowerCase();
+  const area = `${shop?.neighborhood ?? ''} ${localizedNeighborhood}`.toLowerCase();
+
+  let score = 0;
+  if (name === q) score += 120;
+  else if (name.startsWith(q)) score += 90;
+  else if (name.includes(q)) score += 60;
+
+  if (categoryText.includes(q)) score += 35;
+  if (shopName.includes(q)) score += 30;
+  if (area.includes(q)) score += 20;
+  if (desc.includes(q)) score += 15;
+  if (product.isAvailable && product.stock > 0) score += 5;
+  return score;
 }
 
 export function filterAndSortProducts(
@@ -518,6 +549,9 @@ export function filterAndSortProducts(
     const shop = shopsById[p.shopId];
     if (shop?.status === 'suspended') return false;
     if (enforceVerifiedShop && shop && shop.status !== 'approved') return false;
+    if (filters.verifiedOnly && (!shop || !isVerifiedMerchantShop(shop))) {
+      return false;
+    }
 
     if (filters.category && filters.category !== 'all' && p.category !== filters.category) {
       return false;
@@ -562,9 +596,13 @@ export function filterAndSortProducts(
     }
 
     if (q) {
-      const haystack = `${p.name} ${p.description} ${p.shopName} ${p.category} ${
+      const categoryLabel = filters.categoryNamesBySlug?.[p.category] ?? '';
+      const localizedArea = shop?.neighborhood
+        ? filters.localizedNeighborhoodByArea?.[shop.neighborhood] ?? ''
+        : '';
+      const haystack = `${p.name} ${p.description} ${p.shopName} ${p.category} ${categoryLabel} ${
         shop?.neighborhood ?? ''
-      }`.toLowerCase();
+      } ${localizedArea}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
 
@@ -573,6 +611,34 @@ export function filterAndSortProducts(
 
   const sorted = [...filtered];
   switch (filters.sortBy) {
+    case 'relevance': {
+      sorted.sort((a, b) => {
+        if (q) {
+          const shopA = shopsById[a.shopId];
+          const shopB = shopsById[b.shopId];
+          const sa = scoreProductSearchRelevance(
+            a,
+            shopA,
+            q,
+            filters.categoryNamesBySlug?.[a.category] ?? '',
+            shopA?.neighborhood ? filters.localizedNeighborhoodByArea?.[shopA.neighborhood] ?? '' : ''
+          );
+          const sb = scoreProductSearchRelevance(
+            b,
+            shopB,
+            q,
+            filters.categoryNamesBySlug?.[b.category] ?? '',
+            shopB?.neighborhood ? filters.localizedNeighborhoodByArea?.[shopB.neighborhood] ?? '' : ''
+          );
+          if (sa !== sb) return sb - sa;
+        }
+        const ra = a.rating ?? shopsById[a.shopId]?.rating ?? 0;
+        const rb = b.rating ?? shopsById[b.shopId]?.rating ?? 0;
+        if (ra !== rb) return rb - ra;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      break;
+    }
     case 'nearest': {
       const distMap = filters.shopDistanceById ?? {};
       sorted.sort((a, b) => {
@@ -654,6 +720,7 @@ export function getNeighborhoodAvailabilityStats(
 }
 
 export function countActiveSearchFilters(filters: {
+  category?: string;
   neighborhoods?: string[];
   minPrice?: number | null;
   maxPrice?: number | null;
@@ -661,16 +728,19 @@ export function countActiveSearchFilters(filters: {
   inStockOnly?: boolean;
   deliveryOnly?: boolean;
   pickupOnly?: boolean;
+  verifiedOnly?: boolean;
   sortBy?: ProductFilterOptions['sortBy'];
 }): number {
   let count = 0;
+  if (filters.category && filters.category !== 'all') count += 1;
   if (filters.neighborhoods && filters.neighborhoods.length > 0) count += 1;
   if (filters.minPrice != null || filters.maxPrice != null) count += 1;
   if (filters.minShopRating != null && filters.minShopRating > 0) count += 1;
   if (filters.inStockOnly) count += 1;
   if (filters.deliveryOnly) count += 1;
   if (filters.pickupOnly) count += 1;
-  if (filters.sortBy && filters.sortBy !== 'newest') count += 1;
+  if (filters.verifiedOnly) count += 1;
+  if (filters.sortBy && filters.sortBy !== 'newest' && filters.sortBy !== 'relevance') count += 1;
   return count;
 }
 
@@ -736,6 +806,67 @@ export function validateAddressInput(input: AddressInputValidation): Record<stri
   }
   if (!input.streetOrLandmark || input.streetOrLandmark.trim().length < 4) {
     errors.streetOrLandmark = 'Enter a street name or local landmark in Hawassa.';
+  }
+
+  return errors;
+}
+
+export function buildShopSlug(name: string, fallbackId?: string): string {
+  const ascii = (name ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  if (ascii.length >= 2) return ascii.slice(0, 64);
+  const cleanFallback = (fallbackId ?? 'shop')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return cleanFallback || `shop-${Date.now()}`;
+}
+
+export interface ShopInputValidation {
+  name: string;
+  description?: string;
+  phoneNumber: string;
+  neighborhood: string;
+  address: string;
+  deliveryAvailable?: boolean;
+  pickupAvailable?: boolean;
+}
+
+export function validateShopInput(input: ShopInputValidation): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  const name = (input.name ?? '').trim();
+  if (name.length < 3 || name.length > 100) {
+    errors.name = 'Shop name must be between 3 and 100 characters.';
+  }
+
+  const desc = (input.description ?? '').trim();
+  if (desc.length > 0 && desc.length < 10) {
+    errors.description = 'Shop description must be at least 10 characters when provided.';
+  } else if (desc.length > 500) {
+    errors.description = 'Shop description must be 500 characters or less.';
+  }
+
+  const cleanPhone = (input.phoneNumber ?? '').replace(/[\s\-().]/g, '');
+  if (!/^((\+251|0)[79]\d{8}|\+[1-9]\d{7,14})$/.test(cleanPhone)) {
+    errors.phoneNumber = 'Enter a valid Hawassa phone number (e.g. 0911234567 or +251911234567).';
+  }
+
+  if (!input.neighborhood || input.neighborhood.trim().length === 0) {
+    errors.neighborhood = 'Select a Hawassa neighborhood.';
+  }
+
+  const address = (input.address ?? '').trim();
+  if (address.length < 4 || address.length > 200) {
+    errors.address = 'Enter a street name or market stall landmark (4–200 characters).';
+  }
+
+  if (input.deliveryAvailable === false && input.pickupAvailable === false) {
+    errors.fulfillment = 'Enable at least Delivery or In-Shop Pickup for your virtual shop.';
   }
 
   return errors;
@@ -1818,3 +1949,415 @@ export function countSupervisionAttentionThreads(threads: TradeChatThread[]): nu
     (t) => t.supervisionStatus === 'requested' || t.supervisionStatus === 'active'
   ).length;
 }
+
+export const HOME_CATEGORY_ORDER = [
+  'clothing-fashion',
+  'electronics',
+  'home-living',
+  'groceries',
+  'food-spices',
+  'beauty-cosmetics',
+  'sports',
+  'automotive',
+] as const;
+
+export function buildHomeCategories(
+  categories: Category[],
+  seedCategories: Category[]
+): Category[] {
+  const bySlug = new Map<string, Category>();
+  for (const seed of seedCategories) {
+    if (seed.isActive) bySlug.set(seed.slug, seed);
+  }
+  for (const cat of categories) {
+    if (cat.isActive) {
+      bySlug.set(cat.slug, cat);
+    } else {
+      bySlug.delete(cat.slug);
+    }
+  }
+  const orderIndex = new Map<string, number>(
+    HOME_CATEGORY_ORDER.map((slug, idx) => [slug, idx])
+  );
+  return Array.from(bySlug.values()).sort((a, b) => {
+    const idxA = orderIndex.get(a.slug);
+    const idxB = orderIndex.get(b.slug);
+    if (idxA !== undefined && idxB !== undefined) return idxA - idxB;
+    if (idxA !== undefined) return -1;
+    if (idxB !== undefined) return 1;
+    return a.displayOrder - b.displayOrder;
+  });
+}
+
+export function isVerifiedMerchantShop(shop: Pick<Shop, 'status' | 'verificationStatus'>): boolean {
+  if (shop.status !== 'approved') return false;
+  if (shop.verificationStatus && shop.verificationStatus !== 'approved') return false;
+  return true;
+}
+
+export function toggleUniqueId(existingIds: string[], targetId: string): string[] {
+  const cleanTarget = targetId.trim();
+  const deduped = Array.from(new Set(existingIds.filter((id) => typeof id === 'string' && id.trim().length > 0)));
+  if (!cleanTarget) return deduped;
+  if (deduped.includes(cleanTarget)) {
+    return deduped.filter((id) => id !== cleanTarget);
+  }
+  return [...deduped, cleanTarget];
+}
+
+export function mergeUniqueIds(primaryIds: string[], secondaryIds: string[]): string[] {
+  return Array.from(
+    new Set(
+      [...primaryIds, ...secondaryIds].filter(
+        (id): id is string => typeof id === 'string' && id.trim().length > 0
+      )
+    )
+  );
+}
+
+export function filterShopsForDirectory(
+  shops: Shop[],
+  products: Product[],
+  options: {
+    searchQuery?: string;
+    categorySlug?: string;
+    neighborhood?: string;
+    strictShopVerification?: boolean;
+  } = {}
+): Shop[] {
+  const {
+    searchQuery = '',
+    categorySlug = 'all',
+    neighborhood = 'All Hawassa',
+    strictShopVerification = true,
+  } = options;
+
+  const q = searchQuery.trim().toLowerCase();
+  const activeProductsByShop = new Map<string, Product[]>();
+  for (const p of products) {
+    if (p.status !== 'active') continue;
+    const list = activeProductsByShop.get(p.shopId);
+    if (list) {
+      list.push(p);
+    } else {
+      activeProductsByShop.set(p.shopId, [p]);
+    }
+  }
+
+  return shops.filter((shop) => {
+    if (strictShopVerification) {
+      if (shop.status !== 'approved') return false;
+    } else if (shop.status === 'suspended') {
+      return false;
+    }
+
+    if (neighborhood && neighborhood !== 'All Hawassa' && shop.neighborhood !== neighborhood) {
+      return false;
+    }
+
+    const shopProducts = activeProductsByShop.get(shop.shopId) ?? [];
+
+    if (categorySlug && categorySlug !== 'all' && categorySlug !== 'more') {
+      const hasCategoryProduct = shopProducts.some((p) => p.category === categorySlug);
+      if (!hasCategoryProduct) return false;
+    }
+
+    if (q) {
+      const productText = shopProducts.map((p) => `${p.name} ${p.category}`).join(' ');
+      const haystack =
+        `${shop.name} ${shop.description} ${shop.neighborhood} ${shop.address} ${shop.city} ${productText}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+
+    return true;
+  });
+}
+
+export interface ReconciledCartEntry {
+  item: CartItem;
+  reconciledItem: CartItem;
+  snapshotUnitPrice: number;
+  liveUnitPrice: number;
+  priceChanged: boolean;
+  availableStock: number;
+  isUnavailable: boolean;
+  exceedsStock: boolean;
+}
+
+export function reconcileCartWithCatalog(
+  cartItems: CartItem[],
+  liveProducts: Product[],
+  shopsById: Record<string, Shop> = {},
+  strictShopVerification: boolean = true
+): {
+  entries: ReconciledCartEntry[];
+  reconciledCart: CartItem[];
+  unavailableCount: number;
+  priceChangedCount: number;
+  stockIssueCount: number;
+  hasBlockingIssues: boolean;
+} {
+  const productById = new Map<string, Product>(
+    liveProducts.map((p) => [p.productId, p])
+  );
+
+  let unavailableCount = 0;
+  let priceChangedCount = 0;
+  let stockIssueCount = 0;
+
+  const entries: ReconciledCartEntry[] = cartItems.map((item) => {
+    const liveProduct = productById.get(item.product.productId);
+    const liveShop = shopsById[item.shopId];
+    const snapshotUnitPrice = getCartItemUnitPrice(item);
+
+    const matchedVariant =
+      item.variantId && liveProduct?.variants
+        ? liveProduct.variants.find((v) => v.id === item.variantId)
+        : undefined;
+
+    const liveUnitPrice = liveProduct
+      ? matchedVariant
+        ? matchedVariant.price
+        : liveProduct.price
+      : snapshotUnitPrice;
+
+    const availableStock = liveProduct
+      ? matchedVariant
+        ? Math.max(0, matchedVariant.stock ?? liveProduct.stock)
+        : Math.max(0, liveProduct.stock)
+      : 0;
+
+    const shopBlocked = liveShop
+      ? strictShopVerification
+        ? liveShop.status !== 'approved'
+        : liveShop.status === 'suspended'
+      : false;
+
+    const variantMissing = Boolean(
+      item.variantId && liveProduct?.variants && liveProduct.variants.length > 0 && !matchedVariant
+    );
+
+    const isUnavailable =
+      !liveProduct ||
+      !liveProduct.isAvailable ||
+      liveProduct.status !== 'active' ||
+      availableStock <= 0 ||
+      shopBlocked ||
+      variantMissing;
+
+    const priceChanged = Boolean(liveProduct && !isUnavailable && liveUnitPrice !== snapshotUnitPrice);
+    const exceedsStock = !isUnavailable && item.quantity > availableStock;
+
+    if (isUnavailable) unavailableCount += 1;
+    if (priceChanged) priceChangedCount += 1;
+    if (exceedsStock) stockIssueCount += 1;
+
+    const reconciledProduct = liveProduct
+      ? liveProduct
+      : { ...item.product, isAvailable: false, stock: 0 };
+
+    const reconciledItem: CartItem = {
+      ...item,
+      product: reconciledProduct,
+      variantLabel: matchedVariant?.label ?? item.variantLabel,
+      unitPrice: liveUnitPrice,
+    };
+
+    return {
+      item,
+      reconciledItem,
+      snapshotUnitPrice,
+      liveUnitPrice,
+      priceChanged,
+      availableStock,
+      isUnavailable,
+      exceedsStock,
+    };
+  });
+
+  return {
+    entries,
+    reconciledCart: entries.map((e) => e.reconciledItem),
+    unavailableCount,
+    priceChangedCount,
+    stockIssueCount,
+    hasBlockingIssues: unavailableCount > 0 || stockIssueCount > 0,
+  };
+}
+
+export interface ShopSearchFilterOptions {
+  searchQuery?: string;
+  category?: string;
+  neighborhoods?: string[];
+  minRating?: number | null;
+  verifiedOnly?: boolean;
+  deliveryOnly?: boolean;
+  pickupOnly?: boolean;
+  strictShopVerification?: boolean;
+  sortBy?: ProductFilterOptions['sortBy'];
+  shopDistanceById?: Record<string, number>;
+  categoryNamesBySlug?: Record<string, string>;
+  localizedNeighborhoodByArea?: Record<string, string>;
+}
+
+function scoreShopSearchRelevance(
+  shop: Shop,
+  shopProducts: Product[],
+  q: string,
+  categoryNamesBySlug: Record<string, string>,
+  localizedNeighborhood: string
+): number {
+  if (!q) return 0;
+  const name = shop.name.toLowerCase();
+  const desc = shop.description.toLowerCase();
+  const area = `${shop.neighborhood} ${localizedNeighborhood} ${shop.address} ${shop.city}`.toLowerCase();
+
+  let score = 0;
+  if (name === q) score += 120;
+  else if (name.startsWith(q)) score += 90;
+  else if (name.includes(q)) score += 60;
+
+  const hasCategoryMatch = shopProducts.some((p) => {
+    const catLabel = categoryNamesBySlug[p.category] ?? '';
+    return `${p.category} ${catLabel}`.toLowerCase().includes(q);
+  });
+  if (hasCategoryMatch) score += 35;
+
+  const hasProductMatch = shopProducts.some((p) => p.name.toLowerCase().includes(q));
+  if (hasProductMatch) score += 30;
+
+  if (area.includes(q)) score += 20;
+  if (desc.includes(q)) score += 15;
+  if (isVerifiedMerchantShop(shop)) score += 10;
+  if (shop.featured) score += 5;
+  return score;
+}
+
+export function filterShopsForSearch(
+  shops: Shop[],
+  products: Product[],
+  options: ShopSearchFilterOptions = {}
+): Shop[] {
+  const {
+    searchQuery = '',
+    category = 'all',
+    neighborhoods = [],
+    minRating = null,
+    verifiedOnly = false,
+    deliveryOnly = false,
+    pickupOnly = false,
+    strictShopVerification = true,
+    sortBy = 'relevance',
+    shopDistanceById = {},
+    categoryNamesBySlug = {},
+    localizedNeighborhoodByArea = {},
+  } = options;
+
+  const q = searchQuery.trim().toLowerCase();
+  const allowedNeighborhoodKeys = new Set<string>(
+    neighborhoods.map((n) => normalizeNeighborhoodKey(n)).filter((k) => Boolean(k) && k !== 'all')
+  );
+
+  const activeProductsByShop = new Map<string, Product[]>();
+  for (const p of products) {
+    if (p.status !== 'active') continue;
+    const list = activeProductsByShop.get(p.shopId);
+    if (list) list.push(p);
+    else activeProductsByShop.set(p.shopId, [p]);
+  }
+
+  const filtered = shops.filter((shop) => {
+    if (strictShopVerification) {
+      if (shop.status !== 'approved') return false;
+    } else if (shop.status === 'suspended') {
+      return false;
+    }
+
+    if (verifiedOnly && !isVerifiedMerchantShop(shop)) {
+      return false;
+    }
+
+    if (allowedNeighborhoodKeys.size > 0) {
+      const areaKey = normalizeNeighborhoodKey(shop.neighborhood);
+      if (!allowedNeighborhoodKeys.has(areaKey)) return false;
+    }
+
+    if (minRating != null && Number.isFinite(minRating) && minRating > 0) {
+      if ((shop.rating ?? 0) < minRating) return false;
+    }
+
+    if (deliveryOnly && !shop.deliveryAvailable) return false;
+    if (pickupOnly && !shop.pickupAvailable) return false;
+
+    const shopProducts = activeProductsByShop.get(shop.shopId) ?? [];
+
+    if (category && category !== 'all' && category !== 'more') {
+      const hasCategoryProduct = shopProducts.some((p) => p.category === category);
+      if (!hasCategoryProduct) return false;
+    }
+
+    if (q) {
+      const localizedArea = localizedNeighborhoodByArea[shop.neighborhood] ?? '';
+      const productText = shopProducts
+        .map((p) => `${p.name} ${p.category} ${categoryNamesBySlug[p.category] ?? ''}`)
+        .join(' ');
+      const haystack =
+        `${shop.name} ${shop.description} ${shop.neighborhood} ${localizedArea} ${shop.address} ${shop.city} ${productText}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+
+    return true;
+  });
+
+  const sorted = [...filtered];
+  switch (sortBy) {
+    case 'nearest':
+      sorted.sort((a, b) => {
+        const da = shopDistanceById[a.shopId] ?? Number.POSITIVE_INFINITY;
+        const db = shopDistanceById[b.shopId] ?? Number.POSITIVE_INFINITY;
+        if (da !== db) return da - db;
+        return (b.rating ?? 0) - (a.rating ?? 0);
+      });
+      break;
+    case 'rating':
+      sorted.sort((a, b) => {
+        if ((b.rating ?? 0) !== (a.rating ?? 0)) return (b.rating ?? 0) - (a.rating ?? 0);
+        return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
+      });
+      break;
+    case 'newest':
+      sorted.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      break;
+    case 'relevance':
+    default:
+      sorted.sort((a, b) => {
+        if (q) {
+          const sa = scoreShopSearchRelevance(
+            a,
+            activeProductsByShop.get(a.shopId) ?? [],
+            q,
+            categoryNamesBySlug,
+            localizedNeighborhoodByArea[a.neighborhood] ?? ''
+          );
+          const sb = scoreShopSearchRelevance(
+            b,
+            activeProductsByShop.get(b.shopId) ?? [],
+            q,
+            categoryNamesBySlug,
+            localizedNeighborhoodByArea[b.neighborhood] ?? ''
+          );
+          if (sa !== sb) return sb - sa;
+        }
+        if (Boolean(b.featured) !== Boolean(a.featured)) {
+          return Number(Boolean(b.featured)) - Number(Boolean(a.featured));
+        }
+        return (b.rating ?? 0) - (a.rating ?? 0);
+      });
+      break;
+  }
+
+  return sorted;
+}
+

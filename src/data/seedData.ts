@@ -79,6 +79,26 @@ export const SEED_CATEGORIES: Category[] = [
     displayOrder: 6,
     isActive: true,
   },
+  {
+    slug: 'sports',
+    name: 'Sports',
+    nameAm: 'ስፖርት እና የአካል ብቃት',
+    nameOm: 'Ispoortii',
+    nameSid: 'Ispoorte',
+    iconName: 'Dumbbell',
+    displayOrder: 7,
+    isActive: true,
+  },
+  {
+    slug: 'automotive',
+    name: 'Automotive',
+    nameAm: 'አውቶሞቲቭ እና መለዋወጫ',
+    nameOm: 'Konkolaataa fi Meeshaa',
+    nameSid: 'Kaameenna Uduunne',
+    iconName: 'Car',
+    displayOrder: 8,
+    isActive: true,
+  },
 ];
 
 const nowIso = '2026-11-10T09:00:00.000Z';

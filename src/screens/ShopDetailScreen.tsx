@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  Clock,
   MapPin,
   MessageSquare,
   Phone,
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { EmptyState, ProductCard, ResilientImage } from '../components/SharedUI';
-
+import { isVerifiedMerchantShop } from '../utils/marketplaceLogic';
 import { getLocalizedNeighborhood } from '../constants/translations';
 
 export const ShopDetailScreen: React.FC<{ shopId: string }> = ({ shopId }) => {
@@ -117,15 +118,21 @@ export const ShopDetailScreen: React.FC<{ shopId: string }> = ({ shopId }) => {
             <div className="pb-0.5 min-w-0">
               <div className="flex items-center gap-1.5">
                 <h1 className="text-lg font-display font-bold text-stone-900 dark:text-stone-100 truncate">{shop.name}</h1>
-                {shop.status === 'approved' && (
-                  <CheckCircle2 className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                {isVerifiedMerchantShop(shop) && (
+                  <CheckCircle2 className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" aria-label={t('verifiedMerchantLabel')} />
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300 tabular-nums">
-                <span className="flex items-center gap-1 font-medium">
-                  <Star className="w-3.5 h-3.5 fill-[#D97706] text-[#D97706] dark:fill-[#F59E0B] dark:text-[#F59E0B]" />
-                  {shop.rating.toFixed(1)} ({shop.reviewCount})
-                </span>
+                {(shop.reviewCount ?? 0) > 0 || (shop.rating ?? 0) > 0 ? (
+                  <span className="flex items-center gap-1 font-medium">
+                    <Star className="w-3.5 h-3.5 fill-[#D97706] text-[#D97706] dark:fill-[#F59E0B] dark:text-[#F59E0B]" />
+                    {shop.rating.toFixed(1)} ({shop.reviewCount})
+                  </span>
+                ) : (
+                  <span className="font-semibold text-[#047857] dark:text-[#10B981]">
+                    {t('newShopBadge')}
+                  </span>
+                )}
                 <span aria-hidden="true">·</span>
                 <span>{getLocalizedNeighborhood(shop.neighborhood, language)}</span>
               </div>
@@ -189,6 +196,12 @@ export const ShopDetailScreen: React.FC<{ shopId: string }> = ({ shopId }) => {
             <Phone className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
             <span className="tabular-nums">{shop.phoneNumber}</span>
           </div>
+          {shop.operatingHours && (
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
+              <span>{shop.operatingHours}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2 pt-2 flex-wrap">
             <div className="flex items-center gap-4 text-[11px] font-medium text-[#047857] dark:text-[#10B981]">
               {shop.deliveryAvailable && (
@@ -320,10 +333,16 @@ export const ShopDetailScreen: React.FC<{ shopId: string }> = ({ shopId }) => {
             <h2 className="text-sm font-bold text-stone-900 dark:text-stone-100">
               {t('shopReviewsTitle')}
             </h2>
-            <span className="text-xs font-semibold text-stone-600 dark:text-stone-300 tabular-nums flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 fill-[#D97706] text-[#D97706] dark:fill-[#F59E0B] dark:text-[#F59E0B]" />
-              {shop.rating.toFixed(1)} ({shop.reviewCount})
-            </span>
+            {(shop.reviewCount ?? 0) > 0 || (shop.rating ?? 0) > 0 ? (
+              <span className="text-xs font-semibold text-stone-600 dark:text-stone-300 tabular-nums flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 fill-[#D97706] text-[#D97706] dark:fill-[#F59E0B] dark:text-[#F59E0B]" />
+                {shop.rating.toFixed(1)} ({shop.reviewCount})
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-[#047857] dark:text-[#10B981]">
+                {t('newShopBadge')}
+              </span>
+            )}
           </div>
 
           {shopReviews.length === 0 ? (

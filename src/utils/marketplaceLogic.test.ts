@@ -7,6 +7,7 @@ import {
   translations,
 } from '../constants/translations';
 import {
+  buildShopSlug,
   buildSocialShareUrls,
   buildWishlistShareUrl,
   formatETB,
@@ -58,6 +59,7 @@ import {
   validatePaymentReference,
   validateProductImageUrl,
   validateProductInput,
+  validateShopInput,
   validateRegistrationInput,
   validateAddressInput,
   validateLoyaltyRedemption,
@@ -75,6 +77,14 @@ import {
   getPriceRangeBounds,
   getNeighborhoodAvailabilityStats,
   countActiveSearchFilters,
+  buildHomeCategories,
+  HOME_CATEGORY_ORDER,
+  isVerifiedMerchantShop,
+  toggleUniqueId,
+  mergeUniqueIds,
+  filterShopsForDirectory,
+  filterShopsForSearch,
+  reconcileCartWithCatalog,
 } from './marketplaceLogic';
 import {
   buildWelcomeBackEmail,
@@ -1393,4 +1403,443 @@ test('Refined search filters support price ranges, minimum shop ratings, and Haw
     5
   );
 });
+
+test('buildShopSlug and validateShopInput validate virtual shop creation fields and non-ASCII names', () => {
+  assert.equal(buildShopSlug('Sidama Crafts Hub!'), 'sidama-crafts-hub');
+  assert.equal(buildShopSlug('ሐዋሳ ቡና', 'shop-999'), 'shop-999');
+
+  const invalid = validateShopInput({
+    name: 'Ab',
+    description: 'short',
+    phoneNumber: '123',
+    neighborhood: '',
+    address: 'Pi',
+    deliveryAvailable: false,
+    pickupAvailable: false,
+  });
+  assert.ok(invalid.name);
+  assert.ok(invalid.description);
+  assert.ok(invalid.phoneNumber);
+  assert.ok(invalid.neighborhood);
+  assert.ok(invalid.address);
+  assert.ok(invalid.fulfillment);
+
+  const valid = validateShopInput({
+    name: 'Lakefront Sidama Roasters',
+    description: 'Freshly roasted Grade-1 Sidama beans and tea packs.',
+    phoneNumber: '0911234567',
+    neighborhood: 'Piazza',
+    address: 'Across from St. Gabriel Cathedral',
+    deliveryAvailable: true,
+    pickupAvailable: true,
+  });
+  assert.deepEqual(valid, {});
+});
+
+test('buildHomeCategories orders the 8 mobile home categories and merges missing seeds with Firestore overrides', () => {
+  const sampleSeeds = HOME_CATEGORY_ORDER.map((slug, idx) => ({
+    slug,
+    name: slug,
+    nameAm: slug,
+    nameOm: slug,
+    nameSid: slug,
+    iconName: 'Package',
+    displayOrder: idx + 1,
+    isActive: true,
+  }));
+  const partialFirestoreCategories = sampleSeeds.slice(0, 6);
+  const customExtra = {
+    slug: 'books-stationery',
+    name: 'Books',
+    nameAm: 'መጽሐፍት',
+    nameOm: 'Kitaabota',
+    nameSid: 'Maxaaffa',
+    iconName: 'Package',
+    displayOrder: 20,
+    isActive: true,
+  };
+  const ordered = buildHomeCategories([...partialFirestoreCategories, customExtra], sampleSeeds);
+  assert.deepEqual(
+    ordered.slice(0, 8).map((c) => c.slug),
+    [...HOME_CATEGORY_ORDER]
+  );
+  assert.equal(ordered[8].slug, 'books-stationery');
+});
+
+test('isVerifiedMerchantShop returns true only for approved verified merchants', () => {
+  assert.equal(isVerifiedMerchantShop({ status: 'approved', verificationStatus: 'approved' }), true);
+  assert.equal(isVerifiedMerchantShop({ status: 'approved' }), true);
+  assert.equal(isVerifiedMerchantShop({ status: 'approved', verificationStatus: 'pending_review' }), false);
+  assert.equal(isVerifiedMerchantShop({ status: 'approved', verificationStatus: 'unverified' }), false);
+  assert.equal(isVerifiedMerchantShop({ status: 'approved', verificationStatus: 'rejected' }), false);
+  assert.equal(isVerifiedMerchantShop({ status: 'pending', verificationStatus: 'approved' }), false);
+  assert.equal(isVerifiedMerchantShop({ status: 'suspended', verificationStatus: 'approved' }), false);
+});
+
+test('toggleUniqueId and mergeUniqueIds deduplicate favorite shop IDs accurately', () => {
+  assert.deepEqual(toggleUniqueId(['shop-1', 'shop-1', ' '], 'shop-2'), ['shop-1', 'shop-2']);
+  assert.deepEqual(toggleUniqueId(['shop-1', 'shop-2'], 'shop-1'), ['shop-2']);
+  assert.deepEqual(toggleUniqueId(['shop-1'], ''), ['shop-1']);
+
+  assert.deepEqual(
+    mergeUniqueIds(['shop-2', 'shop-1'], ['shop-1', 'shop-3', '']),
+    ['shop-2', 'shop-1', 'shop-3']
+  );
+});
+
+test('filterShopsForDirectory filters shops by query, category, neighborhood, and verification rules', () => {
+  const shopCoffee: Shop = {
+    ...sampleShop,
+    shopId: 'shop-1',
+    name: 'Sidama Heritage Roasters',
+    neighborhood: 'Piazza',
+    status: 'approved',
+  };
+  const shopFashion: Shop = {
+    ...sampleShop,
+    shopId: 'shop-2',
+    name: 'Tabor Handloom',
+    description: 'Traditional cotton tibeb and netela',
+    neighborhood: 'Tabor',
+    status: 'approved',
+  };
+  const shopPending: Shop = {
+    ...sampleShop,
+    shopId: 'shop-3',
+    name: 'Pending Lake Electronics',
+    neighborhood: 'Menhariya',
+    status: 'pending',
+  };
+  const shopSuspended: Shop = {
+    ...sampleShop,
+    shopId: 'shop-4',
+    name: 'Suspended Store',
+    neighborhood: 'Atote',
+    status: 'suspended',
+  };
+
+  const allShops = [shopCoffee, shopFashion, shopPending, shopSuspended];
+  const allProducts = [sampleProductA, sampleProductB];
+
+  // Strict verification shows only approved shops
+  assert.deepEqual(
+    filterShopsForDirectory(allShops, allProducts, { strictShopVerification: true }).map((s) => s.shopId),
+    ['shop-1', 'shop-2']
+  );
+
+  // Relaxed mode excludes suspended shops
+  assert.deepEqual(
+    filterShopsForDirectory(allShops, allProducts, { strictShopVerification: false }).map((s) => s.shopId),
+    ['shop-1', 'shop-2', 'shop-3']
+  );
+
+  // Category filter inspects active products per shop
+  assert.deepEqual(
+    filterShopsForDirectory(allShops, allProducts, { categorySlug: 'clothing-fashion' }).map((s) => s.shopId),
+    ['shop-2']
+  );
+
+  // Search matches shop name, neighborhood, and active product names
+  assert.deepEqual(
+    filterShopsForDirectory(allShops, allProducts, { searchQuery: 'cotton' }).map((s) => s.shopId),
+    ['shop-2']
+  );
+  assert.deepEqual(
+    filterShopsForDirectory(allShops, allProducts, { neighborhood: 'Piazza' }).map((s) => s.shopId),
+    ['shop-1']
+  );
+});
+
+test('reconcileCartWithCatalog detects live price changes, variant pricing, stock reductions, and unavailable products/shops', () => {
+  const approvedShop: Shop = { ...sampleShop, shopId: 'shop-1', status: 'approved' };
+  const suspendedShop: Shop = { ...sampleShop, shopId: 'shop-2', status: 'suspended' };
+
+  const liveProductPriceChanged: Product = {
+    ...sampleProductA,
+    productId: 'prod-price',
+    shopId: 'shop-1',
+    price: 720,
+    stock: 4,
+    variants: [
+      { id: 'v-1kg', label: '1kg Bag', price: 1380, stock: 2 },
+    ],
+  };
+
+  const liveProductOutOfStock: Product = {
+    ...sampleProductA,
+    productId: 'prod-oos',
+    shopId: 'shop-1',
+    price: 500,
+    stock: 0,
+    isAvailable: false,
+  };
+
+  const liveProductSuspendedShop: Product = {
+    ...sampleProductA,
+    productId: 'prod-susp',
+    shopId: 'shop-2',
+    price: 900,
+    stock: 5,
+  };
+
+  const cartItems: CartItem[] = [
+    {
+      product: { ...sampleProductA, productId: 'prod-price', price: 650, stock: 10 },
+      quantity: 3, // exceeds live variant stock of 2
+      shopId: 'shop-1',
+      variantId: 'v-1kg',
+      variantLabel: '1kg Bag',
+      unitPrice: 1200,
+    },
+    {
+      product: { ...sampleProductA, productId: 'prod-oos', price: 500, stock: 4 },
+      quantity: 1,
+      shopId: 'shop-1',
+      unitPrice: 500,
+    },
+    {
+      product: { ...sampleProductA, productId: 'prod-susp', price: 900, stock: 5 },
+      quantity: 1,
+      shopId: 'shop-2',
+      unitPrice: 900,
+    },
+    {
+      product: { ...sampleProductA, productId: 'prod-deleted', price: 400, stock: 2 },
+      quantity: 1,
+      shopId: 'shop-1',
+      unitPrice: 400,
+    },
+  ];
+
+  const result = reconcileCartWithCatalog(
+    cartItems,
+    [liveProductPriceChanged, liveProductOutOfStock, liveProductSuspendedShop],
+    { 'shop-1': approvedShop, 'shop-2': suspendedShop },
+    true
+  );
+
+  assert.equal(result.priceChangedCount, 1);
+  assert.equal(result.stockIssueCount, 1);
+  assert.equal(result.unavailableCount, 3); // prod-oos, prod-susp (suspended shop), prod-deleted
+  assert.equal(result.hasBlockingIssues, true);
+
+  const [variantEntry, oosEntry, suspEntry, deletedEntry] = result.entries;
+  assert.equal(variantEntry.snapshotUnitPrice, 1200);
+  assert.equal(variantEntry.liveUnitPrice, 1380);
+  assert.equal(variantEntry.priceChanged, true);
+  assert.equal(variantEntry.availableStock, 2);
+  assert.equal(variantEntry.exceedsStock, true);
+  assert.equal(variantEntry.isUnavailable, false);
+  assert.equal(result.reconciledCart[0].unitPrice, 1380);
+
+  assert.equal(oosEntry.isUnavailable, true);
+  assert.equal(suspEntry.isUnavailable, true);
+  assert.equal(deletedEntry.isUnavailable, true);
+});
+
+test('filterShopsForSearch filters by query, localized metadata, verification, rating, handoff, and ranks by relevance', () => {
+  const shopRoasters: Shop = {
+    ...sampleShop,
+    shopId: 'shop-roasters',
+    name: 'Coffee House Piazza',
+    description: 'Freshly roasted beans and spices.',
+    neighborhood: 'Piazza',
+    rating: 4.9,
+    reviewCount: 40,
+    deliveryAvailable: true,
+    pickupAvailable: true,
+    status: 'approved',
+    verificationStatus: 'approved',
+    createdAt: '2026-02-01T00:00:00Z',
+  };
+
+  const shopPendingDocs: Shop = {
+    ...sampleShop,
+    shopId: 'shop-pending-docs',
+    name: 'Hawassa Artisan Coffee',
+    description: 'Local coffee blends near Tabor.',
+    neighborhood: 'Tabor',
+    rating: 4.6,
+    reviewCount: 12,
+    deliveryAvailable: false,
+    pickupAvailable: true,
+    status: 'approved',
+    verificationStatus: 'pending_review',
+    createdAt: '2026-03-01T00:00:00Z',
+  };
+
+  const shopDescriptionMatch: Shop = {
+    ...sampleShop,
+    shopId: 'shop-desc',
+    name: 'Lakeview Roastery',
+    description: 'Serving coffee and tea by Lake Hawassa.',
+    neighborhood: 'Gebeya Dar',
+    rating: 4.2,
+    reviewCount: 8,
+    deliveryAvailable: true,
+    pickupAvailable: false,
+    status: 'approved',
+    verificationStatus: 'approved',
+    createdAt: '2026-01-15T00:00:00Z',
+  };
+
+  const prodRoast: Product = {
+    ...sampleProductA,
+    productId: 'prod-roast-1',
+    shopId: 'shop-roasters',
+    name: 'Espresso Dark Roast',
+    category: 'groceries',
+  };
+  const prodTabor: Product = {
+    ...sampleProductB,
+    productId: 'prod-tabor-1',
+    shopId: 'shop-pending-docs',
+    name: 'Yirga Blend',
+    category: 'groceries',
+  };
+  const prodDescShop: Product = {
+    ...sampleProductA,
+    productId: 'prod-desc-1',
+    shopId: 'shop-desc',
+    name: 'Spiced Tea Tin',
+    category: 'home-living',
+  };
+
+  const allShops = [shopDescriptionMatch, shopPendingDocs, shopRoasters];
+  const allProducts = [prodRoast, prodTabor, prodDescShop];
+
+  // Relevance: exact prefix/name match ("Coffee House Piazza") ranks ahead of substring name match ("Hawassa Artisan Coffee") and description match ("Lakeview Roastery")
+  const relevanceOrder = filterShopsForSearch(allShops, allProducts, {
+    searchQuery: 'coffee',
+    sortBy: 'relevance',
+  });
+  assert.deepEqual(
+    relevanceOrder.map((s) => s.shopId),
+    ['shop-roasters', 'shop-pending-docs', 'shop-desc']
+  );
+
+  // verifiedOnly excludes approved shops whose document verificationStatus is pending_review
+  const verifiedOnly = filterShopsForSearch(allShops, allProducts, {
+    searchQuery: 'coffee',
+    verifiedOnly: true,
+  });
+  assert.deepEqual(
+    verifiedOnly.map((s) => s.shopId),
+    ['shop-roasters', 'shop-desc']
+  );
+
+  // Localized neighborhood & category matching
+  const localizedAreaMatch = filterShopsForSearch(allShops, allProducts, {
+    searchQuery: 'Dikko Qarqara',
+    localizedNeighborhoodByArea: { 'Gebeya Dar': 'Dikko Qarqara' },
+  });
+  assert.deepEqual(
+    localizedAreaMatch.map((s) => s.shopId),
+    ['shop-desc']
+  );
+
+  // Minimum rating, deliveryOnly, pickupOnly, and neighborhood filters
+  assert.deepEqual(
+    filterShopsForSearch(allShops, allProducts, {
+      minRating: 4.5,
+      pickupOnly: true,
+      neighborhoods: ['Tabor'],
+    }).map((s) => s.shopId),
+    ['shop-pending-docs']
+  );
+  assert.deepEqual(
+    filterShopsForSearch(allShops, allProducts, {
+      deliveryOnly: true,
+      category: 'home-living',
+    }).map((s) => s.shopId),
+    ['shop-desc']
+  );
+});
+
+test('filterAndSortProducts supports relevance ranking, verifiedOnly, localized category/neighborhood matching, and active filter counts', () => {
+  const verifiedShop: Shop = {
+    ...sampleShop,
+    shopId: 'shop-v',
+    name: 'Sidama Coffee Roasters',
+    neighborhood: 'Gebeya Dar',
+    status: 'approved',
+    verificationStatus: 'approved',
+    rating: 4.8,
+  };
+  const unverifiedShop: Shop = {
+    ...sampleShop,
+    shopId: 'shop-u',
+    name: 'Pending Roasters',
+    neighborhood: 'Piazza',
+    status: 'approved',
+    verificationStatus: 'pending_review',
+    rating: 4.9,
+  };
+
+  const exactProd: Product = {
+    ...sampleProductA,
+    productId: 'prod-exact',
+    shopId: 'shop-v',
+    name: 'Coffee Beans 500g',
+    description: 'Single origin beans',
+    category: 'groceries',
+    rating: 4.6,
+  };
+  const descOnlyProd: Product = {
+    ...sampleProductB,
+    productId: 'prod-desc',
+    shopId: 'shop-u',
+    name: 'Clay Jebena Pot',
+    description: 'Brew traditional coffee at home',
+    category: 'home-living',
+    rating: 5.0,
+  };
+
+  const shopsMap: Record<string, Shop> = {
+    'shop-v': verifiedShop,
+    'shop-u': unverifiedShop,
+  };
+  const products = [descOnlyProd, exactProd];
+
+  const byRelevance = filterAndSortProducts(products, shopsMap, {
+    searchQuery: 'coffee',
+    sortBy: 'relevance',
+  });
+  assert.deepEqual(
+    byRelevance.map((p) => p.productId),
+    ['prod-exact', 'prod-desc']
+  );
+
+  const verifiedProducts = filterAndSortProducts(products, shopsMap, {
+    searchQuery: 'coffee',
+    verifiedOnly: true,
+  });
+  assert.deepEqual(
+    verifiedProducts.map((p) => p.productId),
+    ['prod-exact']
+  );
+
+  const localizedCatMatch = filterAndSortProducts(products, shopsMap, {
+    searchQuery: 'መኖሪያ',
+    categoryNamesBySlug: { 'home-living': 'የቤት እና መኖሪያ' },
+    localizedNeighborhoodByArea: { 'Gebeya Dar': 'ገበያ ዳር' },
+  });
+  assert.deepEqual(
+    localizedCatMatch.map((p) => p.productId),
+    ['prod-desc']
+  );
+
+  assert.equal(countActiveSearchFilters({ sortBy: 'relevance', category: 'all', verifiedOnly: false }), 0);
+  assert.equal(
+    countActiveSearchFilters({
+      category: 'groceries',
+      verifiedOnly: true,
+      minPrice: 100,
+      sortBy: 'price_asc',
+    }),
+    4
+  );
+});
+
+
 

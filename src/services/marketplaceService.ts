@@ -122,6 +122,37 @@ export function subscribeToProducts(
   );
 }
 
+export async function fetchCatalogSnapshotFromFirestore(): Promise<{
+  shops: Shop[];
+  products: Product[];
+}> {
+  const seedById = new Map(SEED_PRODUCTS.map((sp) => [sp.productId, sp]));
+  const [shopsSnap, productsSnap] = await Promise.all([
+    getDocs(collection(db, 'shops')),
+    getDocs(collection(db, 'products')),
+  ]);
+
+  const shops = shopsSnap.empty
+    ? SEED_SHOPS
+    : shopsSnap.docs.map((d) => d.data() as Shop);
+
+  const products = productsSnap.empty
+    ? SEED_PRODUCTS
+    : productsSnap.docs.map((d) => {
+        const data = d.data() as Product;
+        const seed = seedById.get(data.productId);
+        return seed
+          ? {
+              ...data,
+              variants: data.variants ?? seed.variants,
+              additionalImages: data.additionalImages ?? seed.additionalImages,
+            }
+          : data;
+      });
+
+  return { shops, products };
+}
+
 export function subscribeToCategories(
   onUpdate: (categories: Category[]) => void
 ): Unsubscribe {
@@ -132,19 +163,23 @@ export function subscribeToCategories(
       if (snapshot.empty) {
         onUpdate(SEED_CATEGORIES);
       } else {
-        onUpdate(
-          snapshot.docs.map((d) => {
-            const raw = d.data() as Category;
-            const seed = seedBySlug.get(raw.slug);
-            return {
-              ...seed,
-              ...raw,
-              nameAm: raw.nameAm || seed?.nameAm || raw.name,
-              nameOm: raw.nameOm || seed?.nameOm || raw.name,
-              nameSid: raw.nameSid || seed?.nameSid || raw.name,
-            };
-          })
-        );
+        const cloudCategories = snapshot.docs.map((d) => {
+          const raw = d.data() as Category;
+          const seed = seedBySlug.get(raw.slug);
+          return {
+            ...seed,
+            ...raw,
+            nameAm: raw.nameAm || seed?.nameAm || raw.name,
+            nameOm: raw.nameOm || seed?.nameOm || raw.name,
+            nameSid: raw.nameSid || seed?.nameSid || raw.name,
+          };
+        });
+        const cloudSlugs = new Set(cloudCategories.map((c) => c.slug));
+        const merged = [
+          ...cloudCategories,
+          ...SEED_CATEGORIES.filter((seed) => !cloudSlugs.has(seed.slug)),
+        ].sort((a, b) => a.displayOrder - b.displayOrder);
+        onUpdate(merged);
       }
     },
     () => {

@@ -13,6 +13,7 @@ import { HomeScreen } from './screens/HomeScreen';
 import { SearchScreen } from './screens/SearchScreen';
 import { ProductDetailScreen } from './screens/ProductDetailScreen';
 import { ShopDetailScreen } from './screens/ShopDetailScreen';
+import { ShopsScreen } from './screens/ShopsScreen';
 import {
   CartScreen,
   CheckoutScreen,
@@ -86,14 +87,14 @@ const ScreenRouter: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#FAF8F5] dark:bg-[#141A17] min-h-full">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#031719] text-[#F5FAFA] min-h-dvh">
         <img
           src={BRAND_ASSETS.logo}
           alt="Affin Connect"
-          className="w-14 h-14 rounded-2xl object-cover border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm mb-4"
+          className="w-16 h-16 rounded-2xl object-cover border border-[#00C8D7]/30 shadow-xl shadow-black/50 mb-5"
         />
-        <Loader2 className="w-5 h-5 animate-spin text-[#047857] dark:text-[#10B981] mb-2" />
-        <p className="text-xs font-medium text-stone-600 dark:text-stone-300">
+        <Loader2 className="w-6 h-6 animate-spin text-[#00D68F] mb-3" />
+        <p className="text-xs sm:text-sm font-medium text-[#A7C4C5]">
           {t('authCheckingSession')}
         </p>
       </div>
@@ -122,6 +123,8 @@ const ScreenRouter: React.FC = () => {
       return <ProductDetailScreen productId={route.productId} />;
     case 'shop':
       return <ShopDetailScreen shopId={route.shopId} />;
+    case 'shops':
+      return <ShopsScreen initialCategory={route.initialCategory} showAll={route.showAll} />;
     case 'cart':
       return <CartScreen />;
     case 'checkout':

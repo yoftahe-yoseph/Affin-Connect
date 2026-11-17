@@ -3,7 +3,9 @@ import confetti from 'canvas-confetti';
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Award,
+  Bell,
   Bookmark,
   Check,
   CheckCircle2,
@@ -21,15 +23,18 @@ import {
   Plus,
   ShieldCheck,
   ShoppingBag,
+  ShoppingCart,
   Sparkles,
   Store,
   Tag,
   Trash2,
   Truck,
+  User,
   Wallet,
   X,
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
+import { BRAND_ASSETS } from '../data/seedData';
 import { EmptyState, ResilientImage } from '../components/SharedUI';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
@@ -47,6 +52,7 @@ import {
   LOYALTY_ETB_PER_POINT_REDEEMED,
   LOYALTY_MIN_REDEEM_POINTS,
   PROMO_CODES,
+  reconcileCartWithCatalog,
   validateAddressInput,
   validateGatewayReferenceLive,
   validateOrderAgainstGovernance,
@@ -54,13 +60,31 @@ import {
 } from '../utils/marketplaceLogic';
 import type { PaymentMethod } from '../types';
 
+function getProgressWidthClass(pct: number): string {
+  const clamped = Math.max(0, Math.min(100, pct));
+  if (clamped >= 100) return 'w-full';
+  if (clamped >= 90) return 'w-[90%]';
+  if (clamped >= 80) return 'w-[80%]';
+  if (clamped >= 70) return 'w-[70%]';
+  if (clamped >= 60) return 'w-[60%]';
+  if (clamped >= 50) return 'w-[50%]';
+  if (clamped >= 40) return 'w-[40%]';
+  if (clamped >= 30) return 'w-[30%]';
+  if (clamped >= 20) return 'w-[20%]';
+  if (clamped > 0) return 'w-[10%]';
+  return 'w-0';
+}
+
 export const CartScreen: React.FC = () => {
   const {
     navigate,
     cart,
+    products,
     shopsById,
     updateCartQuantity,
     removeFromCart,
+    clearCart,
+    syncCartWithLiveCatalog,
     favorites,
     toggleFavorite,
     promoCode,
@@ -69,16 +93,39 @@ export const CartScreen: React.FC = () => {
     loyaltyBalance,
     redeemLoyaltyPoints,
     governanceConfig,
+    firebaseUser,
     userProfile,
+    unreadNotificationCount,
+    language,
     t,
   } = useMarketplace();
 
   const [promoDraft, setPromoDraft] = useState(promoCode);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [cartFeedback, setCartFeedback] = useState<string | null>(null);
+  const [isProceedingShopId, setIsProceedingShopId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cartFeedback) return;
+    const timer = setTimeout(() => setCartFeedback(null), 3200);
+    return () => clearTimeout(timer);
+  }, [cartFeedback]);
+
+  const cartReconciliation = useMemo(
+    () =>
+      reconcileCartWithCatalog(
+        cart,
+        products,
+        shopsById,
+        governanceConfig.strictShopVerification
+      ),
+    [cart, products, shopsById, governanceConfig.strictShopVerification]
+  );
 
   const summary = useMemo(
     () =>
       calculateCartSummary(
-        cart,
+        cartReconciliation.reconciledCart,
         'delivery',
         deliveryFeeEtb,
         promoCode,
@@ -87,7 +134,7 @@ export const CartScreen: React.FC = () => {
         governanceConfig.freeDeliveryThresholdEtb
       ),
     [
-      cart,
+      cartReconciliation.reconciledCart,
       deliveryFeeEtb,
       promoCode,
       redeemLoyaltyPoints,
@@ -96,43 +143,187 @@ export const CartScreen: React.FC = () => {
     ]
   );
 
-  // Group items by shop to handle single-shop-per-order clarity
+  // Group reconciled entries by shop to preserve single-shop-per-order clarity
   const groupedByShop = useMemo(() => {
-    const map: Record<string, typeof cart> = {};
-    for (const item of cart) {
-      if (!map[item.shopId]) map[item.shopId] = [];
-      map[item.shopId].push(item);
+    const map: Record<string, typeof cartReconciliation.entries> = {};
+    for (const entry of cartReconciliation.entries) {
+      const shopId = entry.item.shopId;
+      if (!map[shopId]) map[shopId] = [];
+      map[shopId].push(entry);
     }
     return Object.entries(map);
-  }, [cart]);
+  }, [cartReconciliation.entries]);
 
   const handleApplyPromo = (e: React.FormEvent) => {
     e.preventDefault();
     setPromoCode(promoDraft);
   };
 
+  const handleConfirmClearCart = () => {
+    clearCart();
+    setClearConfirmOpen(false);
+    setCartFeedback(t('cartClearedToast'));
+  };
+
+  const handleProceedToCheckout = (shopId: string) => {
+    if (isProceedingShopId) return;
+    setIsProceedingShopId(shopId);
+    syncCartWithLiveCatalog(shopId);
+    localStorage.setItem('hg_checkout_shop_id', shopId);
+    navigate({ name: 'checkout' });
+  };
+
+  const displayName =
+    userProfile?.displayName ||
+    firebaseUser?.displayName ||
+    firebaseUser?.email?.split('@')[0] ||
+    '';
+
+  const avatarInitials = displayName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+  const freeDeliveryThreshold = Math.max(0, governanceConfig.freeDeliveryThresholdEtb ?? 0);
+
   return (
-    <div className="flex flex-col min-h-full pb-6">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-4 py-3 flex items-center justify-between">
-        <h1 className="text-base font-display font-bold text-stone-900 dark:text-stone-100">{t('cart')}</h1>
-        <span className="text-xs font-medium text-stone-500 dark:text-stone-400 tabular-nums">
-          {summary.itemCount} {summary.itemCount === 1 ? t('itemSingle') : t('itemPlural')}
-        </span>
+    <div className="min-h-full bg-[#031719] text-[#F5FAFA] pb-8 flex flex-col">
+      {/* Compact Sticky Safe-Area Header */}
+      <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#00D68F]/35 shrink-0 shadow-md shadow-[#00D68F]/10">
+              <img
+                src={BRAND_ASSETS.logo}
+                alt="Affin Connect"
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-display font-bold tracking-tight text-[#F5FAFA] truncate">
+                Affin Connect
+              </div>
+              <p className="text-[11px] text-[#A9C0BD] truncate">
+                {t('authHeaderSubtitle')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigate({ name: 'notifications' })}
+              aria-label={t('notifications')}
+              className="relative min-w-[44px] min-h-[44px] rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#F5FAFA] transition-colors"
+            >
+              <Bell className="w-5 h-5 text-[#00D68F]" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
+                  {unreadNotificationCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate({ name: 'profile' })}
+              aria-label={t('openProfileAria')}
+              className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#092825] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+                {firebaseUser?.photoURL ? (
+                  <img
+                    src={firebaseUser.photoURL}
+                    alt={displayName || 'Profile'}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                ) : avatarInitials ? (
+                  <span>{avatarInitials}</span>
+                ) : (
+                  <User className="w-4 h-4 text-[#00D68F]" />
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
       </header>
 
+      {/* Cart Heading Bar */}
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-[#092825] border border-[#14443F] flex items-center justify-center text-[#00D68F] shrink-0">
+            <ShoppingCart className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-lg font-display font-bold text-[#F5FAFA] leading-tight flex items-center gap-2">
+              <span>{t('myCartTitle')}</span>
+              <span className="px-2 py-0.5 rounded-full bg-[#00D68F]/15 border border-[#00D68F]/30 text-[#00D68F] text-xs font-bold tabular-nums">
+                {summary.itemCount}
+              </span>
+            </h1>
+            <p className="text-[11px] text-[#A9C0BD] tabular-nums">
+              {summary.itemCount} {summary.itemCount === 1 ? t('itemSingle') : t('itemPlural')}
+            </p>
+          </div>
+        </div>
+
+        {cart.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setClearConfirmOpen(true)}
+            className="min-h-[44px] px-3 rounded-xl bg-[#092825] border border-rose-500/30 hover:border-rose-400/60 hover:bg-rose-500/10 text-rose-300 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('clearCartBtn')}</span>
+          </button>
+        )}
+      </div>
+
+      {/* Inline Feedback Notice */}
+      {cartFeedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-4 mt-2 px-3.5 py-2.5 rounded-xl bg-[#092825] border border-[#00D68F]/40 text-xs text-[#F5FAFA] flex items-center gap-2"
+        >
+          <CheckCircle2 className="w-4 h-4 text-[#00D68F] shrink-0" />
+          <span>{cartFeedback}</span>
+        </div>
+      )}
+
       {cart.length === 0 ? (
-        <EmptyState
-          icon={<ShoppingBag className="w-6 h-6" />}
-          title={t('cartEmpty')}
-          description={t('cartEmptyDesc')}
-          actionLabel={t('startShopping')}
-          onAction={() => navigate({ name: 'home' })}
-        />
+        <div className="px-4 py-6 flex-1 flex flex-col justify-center">
+          <div className="rounded-3xl bg-[#092825] border border-[#14443F] p-6 text-center shadow-xl shadow-black/25 space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#00D68F]/20 to-[#00C8D7]/20 border border-[#00D68F]/35 flex items-center justify-center text-[#00D68F]">
+              <ShoppingCart className="w-8 h-8" />
+            </div>
+            <div className="space-y-1.5 max-w-xs mx-auto">
+              <h2 className="text-base font-display font-bold text-[#F5FAFA]">
+                {t('cartEmptySpecialTitle')}
+              </h2>
+              <p className="text-xs text-[#A9C0BD] leading-relaxed">
+                {t('cartEmptySpecialDesc')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate({ name: 'home' })}
+              className="w-full min-h-[48px] px-5 rounded-2xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] text-sm font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 hover:brightness-105 active:scale-[0.99] transition-all"
+            >
+              <span>{t('startShopping')}</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
+            </button>
+          </div>
+        </div>
       ) : (
-        <div className="p-4 space-y-4">
+        <div className="px-4 pt-2 space-y-4">
           {(governanceConfig.orderingPaused || userProfile?.accountStatus === 'suspended') && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 flex items-start gap-2.5 text-xs text-rose-900 dark:text-rose-200">
-              <AlertTriangle className="w-4 h-4 text-rose-700 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-rose-950/50 border border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-200">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <span className="font-medium leading-relaxed">
                 {userProfile?.accountStatus === 'suspended'
                   ? t('governanceUserSuspended')
@@ -140,23 +331,31 @@ export const CartScreen: React.FC = () => {
               </span>
             </div>
           )}
+
           {summary.hasMultipleShops && (
-            <div className="p-3.5 rounded-2xl bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border border-[#FDE68A] dark:border-[#F59E0B]/30 flex items-start gap-2.5 text-xs text-amber-950 dark:text-amber-100">
-              <AlertTriangle className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B] shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/35 flex items-start gap-2.5 text-xs text-amber-100">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <div className="font-bold">{t('multipleShopsTitle')}</div>
-                <p className="text-[11px] text-amber-900 dark:text-amber-200 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-amber-200/90 mt-0.5 leading-relaxed">
                   {t('multipleShopsDesc')}
                 </p>
               </div>
             </div>
           )}
 
+          {cartReconciliation.hasBlockingIssues && (
+            <div className="p-3.5 rounded-2xl bg-rose-950/50 border border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-200">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span className="font-medium leading-relaxed">{t('removeUnavailableHint')}</span>
+            </div>
+          )}
+
           {/* Promo / Voucher Code Card */}
-          <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5 space-y-2.5">
+          <section className="bg-[#092825] rounded-2xl border border-[#14443F] shadow-md p-4 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-stone-900 dark:text-stone-100">
-                <Tag className="w-3.5 h-3.5 text-[#C2410C] dark:text-[#FB923C]" />
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#F5FAFA]">
+                <Tag className="w-3.5 h-3.5 text-[#00C8D7]" />
                 <span>{t('promoCodeTitle')}</span>
               </span>
               {summary.promoCode && (
@@ -166,7 +365,7 @@ export const CartScreen: React.FC = () => {
                     setPromoCode('');
                     setPromoDraft('');
                   }}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-400 hover:underline"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-300 hover:underline min-h-[32px]"
                 >
                   <X className="w-3 h-3" />
                   <span>{t('removeCode')}</span>
@@ -181,32 +380,32 @@ export const CartScreen: React.FC = () => {
                 onChange={(e) => setPromoDraft(e.target.value.toUpperCase())}
                 placeholder={t('promoPlaceholder')}
                 aria-label={t('promoCodeTitle')}
-                className="flex-1 min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-mono uppercase text-stone-900 dark:text-stone-100 placeholder:normal-case placeholder:font-sans dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="flex-1 min-h-[44px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-mono uppercase text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#A9C0BD]/60 focus:outline-none focus:ring-2 focus:ring-[#00D68F]/25 focus:border-[#00D68F]"
               />
               <button
                 type="submit"
-                className="px-4 min-h-[40px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold shrink-0 transition-colors"
+                className="px-4 min-h-[44px] rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] text-xs font-bold shrink-0 hover:brightness-105 transition-all"
               >
                 {t('applyCode')}
               </button>
             </form>
 
             {promoCode && summary.promoErrorKey && (
-              <p className="text-[11px] font-medium text-rose-700 dark:text-rose-400">
+              <p className="text-[11px] font-medium text-rose-300">
                 {t(summary.promoErrorKey, {
                   amount: formatETB(summary.promoMinSubtotal ?? 0),
                 })}
               </p>
             )}
             {summary.promoCode && !summary.promoErrorKey && (
-              <p className="text-[11px] font-semibold text-[#C2410C] dark:text-[#FB923C] bg-[#FFF7ED] dark:bg-[#C2410C]/20 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+              <p className="text-[11px] font-semibold text-[#00D68F] bg-[#00D68F]/10 border border-[#00D68F]/25 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span>{t('promoApplied', { code: summary.promoCode })}</span>
               </p>
             )}
 
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px]">
-              <span className="text-stone-500 dark:text-stone-400 font-medium">{t('availableCodes')}</span>
+              <span className="text-[#A9C0BD] font-medium">{t('availableCodes')}</span>
               {PROMO_CODES.map((rule) => (
                 <button
                   key={rule.code}
@@ -216,10 +415,10 @@ export const CartScreen: React.FC = () => {
                     setPromoCode(rule.code);
                   }}
                   title={t(rule.summaryKey)}
-                  className={`px-2 py-0.5 rounded-md border font-mono text-[10px] font-semibold transition-colors ${
+                  className={`px-2 py-1 rounded-lg border font-mono text-[10px] font-semibold transition-colors ${
                     summary.promoCode === rule.code
-                      ? 'bg-[#FFF7ED] dark:bg-[#C2410C]/20 text-[#C2410C] dark:text-[#FB923C] border-[#C2410C]/40 dark:border-[#FB923C]/40'
-                      : 'bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-200 border-[#E7E5E4] dark:border-[#2A3630] hover:border-[#C2410C]/50 dark:hover:border-[#FB923C]/50'
+                      ? 'bg-[#00D68F]/15 text-[#00D68F] border-[#00D68F]/45'
+                      : 'bg-[#031719] text-[#A9C0BD] border-[#14443F] hover:border-[#00D68F]/45 hover:text-[#F5FAFA]'
                   }`}
                 >
                   {rule.code}
@@ -228,10 +427,11 @@ export const CartScreen: React.FC = () => {
             </div>
           </section>
 
-          {groupedByShop.map(([shopId, shopItems]) => {
+          {groupedByShop.map(([shopId, shopEntries]) => {
             const shop = shopsById[shopId];
+            const reconciledShopItems = shopEntries.map((e) => e.reconciledItem);
             const shopSummary = calculateCartSummary(
-              shopItems,
+              reconciledShopItems,
               'delivery',
               deliveryFeeEtb,
               promoCode,
@@ -245,6 +445,10 @@ export const CartScreen: React.FC = () => {
               shop,
               totalAmount: shopSummary.totalAmount,
             });
+            const shopHasBlockingIssues =
+              shopEntries.some((e) => e.isUnavailable || e.exceedsStock) ||
+              shopSummary.hasStockIssues;
+
             const thresholdDenom = Math.max(
               1,
               governanceConfig.freeDeliveryThresholdEtb || FREE_DELIVERY_THRESHOLD_ETB
@@ -253,128 +457,220 @@ export const CartScreen: React.FC = () => {
               100,
               Math.round((shopSummary.subtotal / thresholdDenom) * 100)
             );
+            const progressWidthClass = getProgressWidthClass(progressPct);
+
             return (
-              <section
-                key={shopId}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm overflow-hidden"
-              >
-                <div className="px-4 py-3 bg-[#FAF8F5] dark:bg-[#141A17]/70 border-b border-[#E7E5E4] dark:border-[#2A3630] flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => navigate({ name: 'shop', shopId })}
-                    className="flex items-center gap-2 text-xs font-bold text-[#047857] dark:text-[#10B981] hover:underline"
-                  >
-                    <Store className="w-4 h-4 shrink-0" />
-                    <span>{shop?.name ?? 'Local Shop'}</span>
-                  </button>
-                  <span className="text-[11px] text-stone-500 dark:text-stone-400">{shop?.neighborhood}</span>
-                </div>
-
-                {/* Free Hawassa Delivery Progress Bar */}
-                <div className="px-4 py-2.5 bg-[#ECFDF5]/60 dark:bg-[#10B981]/10 border-b border-[#E7E5E4] dark:border-[#2A3630] space-y-1.5">
-                  <div className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="flex items-center gap-1.5 font-medium text-stone-900 dark:text-stone-100">
-                      <Truck className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
-                      <span>
-                        {shopSummary.freeDeliveryUnlocked
-                          ? t('freeDeliveryUnlocked')
-                          : t('addMoreForFreeDelivery', {
-                              amount: formatETB(shopSummary.amountToFreeDelivery),
-                            })}
+              <div key={shopId} className="space-y-3">
+                {/* Shop Product Cards Container */}
+                <section className="bg-[#092825] rounded-2xl border border-[#14443F] shadow-md overflow-hidden">
+                  <div className="px-4 py-3 bg-[#061D1B] border-b border-[#14443F] flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate({ name: 'shop', shopId })}
+                      className="flex items-center gap-2 text-xs font-bold text-[#00D68F] hover:underline min-w-0"
+                    >
+                      <Store className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{shop?.name ?? 'Hawassa Shop'}</span>
+                    </button>
+                    {shop?.neighborhood && (
+                      <span className="text-[11px] text-[#A9C0BD] shrink-0">
+                        {getLocalizedNeighborhood(shop.neighborhood, language)}
                       </span>
-                    </span>
-                    <span className="tabular-nums font-semibold text-[#047857] dark:text-[#10B981] shrink-0">
-                      {progressPct}%
-                    </span>
+                    )}
                   </div>
-                  <div className="h-1.5 rounded-full bg-[#E7E5E4] dark:bg-[#2A3630] overflow-hidden">
-                    <div
-                      className="h-full bg-[#047857] dark:bg-[#10B981] rounded-full transition-all duration-300"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                </div>
 
-                <div className="divide-y divide-[#E7E5E4]/80 dark:divide-[#2A3630]">
-                  {shopItems.map((item) => {
-                    const { product, quantity, variantId, variantLabel } = item;
-                    const itemKey = getCartItemKey(product.productId, variantId);
-                    const unitPrice = getCartItemUnitPrice(item);
-                    const maxStock =
-                      variantId && product.variants
-                        ? product.variants.find((v) => v.id === variantId)?.stock ?? product.stock
-                        : product.stock;
+                  {/* Real Free Delivery Progress Bar (when configured) */}
+                  {freeDeliveryThreshold > 0 && (
+                    <div className="px-4 py-2.5 bg-[#00D68F]/8 border-b border-[#14443F] space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="flex items-center gap-1.5 font-medium text-[#F5FAFA]">
+                          <Truck className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                          <span>
+                            {shopSummary.freeDeliveryUnlocked
+                              ? t('freeDeliveryUnlocked')
+                              : t('addMoreForFreeDelivery', {
+                                  amount: formatETB(shopSummary.amountToFreeDelivery),
+                                })}
+                          </span>
+                        </span>
+                        <span className="tabular-nums font-bold text-[#00D68F] shrink-0">
+                          {progressPct}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-[#031719] overflow-hidden">
+                        <div
+                          className={`h-full bg-gradient-to-r from-[#00D68F] to-[#00C8D7] rounded-full transition-all duration-300 ${progressWidthClass}`}
+                        />
+                      </div>
+                    </div>
+                  )}
 
-                    return (
-                      <div key={itemKey} className="p-3.5 flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => navigate({ name: 'product', productId: product.productId })}
-                          className="w-16 h-16 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] shrink-0 border border-[#E7E5E4] dark:border-[#2A3630]"
+                  <div className="divide-y divide-[#14443F]">
+                    {shopEntries.map((entry) => {
+                      const {
+                        item,
+                        snapshotUnitPrice,
+                        liveUnitPrice,
+                        priceChanged,
+                        availableStock,
+                        isUnavailable,
+                        exceedsStock,
+                      } = entry;
+                      const { product, quantity, variantId, variantLabel } = item;
+                      const itemKey = getCartItemKey(product.productId, variantId);
+                      const lineSubtotal = liveUnitPrice * quantity;
+                      const canDecrement = quantity > 1 && !isUnavailable;
+                      const canIncrement = !isUnavailable && quantity < availableStock;
+
+                      return (
+                        <article
+                          key={itemKey}
+                          className={`p-3.5 space-y-2.5 ${isUnavailable ? 'bg-rose-950/20' : ''}`}
                         >
-                          <ResilientImage
-                            src={product.imageUrl}
-                            alt={product.name}
-                            fallbackTitle={product.name}
-                          />
-                        </button>
-
-                        <div className="flex-1 min-w-0 flex flex-col justify-between">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <h3 className="text-xs font-semibold text-stone-900 dark:text-stone-100 line-clamp-2">
-                                {product.name}
-                              </h3>
-                              {variantLabel && (
-                                <div className="text-[11px] text-[#047857] dark:text-[#10B981] font-medium mt-0.5">
-                                  {variantLabel}
-                                </div>
-                              )}
-                            </div>
+                          <div className="flex gap-3">
                             <button
                               type="button"
-                              onClick={() => removeFromCart(product.productId, variantId)}
-                              aria-label={`Remove ${product.name} from cart`}
-                              className="p-1.5 text-stone-400 dark:text-stone-500 hover:text-rose-600 dark:hover:text-rose-400 shrink-0"
+                              onClick={() =>
+                                navigate({ name: 'product', productId: product.productId })
+                              }
+                              aria-label={product.name}
+                              className="w-20 h-20 rounded-xl overflow-hidden bg-[#031719] shrink-0 border border-[#14443F] hover:border-[#00D68F]/50 transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <ResilientImage
+                                src={product.imageUrl}
+                                alt={product.name}
+                                fallbackTitle={product.name}
+                                darkSurface
+                              />
                             </button>
+
+                            <div className="flex-1 min-w-0 flex flex-col justify-between gap-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      navigate({ name: 'product', productId: product.productId })
+                                    }
+                                    className="text-left text-xs sm:text-sm font-semibold text-[#F5FAFA] hover:text-[#00D68F] transition-colors break-words leading-snug"
+                                  >
+                                    {product.name}
+                                  </button>
+                                  {variantLabel && (
+                                    <div className="text-[11px] text-[#00C8D7] font-medium mt-0.5 break-words">
+                                      {variantLabel}
+                                    </div>
+                                  )}
+                                  <div className="text-[11px] text-[#A9C0BD] mt-1 tabular-nums">
+                                    {t('unitPriceLabel')}:{' '}
+                                    <span className="font-semibold text-[#F5FAFA]">
+                                      {formatETB(liveUnitPrice)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => removeFromCart(product.productId, variantId)}
+                                  aria-label={`${t('removeItemBtn')} ${product.name}`}
+                                  className="min-w-[40px] min-h-[40px] -mt-1 -mr-1 rounded-xl flex items-center justify-center text-[#A9C0BD] hover:text-rose-400 hover:bg-rose-500/10 shrink-0 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2 pt-1">
+                                <div className="text-sm font-display font-bold text-[#00D68F] tabular-nums">
+                                  {formatETB(lineSubtotal)}
+                                </div>
+
+                                <div className="flex items-center gap-1 border border-[#14443F] bg-[#031719] rounded-xl p-0.5">
+                                  <button
+                                    type="button"
+                                    aria-label={`Decrease quantity of ${product.name}`}
+                                    disabled={!canDecrement}
+                                    onClick={() =>
+                                      updateCartQuantity(product.productId, quantity - 1, variantId)
+                                    }
+                                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#092825] text-[#F5FAFA] disabled:opacity-35 disabled:pointer-events-none transition-colors"
+                                  >
+                                    <Minus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <span className="w-7 text-center text-xs font-bold text-[#F5FAFA] tabular-nums">
+                                    {quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    aria-label={`Increase quantity of ${product.name}`}
+                                    disabled={!canIncrement}
+                                    onClick={() =>
+                                      updateCartQuantity(product.productId, quantity + 1, variantId)
+                                    }
+                                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#092825] text-[#F5FAFA] disabled:opacity-35 disabled:pointer-events-none transition-colors"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
-                              {formatETB(unitPrice * quantity)}
-                            </span>
-
-                            <div className="flex items-center gap-1 border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] rounded-lg p-0.5">
-                              <button
-                                type="button"
-                                aria-label={`Decrease quantity of ${product.name}`}
-                                onClick={() =>
-                                  updateCartQuantity(product.productId, quantity - 1, variantId)
-                                }
-                                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-[#1C2420] text-stone-700 dark:text-stone-200"
-                              >
-                                <Minus className="w-3.5 h-3.5" />
-                              </button>
-                              <span className="w-6 text-center text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
-                                {quantity}
+                          {/* Status Alerts for Availability, Stock Limit, or Price Updates */}
+                          {isUnavailable && (
+                            <div className="px-3 py-2 rounded-xl bg-rose-950/60 border border-rose-500/40 flex items-center justify-between gap-2 text-[11px] text-rose-200">
+                              <span className="font-semibold flex items-center gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                <span>{t('itemUnavailableLabel')}</span>
                               </span>
                               <button
                                 type="button"
-                                aria-label={`Increase quantity of ${product.name}`}
-                                onClick={() =>
-                                  updateCartQuantity(product.productId, quantity + 1, variantId)
-                                }
-                                disabled={quantity >= maxStock}
-                                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-[#1C2420] text-stone-700 dark:text-stone-200 disabled:text-stone-300 dark:disabled:text-stone-600"
+                                onClick={() => removeFromCart(product.productId, variantId)}
+                                className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 font-bold shrink-0"
                               >
-                                <Plus className="w-3.5 h-3.5" />
+                                {t('removeItemBtn')}
                               </button>
                             </div>
-                          </div>
+                          )}
 
-                          <div className="mt-1.5 flex justify-start">
+                          {!isUnavailable && exceedsStock && (
+                            <div className="px-3 py-2 rounded-xl bg-amber-950/50 border border-amber-500/40 flex items-center justify-between gap-2 text-[11px] text-amber-200">
+                              <span className="font-medium flex items-center gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                <span>
+                                  {t('stockLimitReached', { stock: availableStock })}
+                                </span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateCartQuantity(product.productId, availableStock, variantId)
+                                }
+                                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-100 font-bold shrink-0 tabular-nums"
+                              >
+                                {availableStock}
+                              </button>
+                            </div>
+                          )}
+
+                          {priceChanged && (
+                            <div className="px-3 py-2 rounded-xl bg-[#00C8D7]/10 border border-[#00C8D7]/35 flex items-center justify-between gap-2 text-[11px] text-[#F5FAFA]">
+                              <span>
+                                {t('priceUpdatedLabel', {
+                                  oldPrice: formatETB(snapshotUnitPrice),
+                                  newPrice: formatETB(liveUnitPrice),
+                                })}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => syncCartWithLiveCatalog(shopId)}
+                                className="px-2.5 py-1 rounded-lg bg-[#00C8D7]/20 hover:bg-[#00C8D7]/30 text-[#00C8D7] font-bold shrink-0"
+                              >
+                                {t('syncLivePriceBtn')}
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-0.5">
                             <button
                               type="button"
                               onClick={() => {
@@ -383,57 +679,81 @@ export const CartScreen: React.FC = () => {
                                 }
                                 removeFromCart(product.productId, variantId);
                               }}
-                              className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 dark:text-stone-400 hover:text-[#047857] dark:hover:text-[#10B981] transition-colors"
+                              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#A9C0BD] hover:text-[#00D68F] transition-colors min-h-[32px]"
                             >
-                              <Bookmark className="w-3 h-3" />
+                              <Bookmark className="w-3.5 h-3.5" />
                               <span>{t('saveForLater')}</span>
                             </button>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
 
-                {/* Shop Subtotal & Checkout Action */}
-                <div className="p-3.5 bg-[#FAF8F5] dark:bg-[#141A17]/60 border-t border-[#E7E5E4] dark:border-[#2A3630] space-y-2">
-                  <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
-                    <span>{t('shopSubtotal')}</span>
-                    <span className="font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
-                      {formatETB(shopSummary.subtotal)}
-                    </span>
+                {/* Separate Order Summary Card */}
+                <section className="bg-[#092825] rounded-2xl border border-[#14443F] shadow-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#14443F]">
+                    <h2 className="text-sm font-display font-bold text-[#F5FAFA]">
+                      {t('orderSummary')}
+                    </h2>
+                    {groupedByShop.length > 1 && (
+                      <span className="text-[11px] font-semibold text-[#00C8D7] truncate">
+                        {shop?.name ?? 'Hawassa Shop'}
+                      </span>
+                    )}
                   </div>
-                  {shopSummary.promoDiscountAmount > 0 && shopSummary.promoCode && (
-                    <div className="flex items-center justify-between text-xs text-[#C2410C] dark:text-[#FB923C] font-semibold">
-                      <span>{t('promoDiscountLabel', { code: shopSummary.promoCode })}</span>
-                      <span className="tabular-nums">-{formatETB(shopSummary.promoDiscountAmount)}</span>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-[#A9C0BD]">
+                      <span>{t('shopSubtotal')}</span>
+                      <span className="font-semibold text-[#F5FAFA] tabular-nums">
+                        {formatETB(shopSummary.subtotal)}
+                      </span>
                     </div>
-                  )}
-                  {shopSummary.loyaltyDiscountAmount > 0 && (
-                    <div className="flex items-center justify-between text-xs text-[#047857] dark:text-[#10B981] font-medium">
-                      <span>{t('loyaltyDiscountLine', { points: shopSummary.loyaltyPointsApplied })}</span>
-                      <span className="tabular-nums">-{formatETB(shopSummary.loyaltyDiscountAmount)}</span>
+
+                    {shopSummary.promoDiscountAmount > 0 && shopSummary.promoCode && (
+                      <div className="flex items-center justify-between text-[#00C8D7] font-semibold">
+                        <span>{t('promoDiscountLabel', { code: shopSummary.promoCode })}</span>
+                        <span className="tabular-nums">
+                          -{formatETB(shopSummary.promoDiscountAmount)}
+                        </span>
+                      </div>
+                    )}
+
+                    {shopSummary.loyaltyDiscountAmount > 0 && (
+                      <div className="flex items-center justify-between text-[#00D68F] font-medium">
+                        <span>
+                          {t('loyaltyDiscountLine', { points: shopSummary.loyaltyPointsApplied })}
+                        </span>
+                        <span className="tabular-nums">
+                          -{formatETB(shopSummary.loyaltyDiscountAmount)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[#A9C0BD]">
+                      <span>{t('deliveryFee')}</span>
+                      <span className="tabular-nums font-medium text-[#F5FAFA]">
+                        {shopSummary.deliveryFee === 0 ? (
+                          <span className="text-[#00D68F] font-bold">{t('free')}</span>
+                        ) : (
+                          formatETB(shopSummary.deliveryFee)
+                        )}
+                      </span>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-300">
-                    <span>{t('deliveryFee')}</span>
-                    <span className="tabular-nums font-medium">
-                      {shopSummary.deliveryFee === 0 ? (
-                        <span className="text-[#047857] dark:text-[#10B981] font-semibold">{t('free')}</span>
-                      ) : (
-                        formatETB(shopSummary.deliveryFee)
-                      )}
-                    </span>
+
+                    <div className="flex items-center justify-between text-sm font-bold text-[#F5FAFA] pt-2.5 border-t border-[#14443F]">
+                      <span>{t('totalPayableLabel')}</span>
+                      <span className="text-base font-display font-extrabold text-[#00D68F] tabular-nums">
+                        {formatETB(shopSummary.totalAmount)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs font-bold text-stone-900 dark:text-stone-100 pt-1.5 border-t border-[#E7E5E4] dark:border-[#2A3630]">
-                    <span>{t('total')}</span>
-                    <span className="tabular-nums text-[#047857] dark:text-[#10B981]">
-                      {formatETB(shopSummary.totalAmount)}
-                    </span>
-                  </div>
+
                   {shopSummary.pointsToEarn > 0 && (
-                    <div className="flex items-center justify-between gap-2 text-[11px] text-[#D97706] dark:text-[#F59E0B] font-semibold pt-0.5">
-                      <span className="flex items-center gap-1">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-[#00C8D7] font-semibold bg-[#00C8D7]/8 border border-[#00C8D7]/20 rounded-xl px-3 py-2">
+                      <span className="flex items-center gap-1.5">
                         <Award className="w-3.5 h-3.5 shrink-0" />
                         <span>{t('loyaltyEarnEstimate', { points: shopSummary.pointsToEarn })}</span>
                       </span>
@@ -441,7 +761,7 @@ export const CartScreen: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => navigate({ name: 'loyalty' })}
-                          className="underline font-semibold shrink-0"
+                          className="underline font-semibold shrink-0 hover:text-[#00D68F]"
                         >
                           {t('loyaltyPointsShort', { points: loyaltyBalance })}
                         </button>
@@ -449,36 +769,112 @@ export const CartScreen: React.FC = () => {
                     </div>
                   )}
 
-                  {shopSummary.hasStockIssues && (
-                    <p className="text-[11px] text-rose-700 dark:text-rose-400 font-medium">
-                      {shopSummary.stockIssues[0]}
+                  {shopHasBlockingIssues && (
+                    <p className="text-[11px] text-rose-300 font-medium">
+                      {shopSummary.stockIssues[0] ?? t('removeUnavailableHint')}
                     </p>
                   )}
+
                   {!shopGov.allowed && (
-                    <p className="text-[11px] text-rose-700 dark:text-rose-400 font-medium">
+                    <p className="text-[11px] text-rose-300 font-medium">
                       {shopGov.customMessage ||
                         t(shopGov.errorKey ?? 'governanceOrderingPaused', {
                           limit: formatETB(governanceConfig.maxOrderAmountEtb),
                         })}
                     </p>
                   )}
+
                   <button
                     type="button"
-                    disabled={shopSummary.hasStockIssues || !shopGov.allowed}
-                    onClick={() => {
-                      localStorage.setItem('hg_checkout_shop_id', shopId);
-                      navigate({ name: 'checkout' });
-                    }}
-                    className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:bg-stone-300 dark:disabled:bg-[#2A3630] dark:disabled:text-stone-500 text-white dark:text-[#0B1410] text-xs font-semibold transition-colors"
+                    disabled={
+                      isProceedingShopId === shopId || shopHasBlockingIssues || !shopGov.allowed
+                    }
+                    onClick={() => handleProceedToCheckout(shopId)}
+                    className="w-full min-h-[48px] px-4 rounded-2xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-45 disabled:pointer-events-none"
                   >
-                    {groupedByShop.length > 1
-                      ? `Checkout ${shop?.name ?? 'Shop'} (${formatETB(shopSummary.totalAmount)})`
-                      : `${t('checkout')} · ${formatETB(shopSummary.totalAmount)}`}
+                    <span>
+                      {groupedByShop.length > 1
+                        ? `${t('proceedToCheckoutArrow')} · ${shop?.name ?? 'Shop'}`
+                        : t('proceedToCheckoutArrow')}
+                    </span>
                   </button>
-                </div>
-              </section>
+                </section>
+              </div>
             );
           })}
+
+          {/* Delivery Promotion Banner */}
+          <section className="rounded-2xl bg-gradient-to-br from-[#092825] to-[#061D1B] border border-[#14443F] p-4 flex items-center justify-between gap-3 shadow-md">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/30 flex items-center justify-center text-[#00D68F] shrink-0">
+                <Truck className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-display font-bold text-[#F5FAFA]">
+                  {t('cartPromoBannerTitle')}
+                </h3>
+                <p className="text-[11px] text-[#A9C0BD] mt-0.5 leading-relaxed">
+                  {freeDeliveryThreshold > 0
+                    ? t('freeDeliveryAbove', { amount: formatETB(freeDeliveryThreshold) })
+                    : t('shopsDeliveryDesc')}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate({ name: 'home' })}
+              className="min-h-[40px] px-3.5 rounded-xl bg-[#031719] border border-[#00D68F]/40 hover:border-[#00D68F] text-[#00D68F] text-xs font-bold shrink-0 transition-colors"
+            >
+              {t('shopMore')}
+            </button>
+          </section>
+        </div>
+      )}
+
+      {/* In-App Clear Cart Confirmation Modal */}
+      {clearConfirmOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clear-cart-modal-title"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-[#092825] border border-[#14443F] p-5 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/35 flex items-center justify-center text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h2
+                  id="clear-cart-modal-title"
+                  className="text-sm font-display font-bold text-[#F5FAFA]"
+                >
+                  {t('clearCartConfirmTitle')}
+                </h2>
+                <p className="text-xs text-[#A9C0BD] mt-1 leading-relaxed">
+                  {t('clearCartConfirmDesc', { count: summary.itemCount })}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setClearConfirmOpen(false)}
+                className="min-h-[44px] px-4 rounded-xl bg-[#031719] border border-[#14443F] hover:border-[#00D68F]/40 text-xs font-semibold text-[#F5FAFA] transition-colors"
+              >
+                {t('keepItemsBtn')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearCart}
+                className="min-h-[44px] px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition-colors"
+              >
+                {t('confirmClearCartBtn')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -492,6 +888,7 @@ export const CheckoutScreen: React.FC = () => {
     goBack,
     navigate,
     cart,
+    products,
     shopsById,
     proximityByShopId,
     addresses,
@@ -527,7 +924,18 @@ export const CheckoutScreen: React.FC = () => {
       ? selectedShopId
       : cart[0]?.shopId || '';
 
-  const shopItems = cart.filter((c) => c.shopId === effectiveShopId);
+  const rawShopItems = cart.filter((c) => c.shopId === effectiveShopId);
+  const shopCheckoutReconciliation = useMemo(
+    () =>
+      reconcileCartWithCatalog(
+        rawShopItems,
+        products,
+        shopsById,
+        governanceConfig.strictShopVerification
+      ),
+    [rawShopItems, products, shopsById, governanceConfig.strictShopVerification]
+  );
+  const shopItems = shopCheckoutReconciliation.reconciledCart;
   const shop = shopsById[effectiveShopId];
   const otherShopIds = groupedShopIds.filter((id) => id !== effectiveShopId);
 
@@ -903,7 +1311,14 @@ export const CheckoutScreen: React.FC = () => {
       </header>
 
       <div className="p-4 space-y-3.5 pb-6 flex-1">
-        {/* Governance or Submit Banner */}
+        {/* Governance, Availability, or Submit Banner */}
+        {shopCheckoutReconciliation.hasBlockingIssues && (
+          <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{t('removeUnavailableHint')}</span>
+          </div>
+        )}
+
         {!checkoutGov.allowed && (
           <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -2261,7 +2676,7 @@ export const CheckoutScreen: React.FC = () => {
 
           <button
             type="button"
-            disabled={submitting || !checkoutGov.allowed}
+            disabled={submitting || !checkoutGov.allowed || shopCheckoutReconciliation.hasBlockingIssues}
             onClick={handleConfirmOrder}
             className="min-h-[48px] px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:opacity-60 text-white dark:text-[#0B1410] text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 shrink-0 transition-colors shadow-sm"
           >

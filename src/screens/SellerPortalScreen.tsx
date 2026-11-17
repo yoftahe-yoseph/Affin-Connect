@@ -1,15 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
+  Archive,
   Camera,
   Check,
   CheckCircle2,
   Clock,
   FileCheck2,
+  Loader2,
   Lock,
   MessageSquare,
   Package,
+  Pencil,
   Plus,
+  RotateCcw,
   ShieldAlert,
   ShieldCheck,
   ShoppingBag,
@@ -25,6 +29,7 @@ import { BRAND_ASSETS } from '../data/seedData';
 import { EmptyState, OrderStatusBadge, ResilientImage } from '../components/SharedUI';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
+  buildShopSlug,
   canShopListProducts,
   formatETB,
   getEffectiveShopVerificationStatus,
@@ -33,6 +38,7 @@ import {
   validateMerchantVerificationInput,
   validateProductImageUrl,
   validateProductInput,
+  validateShopInput,
 } from '../utils/marketplaceLogic';
 import {
   compressImageSourceToDataUrl,
@@ -50,6 +56,7 @@ export const SellerPortalScreen: React.FC<{
   const {
     navigate,
     firebaseUser,
+    activeRoleView,
     shops,
     products,
     categories,
@@ -83,24 +90,50 @@ export const SellerPortalScreen: React.FC<{
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [prodName, setProdName] = useState('');
   const [prodPrice, setProdPrice] = useState('');
+  const [prodPreviousPrice, setProdPreviousPrice] = useState('');
   const [prodStock, setProdStock] = useState('10');
   const [prodCategory, setProdCategory] = useState(categories[0]?.slug ?? 'groceries');
   const [prodDesc, setProdDesc] = useState('');
   const [prodImageUrl, setProdImageUrl] = useState('');
+  const [prodDeliveryAvailable, setProdDeliveryAvailable] = useState(true);
+  const [prodPickupAvailable, setProdPickupAvailable] = useState(true);
   const [prodErrors, setProdErrors] = useState<Record<string, string>>({});
   const [prodSubmitError, setProdSubmitError] = useState<string | null>(null);
+  const [prodSuccessMsg, setProdSuccessMsg] = useState<string | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
 
-  // Shop Application State
+  // Virtual Shop Creation & Editing State
+  const [isCreatingShop, setIsCreatingShop] = useState(false);
   const [newShopName, setNewShopName] = useState('');
+  const [newShopDescription, setNewShopDescription] = useState('');
   const [newShopNeighborhood, setNewShopNeighborhood] = useState<string>(HAWASSA_NEIGHBORHOODS[0]);
   const [newShopAddress, setNewShopAddress] = useState('');
   const [newShopPhone, setNewShopPhone] = useState('');
+  const [newShopLogoUrl, setNewShopLogoUrl] = useState(BRAND_ASSETS.logo);
+  const [newShopDeliveryAvailable, setNewShopDeliveryAvailable] = useState(true);
+  const [newShopPickupAvailable, setNewShopPickupAvailable] = useState(true);
+  const [shopFormErrors, setShopFormErrors] = useState<Record<string, string>>({});
+  const [shopCreateError, setShopCreateError] = useState<string | null>(null);
   const [shopSavedMsg, setShopSavedMsg] = useState<string | null>(null);
+
+  const [isEditingCurrentShop, setIsEditingCurrentShop] = useState(false);
+  const [isUpdatingShop, setIsUpdatingShop] = useState(false);
+  const [editShopName, setEditShopName] = useState('');
+  const [editShopDesc, setEditShopDesc] = useState('');
+  const [editShopNeighborhood, setEditShopNeighborhood] = useState<string>(HAWASSA_NEIGHBORHOODS[0]);
+  const [editShopAddress, setEditShopAddress] = useState('');
+  const [editShopPhone, setEditShopPhone] = useState('');
+  const [editShopLogoUrl, setEditShopLogoUrl] = useState(BRAND_ASSETS.logo);
+  const [editShopDelivery, setEditShopDelivery] = useState(true);
+  const [editShopPickup, setEditShopPickup] = useState(true);
+  const [editShopErrors, setEditShopErrors] = useState<Record<string, string>>({});
+  const [editShopError, setEditShopError] = useState<string | null>(null);
 
   const currentShop = shops.find((s) => s.shopId === activeSellerShopId) ?? shops[0];
   const currentVerification = currentShop ? getShopVerification(currentShop.shopId) : null;
   const docStatus = getEffectiveShopVerificationStatus(currentShop, currentVerification);
-  const isListingUnlocked = canShopListProducts(currentShop, currentVerification);
+  const isListingUnlocked =
+    activeRoleView === 'admin' || canShopListProducts(currentShop, currentVerification);
 
   // Document Verification Form State
   const [businessLegalName, setBusinessLegalName] = useState('');
@@ -177,6 +210,20 @@ export const SellerPortalScreen: React.FC<{
     }
     setShowProductForm(false);
     setProdSubmitError(null);
+    setProdSuccessMsg(null);
+    setIsEditingCurrentShop(false);
+    setEditShopError(null);
+    setEditShopErrors({});
+    if (currentShop) {
+      setEditShopName(currentShop.name);
+      setEditShopDesc(currentShop.description);
+      setEditShopNeighborhood(currentShop.neighborhood);
+      setEditShopAddress(currentShop.address);
+      setEditShopPhone(currentShop.phoneNumber);
+      setEditShopLogoUrl(currentShop.logoUrl || BRAND_ASSETS.logo);
+      setEditShopDelivery(currentShop.deliveryAvailable);
+      setEditShopPickup(currentShop.pickupAvailable);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentShop?.shopId, currentVerification?.verificationId, currentVerification?.updatedAt]);
 
@@ -196,12 +243,16 @@ export const SellerPortalScreen: React.FC<{
     setEditingProductId(null);
     setProdName('');
     setProdPrice('');
+    setProdPreviousPrice('');
     setProdStock('10');
     setProdCategory(categories[0]?.slug ?? 'groceries');
     setProdDesc('');
     setProdImageUrl(currentShop?.logoUrl ?? BRAND_ASSETS.coffee);
+    setProdDeliveryAvailable(currentShop?.deliveryAvailable ?? true);
+    setProdPickupAvailable(currentShop?.pickupAvailable ?? true);
     setProdErrors({});
     setProdSubmitError(null);
+    setProdSuccessMsg(null);
     setShowProductForm(true);
   };
 
@@ -213,12 +264,16 @@ export const SellerPortalScreen: React.FC<{
     setEditingProductId(p.productId);
     setProdName(p.name);
     setProdPrice(String(p.price));
+    setProdPreviousPrice(p.previousPrice ? String(p.previousPrice) : '');
     setProdStock(String(p.stock));
     setProdCategory(p.category);
     setProdDesc(p.description);
     setProdImageUrl(p.imageUrl);
+    setProdDeliveryAvailable(p.deliveryAvailable);
+    setProdPickupAvailable(p.pickupAvailable);
     setProdErrors({});
     setProdSubmitError(null);
+    setProdSuccessMsg(null);
     setShowProductForm(true);
   };
 
@@ -239,8 +294,10 @@ export const SellerPortalScreen: React.FC<{
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentShop) return;
+    if (!currentShop || isSavingProduct) return;
     setProdSubmitError(null);
+    setProdSuccessMsg(null);
+    setProdErrors({});
 
     if (!isListingUnlocked) {
       setProdSubmitError(t('docVerifyGateDesc'));
@@ -256,6 +313,9 @@ export const SellerPortalScreen: React.FC<{
       category: prodCategory,
       description: prodDesc,
     });
+    if (!prodDeliveryAvailable && !prodPickupAvailable) {
+      errs.fulfillment = 'Enable delivery or in-shop pickup for this product.';
+    }
     if (Object.keys(errs).length > 0) {
       setProdErrors(errs);
       return;
@@ -272,6 +332,15 @@ export const SellerPortalScreen: React.FC<{
       return;
     }
 
+    const parsedComparePrice = prodPreviousPrice.trim() ? Number(prodPreviousPrice) : undefined;
+    const roundedPrice = Math.round(parsedPrice);
+    const resolvedPreviousPrice =
+      parsedComparePrice && Number.isFinite(parsedComparePrice) && parsedComparePrice > roundedPrice
+        ? Math.round(parsedComparePrice)
+        : existing && roundedPrice < existing.price
+          ? existing.price
+          : undefined;
+
     const now = new Date().toISOString();
     const product: Product = {
       productId: existing?.productId ?? `prod-${Date.now()}`,
@@ -280,16 +349,13 @@ export const SellerPortalScreen: React.FC<{
       name: prodName.trim(),
       description: prodDesc.trim(),
       category: prodCategory,
-      price: Math.round(parsedPrice),
-      previousPrice:
-        existing && Math.round(parsedPrice) < existing.price
-          ? existing.price
-          : existing?.previousPrice,
+      price: roundedPrice,
+      previousPrice: resolvedPreviousPrice,
       stock: Math.floor(parsedStock),
       isAvailable: Math.floor(parsedStock) > 0,
       imageUrl: finalImageUrl,
-      pickupAvailable: currentShop.pickupAvailable,
-      deliveryAvailable: currentShop.deliveryAvailable,
+      pickupAvailable: prodPickupAvailable,
+      deliveryAvailable: prodDeliveryAvailable,
       status: 'active',
       rating: existing?.rating,
       reviewCount: existing?.reviewCount,
@@ -297,50 +363,186 @@ export const SellerPortalScreen: React.FC<{
       updatedAt: now,
     };
 
+    setIsSavingProduct(true);
     try {
       await saveSellerProduct(product);
       setShowProductForm(false);
+      setProdSuccessMsg(
+        existing
+          ? `Updated "${product.name}" in ${currentShop.name}.`
+          : `Published "${product.name}" to ${currentShop.name}!`
+      );
     } catch (err) {
       setProdSubmitError(
         err instanceof Error ? err.message : 'Unable to save product listing.'
       );
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  const handleToggleProductStatus = async (product: Product) => {
+    if (!isListingUnlocked) return;
+    setProdSubmitError(null);
+    setProdSuccessMsg(null);
+    const nextStatus = product.status === 'active' ? 'archived' : 'active';
+    try {
+      await saveSellerProduct({
+        ...product,
+        status: nextStatus,
+        updatedAt: new Date().toISOString(),
+      });
+      setProdSuccessMsg(
+        nextStatus === 'active'
+          ? `Reactivated "${product.name}".`
+          : `Archived "${product.name}" from buyer search.`
+      );
+    } catch (err) {
+      setProdSubmitError(
+        err instanceof Error ? err.message : 'Unable to update product status.'
+      );
+    }
+  };
+
+  const handleShopLogoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: 'new' | 'edit'
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (target === 'new') setShopCreateError(null);
+    else setEditShopError(null);
+    try {
+      const processed = await processUploadedPhotoFile(file);
+      if (target === 'new') setNewShopLogoUrl(processed);
+      else setEditShopLogoUrl(processed);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t('imageSizeTooLargeError');
+      if (target === 'new') setShopCreateError(msg);
+      else setEditShopError(msg);
     }
   };
 
   const handleApplyNewShop = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newShopName.trim() || !newShopAddress.trim() || !newShopPhone.trim()) return;
+    if (isCreatingShop) return;
+    setShopFormErrors({});
+    setShopCreateError(null);
+    setShopSavedMsg(null);
+
+    const validationErrors = validateShopInput({
+      name: newShopName,
+      description: newShopDescription,
+      phoneNumber: newShopPhone,
+      neighborhood: newShopNeighborhood,
+      address: newShopAddress,
+      deliveryAvailable: newShopDeliveryAvailable,
+      pickupAvailable: newShopPickupAvailable,
+    });
+    if (Object.keys(validationErrors).length > 0) {
+      setShopFormErrors(validationErrors);
+      return;
+    }
+
     const id = `shop-${Date.now()}`;
     const now = new Date().toISOString();
-    await saveSellerShop({
-      shopId: id,
-      ownerUid: firebaseUser?.uid ?? 'seller-applicant',
-      name: newShopName.trim(),
-      slug: newShopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: `Verified local merchant located in ${newShopNeighborhood}, Hawassa.`,
-      logoUrl: BRAND_ASSETS.logo,
-      coverImageUrl: BRAND_ASSETS.banner,
-      phoneNumber: newShopPhone.trim(),
-      city: 'Hawassa',
-      neighborhood: newShopNeighborhood,
-      address: newShopAddress.trim(),
-      deliveryAvailable: true,
-      pickupAvailable: true,
-      status: 'pending',
-      verificationStatus: 'unverified',
-      rating: 5.0,
-      reviewCount: 0,
-      createdAt: now,
-      updatedAt: now,
+    const isAdminCreator = activeRoleView === 'admin';
+    const descriptionText =
+      newShopDescription.trim() ||
+      `Verified local merchant located in ${newShopNeighborhood}, Hawassa.`;
+
+    setIsCreatingShop(true);
+    try {
+      await saveSellerShop({
+        shopId: id,
+        ownerUid: firebaseUser?.uid ?? 'seller-applicant',
+        name: newShopName.trim(),
+        slug: buildShopSlug(newShopName, id),
+        description: descriptionText,
+        logoUrl: validateProductImageUrl(newShopLogoUrl) ? newShopLogoUrl : BRAND_ASSETS.logo,
+        coverImageUrl: BRAND_ASSETS.banner,
+        phoneNumber: newShopPhone.trim(),
+        city: 'Hawassa',
+        neighborhood: newShopNeighborhood,
+        address: newShopAddress.trim(),
+        deliveryAvailable: newShopDeliveryAvailable,
+        pickupAvailable: newShopPickupAvailable,
+        status: isAdminCreator ? 'approved' : 'pending',
+        verificationStatus: isAdminCreator ? 'approved' : 'unverified',
+        rating: 5.0,
+        reviewCount: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      setActiveSellerShopId(id);
+      setNewShopName('');
+      setNewShopDescription('');
+      setNewShopAddress('');
+      setNewShopPhone('');
+      setNewShopLogoUrl(BRAND_ASSETS.logo);
+      setNewShopDeliveryAvailable(true);
+      setNewShopPickupAvailable(true);
+      setShopSavedMsg(
+        isAdminCreator
+          ? `Virtual shop "${newShopName.trim()}" created and approved. You can post products immediately.`
+          : 'Virtual shop created as pending. Upload your business license on the Verification tab to unlock product listings.'
+      );
+      setActiveTab(isAdminCreator ? 'products' : 'verification');
+    } catch (err) {
+      setShopCreateError(
+        err instanceof Error ? err.message : 'Unable to create virtual shop right now.'
+      );
+    } finally {
+      setIsCreatingShop(false);
+    }
+  };
+
+  const handleSaveCurrentShopEdits = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentShop || isUpdatingShop) return;
+    setEditShopErrors({});
+    setEditShopError(null);
+    setShopSavedMsg(null);
+
+    const validationErrors = validateShopInput({
+      name: editShopName,
+      description: editShopDesc,
+      phoneNumber: editShopPhone,
+      neighborhood: editShopNeighborhood,
+      address: editShopAddress,
+      deliveryAvailable: editShopDelivery,
+      pickupAvailable: editShopPickup,
     });
-    setActiveSellerShopId(id);
-    setNewShopName('');
-    setNewShopAddress('');
-    setNewShopPhone('');
-    setShopSavedMsg(
-      'Shop registered as pending. Upload your business license on the Verification tab to unlock product listings.'
-    );
-    setActiveTab('verification');
+    if (Object.keys(validationErrors).length > 0) {
+      setEditShopErrors(validationErrors);
+      return;
+    }
+
+    setIsUpdatingShop(true);
+    try {
+      await saveSellerShop({
+        ...currentShop,
+        name: editShopName.trim(),
+        slug: buildShopSlug(editShopName, currentShop.shopId),
+        description: editShopDesc.trim() || currentShop.description,
+        neighborhood: editShopNeighborhood,
+        address: editShopAddress.trim(),
+        phoneNumber: editShopPhone.trim(),
+        logoUrl: validateProductImageUrl(editShopLogoUrl) ? editShopLogoUrl : currentShop.logoUrl,
+        deliveryAvailable: editShopDelivery,
+        pickupAvailable: editShopPickup,
+        updatedAt: new Date().toISOString(),
+      });
+      setIsEditingCurrentShop(false);
+      setShopSavedMsg(`Saved changes to "${editShopName.trim()}".`);
+    } catch (err) {
+      setEditShopError(
+        err instanceof Error ? err.message : 'Unable to update virtual shop details.'
+      );
+    } finally {
+      setIsUpdatingShop(false);
+    }
   };
 
   const handleOpenCamera = async () => {
@@ -569,48 +771,78 @@ export const SellerPortalScreen: React.FC<{
       <div className="p-4 space-y-4">
         {activeTab === 'dashboard' && currentShop && (
           <>
-            <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">
-                  {currentShop.name}
+            <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                    <ResilientImage
+                      src={currentShop.logoUrl}
+                      alt={currentShop.name}
+                      fallbackTitle={currentShop.name}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">
+                      {currentShop.name}
+                    </div>
+                    <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                      {getLocalizedNeighborhood(currentShop.neighborhood, language)} · Status:{' '}
+                      <span
+                        className={`font-semibold capitalize ${
+                          currentShop.status === 'approved'
+                            ? 'text-[#047857] dark:text-[#10B981]'
+                            : currentShop.status === 'suspended'
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-[#D97706] dark:text-[#F59E0B]'
+                        }`}
+                      >
+                        {currentShop.status}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                  {getLocalizedNeighborhood(currentShop.neighborhood, language)} · Status:{' '}
-                  <span
-                    className={`font-semibold capitalize ${
-                      currentShop.status === 'approved'
-                        ? 'text-[#047857] dark:text-[#10B981]'
-                        : currentShop.status === 'suspended'
-                        ? 'text-rose-700 dark:text-rose-400'
-                        : 'text-[#D97706] dark:text-[#F59E0B]'
-                    }`}
+                {isListingUnlocked ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('products');
+                      openCreateForm();
+                    }}
+                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center gap-1 shadow-sm transition-colors shrink-0"
                   >
-                    {currentShop.status}
-                  </span>
-                </div>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Product</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('verification')}
+                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] dark:bg-[#F59E0B] dark:hover:bg-[#D97706] text-white dark:text-[#141A17] text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors shrink-0"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>{t('docVerifyTab')}</span>
+                  </button>
+                )}
               </div>
-              {isListingUnlocked ? (
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E7E5E4]/70 dark:border-[#2A3630]">
                 <button
                   type="button"
-                  onClick={() => {
-                    setActiveTab('products');
-                    openCreateForm();
-                  }}
-                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center gap-1 shadow-sm transition-colors shrink-0"
+                  onClick={() => setActiveTab('shop')}
+                  className="min-h-[40px] px-3 rounded-xl border border-[#047857]/30 dark:border-[#10B981]/30 bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#D1FAE5] dark:hover:bg-[#10B981]/25 transition-colors"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Product</span>
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  <span>Create Virtual Shop</span>
                 </button>
-              ) : (
                 <button
                   type="button"
-                  onClick={() => setActiveTab('verification')}
-                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[#D97706] hover:bg-[#B45309] dark:bg-[#F59E0B] dark:hover:bg-[#D97706] text-white dark:text-[#141A17] text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors shrink-0"
+                  onClick={() => navigate({ name: 'shop', shopId: currentShop.shopId })}
+                  className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 hover:border-[#047857]/40 transition-colors"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>{t('docVerifyTab')}</span>
+                  <Store className="w-3.5 h-3.5 shrink-0 text-[#047857] dark:text-[#10B981]" />
+                  <span>{t('visitShop')}</span>
                 </button>
-              )}
+              </div>
             </div>
 
             {!isListingUnlocked && (
@@ -918,10 +1150,17 @@ export const SellerPortalScreen: React.FC<{
               </div>
             )}
 
+            {prodSuccessMsg && (
+              <div className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#A7F3D0] dark:border-[#10B981]/30 text-[#047857] dark:text-[#10B981] text-xs font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{prodSuccessMsg}</span>
+              </div>
+            )}
+
             {showProductForm && isListingUnlocked && (
               <form
                 onSubmit={handleSaveProduct}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5"
+                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-stone-900 dark:text-stone-100">
@@ -942,34 +1181,46 @@ export const SellerPortalScreen: React.FC<{
                     value={prodName}
                     onChange={(e) => setProdName(e.target.value)}
                     placeholder="Product Name"
-                    className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                   />
-                  {prodErrors.name && <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.name}</p>}
+                  {prodErrors.name && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.name}</p>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <input
                       type="number"
+                      min={1}
                       value={prodPrice}
                       onChange={(e) => setProdPrice(e.target.value)}
                       placeholder="Price (ETB)"
-                      className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                     />
                     {prodErrors.price && (
-                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.price}</p>
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.price}</p>
                     )}
                   </div>
                   <div>
                     <input
                       type="number"
+                      min={0}
+                      value={prodPreviousPrice}
+                      onChange={(e) => setProdPreviousPrice(e.target.value)}
+                      placeholder="Was ETB (opt)"
+                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      min={0}
                       value={prodStock}
                       onChange={(e) => setProdStock(e.target.value)}
-                      placeholder="Stock Quantity"
-                      className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                      placeholder="Stock Qty"
+                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                     />
                     {prodErrors.stock && (
-                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.stock}</p>
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.stock}</p>
                     )}
                   </div>
                 </div>
@@ -977,7 +1228,7 @@ export const SellerPortalScreen: React.FC<{
                 <select
                   value={prodCategory}
                   onChange={(e) => setProdCategory(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                 >
                   {categories.map((c) => (
                     <option key={c.slug} value={c.slug} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
@@ -1001,11 +1252,36 @@ export const SellerPortalScreen: React.FC<{
                     className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                   />
                   {prodErrors.description && (
-                    <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.description}</p>
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.description}</p>
                   )}
                 </div>
 
-                {/* Product Catalog Photo Upload with < 350 KB Compression */}
+                {/* Fulfillment Availability Toggles */}
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={prodDeliveryAvailable}
+                      onChange={(e) => setProdDeliveryAvailable(e.target.checked)}
+                      className="accent-[#047857] dark:accent-[#10B981]"
+                    />
+                    <span>{t('deliveryAvailable')}</span>
+                  </label>
+                  <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={prodPickupAvailable}
+                      onChange={(e) => setProdPickupAvailable(e.target.checked)}
+                      className="accent-[#047857] dark:accent-[#10B981]"
+                    />
+                    <span>{t('pickupAvailable')}</span>
+                  </label>
+                </div>
+                {prodErrors.fulfillment && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.fulfillment}</p>
+                )}
+
+                {/* Product Catalog Photo Upload or URL */}
                 <div className="space-y-2 pt-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
@@ -1023,6 +1299,13 @@ export const SellerPortalScreen: React.FC<{
                       />
                     </label>
                   </div>
+                  <input
+                    type="text"
+                    value={prodImageUrl.startsWith('data:image/') ? '' : prodImageUrl}
+                    onChange={(e) => setProdImageUrl(e.target.value)}
+                    placeholder="Or paste https:// image URL (optional)"
+                    className="w-full min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  />
                   {prodImageUrl && (
                     <div className="flex items-center gap-3 p-2 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17]">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-[#1C2420] shrink-0">
@@ -1051,9 +1334,11 @@ export const SellerPortalScreen: React.FC<{
 
                 <button
                   type="submit"
-                  className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold shadow-sm transition-colors"
+                  disabled={isSavingProduct}
+                  className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:opacity-60 text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-colors"
                 >
-                  Save Product
+                  {isSavingProduct && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+                  <span>{isSavingProduct ? t('saving') : 'Save Product'}</span>
                 </button>
               </form>
             )}
@@ -1088,14 +1373,30 @@ export const SellerPortalScreen: React.FC<{
                       </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    disabled={!isListingUnlocked}
-                    onClick={() => openEditForm(p)}
-                    className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] disabled:opacity-40 transition-colors"
-                  >
-                    {t('edit')}
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      disabled={!isListingUnlocked}
+                      onClick={() => openEditForm(p)}
+                      className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] disabled:opacity-40 transition-colors"
+                    >
+                      {t('edit')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!isListingUnlocked}
+                      onClick={() => handleToggleProductStatus(p)}
+                      aria-label={p.status === 'active' ? 'Archive product' : 'Restore product'}
+                      title={p.status === 'active' ? 'Archive product' : 'Restore product'}
+                      className="min-w-[36px] min-h-[36px] rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-stone-600 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] disabled:opacity-40 flex items-center justify-center transition-colors"
+                    >
+                      {p.status === 'active' ? (
+                        <Archive className="w-3.5 h-3.5" />
+                      ) : (
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -1446,69 +1747,329 @@ export const SellerPortalScreen: React.FC<{
 
         {activeTab === 'shop' && (
           <div className="space-y-4">
+            {shopSavedMsg && (
+              <div className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#A7F3D0] dark:border-[#10B981]/30 text-[#047857] dark:text-[#10B981] text-xs font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{shopSavedMsg}</span>
+              </div>
+            )}
+
+            {/* Active Virtual Shop Profile & Inline Editor */}
+            {currentShop && (
+              <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                      <ResilientImage
+                        src={currentShop.logoUrl}
+                        alt={currentShop.name}
+                        fallbackTitle={currentShop.name}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
+                        {currentShop.name}
+                      </h2>
+                      <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
+                        {getLocalizedNeighborhood(currentShop.neighborhood, language)} ·{' '}
+                        {currentShop.phoneNumber}
+                      </div>
+                    </div>
+                  </div>
+                  {(activeRoleView === 'admin' ||
+                    (firebaseUser && currentShop.ownerUid === firebaseUser.uid)) && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingCurrentShop((v) => !v)}
+                      className="min-h-[36px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5 shrink-0"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>{isEditingCurrentShop ? t('cancel') : t('edit')}</span>
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingCurrentShop ? (
+                  <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
+                    {currentShop.description}
+                  </p>
+                ) : (
+                  <form onSubmit={handleSaveCurrentShopEdits} className="space-y-2.5 pt-2 border-t border-[#E7E5E4] dark:border-[#2A3630]">
+                    <div>
+                      <input
+                        type="text"
+                        value={editShopName}
+                        onChange={(e) => setEditShopName(e.target.value)}
+                        placeholder="Virtual Shop Name"
+                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                      />
+                      {editShopErrors.name && (
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.name}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <textarea
+                        rows={2}
+                        value={editShopDesc}
+                        onChange={(e) => setEditShopDesc(e.target.value)}
+                        placeholder="Describe what your virtual shop sells..."
+                        className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                      />
+                      {editShopErrors.description && (
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.description}</p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={editShopNeighborhood}
+                        onChange={(e) => setEditShopNeighborhood(e.target.value)}
+                        className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                      >
+                        {HAWASSA_NEIGHBORHOODS.map((n) => (
+                          <option key={n} value={n}>
+                            {getLocalizedNeighborhood(n, language)}
+                          </option>
+                        ))}
+                      </select>
+                      <div>
+                        <input
+                          type="tel"
+                          value={editShopPhone}
+                          onChange={(e) => setEditShopPhone(e.target.value)}
+                          placeholder="+251 9X XXX XXXX"
+                          className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                        />
+                        {editShopErrors.phoneNumber && (
+                          <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.phoneNumber}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <input
+                        type="text"
+                        value={editShopAddress}
+                        onChange={(e) => setEditShopAddress(e.target.value)}
+                        placeholder="Street / Market Stall Location"
+                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                      />
+                      {editShopErrors.address && (
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.address}</p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editShopDelivery}
+                          onChange={(e) => setEditShopDelivery(e.target.checked)}
+                          className="accent-[#047857]"
+                        />
+                        <span>{t('deliveryAvailable')}</span>
+                      </label>
+                      <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editShopPickup}
+                          onChange={(e) => setEditShopPickup(e.target.checked)}
+                          className="accent-[#047857]"
+                        />
+                        <span>{t('pickupAvailable')}</span>
+                      </label>
+                    </div>
+                    {editShopErrors.fulfillment && (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{editShopErrors.fulfillment}</p>
+                    )}
+
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300">
+                        Shop Logo Photo
+                      </span>
+                      <label className="min-h-[36px] px-3 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer">
+                        <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
+                        <span>Upload Logo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleShopLogoUpload(e, 'edit')}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+
+                    {editShopError && (
+                      <p className="text-[11px] font-medium text-rose-700 dark:text-rose-400">
+                        {editShopError}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isUpdatingShop}
+                      className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:opacity-60 text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-colors"
+                    >
+                      {isUpdatingShop && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+                      <span>{isUpdatingShop ? t('saving') : 'Save Virtual Shop Changes'}</span>
+                    </button>
+                  </form>
+                )}
+              </section>
+            )}
+
+            {/* Create a New Virtual Shop Form */}
             <form
               onSubmit={handleApplyNewShop}
               className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
             >
-              <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
-                Apply to Open a New Hawassa Shop
-              </h2>
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                  Create a New Hawassa Virtual Shop
+                </h2>
+              </div>
               <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
-                New merchant applications start in pending status. Upload your trade license on the
-                Verification tab for manual admin approval before listing products.
+                {activeRoleView === 'admin'
+                  ? 'Admin-created virtual shops are approved automatically so you can start posting products right away.'
+                  : 'New merchant applications start in pending status. Upload your trade license on the Verification tab for manual admin approval before listing products.'}
               </p>
 
-              {shopSavedMsg && (
-                <div className="p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#A7F3D0] dark:border-[#10B981]/30 text-[#047857] dark:text-[#10B981] text-xs font-medium flex items-center gap-2">
+              <div>
+                <input
+                  type="text"
+                  value={newShopName}
+                  onChange={(e) => setNewShopName(e.target.value)}
+                  placeholder="Virtual Shop Name (e.g. Sidama Crafts Hub)"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                />
+                {shopFormErrors.name && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <textarea
+                  rows={2}
+                  value={newShopDescription}
+                  onChange={(e) => setNewShopDescription(e.target.value)}
+                  placeholder="What does your shop offer? (optional, min 10 chars if provided)"
+                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                />
+                {shopFormErrors.description && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.description}</p>
+                )}
+              </div>
+
+              <div>
+                <select
+                  value={newShopNeighborhood}
+                  onChange={(e) => setNewShopNeighborhood(e.target.value)}
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                >
+                  {HAWASSA_NEIGHBORHOODS.map((n) => (
+                    <option
+                      key={n}
+                      value={n}
+                      className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                    >
+                      {getLocalizedNeighborhood(n, language)}
+                    </option>
+                  ))}
+                </select>
+                {shopFormErrors.neighborhood && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.neighborhood}</p>
+                )}
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  value={newShopAddress}
+                  onChange={(e) => setNewShopAddress(e.target.value)}
+                  placeholder="Street / Market Stall Location"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                />
+                {shopFormErrors.address && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.address}</p>
+                )}
+              </div>
+
+              <div>
+                <input
+                  type="tel"
+                  value={newShopPhone}
+                  onChange={(e) => setNewShopPhone(e.target.value)}
+                  placeholder="Shop Contact Phone (e.g. 0911234567)"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                />
+                {shopFormErrors.phoneNumber && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.phoneNumber}</p>
+                )}
+              </div>
+
+              {/* Delivery & Pickup Options */}
+              <div className="grid grid-cols-2 gap-2">
+                <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newShopDeliveryAvailable}
+                    onChange={(e) => setNewShopDeliveryAvailable(e.target.checked)}
+                    className="accent-[#047857] dark:accent-[#10B981]"
+                  />
+                  <span>{t('deliveryAvailable')}</span>
+                </label>
+                <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newShopPickupAvailable}
+                    onChange={(e) => setNewShopPickupAvailable(e.target.checked)}
+                    className="accent-[#047857] dark:accent-[#10B981]"
+                  />
+                  <span>{t('pickupAvailable')}</span>
+                </label>
+              </div>
+              {shopFormErrors.fulfillment && (
+                <p className="text-[11px] text-rose-600 dark:text-rose-400">{shopFormErrors.fulfillment}</p>
+              )}
+
+              {/* Virtual Shop Logo Preview & Upload */}
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17]">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                    <ResilientImage src={newShopLogoUrl} alt="Virtual shop logo preview" />
+                  </div>
+                  <div className="text-[11px] font-semibold text-stone-700 dark:text-stone-200 truncate">
+                    Virtual Shop Logo
+                  </div>
+                </div>
+                <label className="min-h-[36px] px-3 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#1C2420] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer shrink-0">
+                  <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
+                  <span>Upload Logo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleShopLogoUpload(e, 'new')}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+
+              {shopCreateError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-[11px] font-medium text-rose-800 dark:text-rose-200 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{shopSavedMsg}</span>
+                  <span>{shopCreateError}</span>
                 </div>
               )}
 
-              <input
-                type="text"
-                required
-                value={newShopName}
-                onChange={(e) => setNewShopName(e.target.value)}
-                placeholder="Shop Business Name"
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
-              />
-              <select
-                value={newShopNeighborhood}
-                onChange={(e) => setNewShopNeighborhood(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
-              >
-                {HAWASSA_NEIGHBORHOODS.map((n) => (
-                  <option
-                    key={n}
-                    value={n}
-                    className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
-                  >
-                    {getLocalizedNeighborhood(n, language)}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                required
-                value={newShopAddress}
-                onChange={(e) => setNewShopAddress(e.target.value)}
-                placeholder="Street / Market Stall Location"
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
-              />
-              <input
-                type="tel"
-                required
-                value={newShopPhone}
-                onChange={(e) => setNewShopPhone(e.target.value)}
-                placeholder="Shop Contact Phone"
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
-              />
               <button
                 type="submit"
-                className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold shadow-sm transition-colors"
+                disabled={isCreatingShop}
+                className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:opacity-60 text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-colors"
               >
-                Submit Seller Application
+                {isCreatingShop && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+                <span>{isCreatingShop ? 'Creating Virtual Shop...' : 'Create Virtual Shop'}</span>
               </button>
             </form>
           </div>
