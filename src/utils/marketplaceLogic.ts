@@ -11,6 +11,7 @@ import type {
   PaymentMethod,
   PriceAlert,
   Product,
+  ProductVariant,
   ResolvedTheme,
   ReturnRequest,
   ReturnRequestReason,
@@ -2360,4 +2361,363 @@ export function filterShopsForSearch(
 
   return sorted;
 }
+
+export interface ProductBadgeFlags {
+  isOrganic: boolean;
+  isVerified: boolean;
+  hasFastDelivery: boolean;
+}
+
+export function buildProductGalleryImages(
+  product: Pick<Product, 'imageUrl' | 'additionalImages'>
+): string[] {
+  const candidates = [product.imageUrl, ...(product.additionalImages ?? [])]
+    .map((url) => (typeof url === 'string' ? url.trim() : ''))
+    .filter((url) => url.length > 0);
+  return Array.from(new Set(candidates));
+}
+
+export function deriveProductBadges(
+  product: Pick<Product, 'name' | 'description' | 'deliveryAvailable'>,
+  shop?: Pick<Shop, 'status' | 'verificationStatus' | 'deliveryAvailable'>
+): ProductBadgeFlags {
+  const text = `${product.name ?? ''} ${product.description ?? ''}`;
+  const isOrganic =
+    /(\borganic\b|\b100%\s*natural\b|ኦርጋኒክ|ተፈጥሯዊ|uumaamaa|kalaqamu)/i.test(text);
+  const isVerified = Boolean(shop && isVerifiedMerchantShop(shop));
+  const hasFastDelivery = Boolean(
+    product.deliveryAvailable && (!shop || shop.deliveryAvailable !== false)
+  );
+  return { isOrganic, isVerified, hasFastDelivery };
+}
+
+export function clampProductQuantity(requested: number, availableStock: number): number {
+  const safeReq = Number.isFinite(requested) ? Math.floor(requested) : 1;
+  const safeStock = Number.isFinite(availableStock) ? Math.floor(availableStock) : 0;
+  if (safeStock <= 0) return 1;
+  return Math.max(1, Math.min(safeReq, safeStock));
+}
+
+export function validateAddToCartRequest(params: {
+  product: Pick<Product, 'isAvailable' | 'status' | 'stock'>;
+  shop?: Pick<Shop, 'status'>;
+  variant?: Pick<ProductVariant, 'stock'>;
+  quantity: number;
+  existingCartQty: number;
+  strictShopVerification?: boolean;
+}): {
+  allowed: boolean;
+  maxAllowedToAdd: number;
+  availableStock: number;
+  errorKey?: string;
+} {
+  const {
+    product,
+    shop,
+    variant,
+    quantity,
+    existingCartQty,
+    strictShopVerification = false,
+  } = params;
+  const availableStock = Math.max(0, Math.floor(variant?.stock ?? product.stock ?? 0));
+
+  const shopUnavailable =
+    !shop ||
+    shop.status === 'suspended' ||
+    (strictShopVerification && shop.status !== 'approved');
+
+  if (!product.isAvailable || product.status !== 'active' || shopUnavailable) {
+    return {
+      allowed: false,
+      maxAllowedToAdd: 0,
+      availableStock,
+      errorKey: 'productUnavailableError',
+    };
+  }
+
+  if (availableStock <= 0) {
+    return {
+      allowed: false,
+      maxAllowedToAdd: 0,
+      availableStock: 0,
+      errorKey: 'outOfStock',
+    };
+  }
+
+  const cleanQty = Number.isFinite(quantity) ? Math.floor(quantity) : 0;
+  if (cleanQty < 1) {
+    return {
+      allowed: false,
+      maxAllowedToAdd: Math.max(0, availableStock - Math.max(0, existingCartQty)),
+      availableStock,
+      errorKey: 'stockLimitReached',
+    };
+  }
+
+  const currentInCart = Math.max(0, Math.floor(existingCartQty));
+  const remaining = Math.max(0, availableStock - currentInCart);
+  if (remaining <= 0) {
+    return {
+      allowed: false,
+      maxAllowedToAdd: 0,
+      availableStock,
+      errorKey: 'maxCartStockReached',
+    };
+  }
+
+  if (cleanQty > remaining) {
+    return {
+      allowed: false,
+      maxAllowedToAdd: remaining,
+      availableStock,
+      errorKey: 'stockLimitReached',
+    };
+  }
+
+  return {
+    allowed: true,
+    maxAllowedToAdd: remaining,
+    availableStock,
+  };
+}
+
+export function resolveInitialOrderPaymentStatus(params: {
+  paymentMethod: PaymentMethod;
+  serverVerifiedPaid?: boolean;
+}): 'pending' | 'paid' {
+  if (isElectronicPaymentMethod(params.paymentMethod) && params.serverVerifiedPaid === true) {
+    return 'paid';
+  }
+  return 'pending';
+}
+
+export function canNavigateToCheckoutStep(params: {
+  targetStep: 1 | 2 | 3;
+  isStep1Valid: boolean;
+  step2Confirmed: boolean;
+}): boolean {
+  if (params.targetStep === 1) return true;
+  if (params.targetStep === 2) return params.isStep1Valid;
+  return params.isStep1Valid && params.step2Confirmed;
+}
+
+export function formatReceiptNumber(order: Pick<Order, 'orderId' | 'createdAt'>): string {
+  const date = new Date(order.createdAt);
+  const validDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const stamp = [
+    validDate.getUTCFullYear(),
+    pad2(validDate.getUTCMonth() + 1),
+    pad2(validDate.getUTCDate()),
+    pad2(validDate.getUTCHours()),
+    pad2(validDate.getUTCMinutes()),
+  ].join('');
+  const tail = (order.orderId || 'ORD000')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .slice(-4)
+    .toUpperCase()
+    .padStart(4, '0');
+  return `AC${stamp}${tail}`;
+}
+
+export function formatOrderReference(orderId: string): string {
+  const clean = (orderId || '').replace(/[^a-zA-Z0-9]/g, '');
+  const tail = clean.slice(-8).toUpperCase() || 'ORDER';
+  return `#${tail}`;
+}
+
+export function formatPaymentMethodDisplay(method: PaymentMethod): string {
+  switch (method) {
+    case 'telebirr':
+    case 'telebirr_sandbox':
+      return 'Telebirr';
+    case 'cbe_birr':
+    case 'cbe_birr_sandbox':
+      return 'CBE';
+    case 'chapa':
+      return 'Chapa';
+    case 'pay_at_pickup':
+      return 'Pay at Pickup';
+    case 'cash_on_delivery':
+    default:
+      return 'Cash on Delivery';
+  }
+}
+
+export interface FinancialReceiptLineItem {
+  name: string;
+  variantLabel?: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface FinancialReceiptData {
+  receiptNumber: string;
+  orderRef: string;
+  orderId: string;
+  issuedAtIso: string;
+  issuedAtDisplay: string;
+  paymentStatus: 'pending' | 'paid' | 'refunded';
+  bannerTone: 'paid' | 'pending' | 'refunded';
+  merchantName: string;
+  merchantLocation: string;
+  customerName: string;
+  fulfillmentMethod: 'delivery' | 'pickup';
+  items: FinancialReceiptLineItem[];
+  subtotal: number;
+  promoCode?: string;
+  promoDiscountAmount: number;
+  pointsRedeemed: number;
+  loyaltyDiscountAmount: number;
+  totalDiscountAmount: number;
+  deliveryFee: number;
+  totalAmount: number;
+  paymentMethod: PaymentMethod;
+  paymentMethodLabel: string;
+  paymentReference?: string;
+}
+
+export function buildFinancialReceiptData(
+  order: Order,
+  shop?: Pick<Shop, 'name' | 'neighborhood' | 'address' | 'city'>
+): FinancialReceiptData {
+  const dateObj = new Date(order.createdAt);
+  const issuedAtDisplay = Number.isNaN(dateObj.getTime())
+    ? order.createdAt
+    : dateObj.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+  const promoDiscountAmount =
+    order.promoDiscountAmount ??
+    (!order.pointsDiscountAmount ? order.discountAmount ?? 0 : 0);
+  const loyaltyDiscountAmount = order.pointsDiscountAmount ?? 0;
+  const totalDiscountAmount =
+    order.discountAmount ?? promoDiscountAmount + loyaltyDiscountAmount;
+
+  const merchantLocationParts = [
+    shop?.neighborhood || order.neighborhood || 'Hawassa',
+    shop?.city || 'Sidama',
+  ].filter(Boolean);
+
+  return {
+    receiptNumber: formatReceiptNumber(order),
+    orderRef: formatOrderReference(order.orderId),
+    orderId: order.orderId,
+    issuedAtIso: order.createdAt,
+    issuedAtDisplay,
+    paymentStatus: order.paymentStatus,
+    bannerTone: order.paymentStatus,
+    merchantName: shop?.name || order.shopName,
+    merchantLocation: merchantLocationParts.join(', '),
+    customerName: order.customerName,
+    fulfillmentMethod: order.fulfillmentMethod,
+    items: order.items.map((item) => ({
+      name: item.name,
+      ...(item.variantLabel ? { variantLabel: item.variantLabel } : {}),
+      ...(item.imageUrl ? { imageUrl: item.imageUrl } : {}),
+      quantity: item.quantity,
+      unitPrice: item.price,
+      lineTotal: item.price * item.quantity,
+    })),
+    subtotal: order.subtotal,
+    ...(order.promoCode ? { promoCode: order.promoCode } : {}),
+    promoDiscountAmount,
+    pointsRedeemed: order.pointsRedeemed ?? 0,
+    loyaltyDiscountAmount,
+    totalDiscountAmount,
+    deliveryFee: order.deliveryFee,
+    totalAmount: order.totalAmount,
+    paymentMethod: order.paymentMethod,
+    paymentMethodLabel: formatPaymentMethodDisplay(order.paymentMethod),
+    ...(order.paymentReference ? { paymentReference: order.paymentReference } : {}),
+  };
+}
+
+export function getTailwindWidthClass(pct: number): string {
+  const clamped = Math.max(0, Math.min(100, pct));
+  if (clamped >= 100) return 'w-full';
+  if (clamped >= 90) return 'w-[90%]';
+  if (clamped >= 80) return 'w-[80%]';
+  if (clamped >= 75) return 'w-3/4';
+  if (clamped >= 66) return 'w-2/3';
+  if (clamped >= 60) return 'w-[60%]';
+  if (clamped >= 50) return 'w-1/2';
+  if (clamped >= 40) return 'w-[40%]';
+  if (clamped >= 33) return 'w-1/3';
+  if (clamped >= 25) return 'w-1/4';
+  if (clamped >= 20) return 'w-[20%]';
+  if (clamped >= 12) return 'w-[12%]';
+  if (clamped > 0) return 'w-[8%]';
+  return 'w-0';
+}
+
+export function resolveSellerManagedShops(
+  shops: Shop[],
+  userUid: string | null | undefined,
+  isAdminMode: boolean
+): Shop[] {
+  if (isAdminMode || !userUid) {
+    return shops;
+  }
+  return shops.filter((shop) => shop.ownerUid === userUid);
+}
+
+export function resolveActiveSellerShopId(params: {
+  shops: Shop[];
+  currentShopId: string;
+  userUid: string | null | undefined;
+  isAdminMode: boolean;
+  preferredShopId?: string;
+}): string {
+  const managed = resolveSellerManagedShops(
+    params.shops,
+    params.userUid,
+    params.isAdminMode
+  );
+  if (managed.length === 0) {
+    return params.isAdminMode ? params.shops[0]?.shopId ?? '' : '';
+  }
+  if (managed.some((s) => s.shopId === params.currentShopId)) {
+    return params.currentShopId;
+  }
+  if (
+    params.preferredShopId &&
+    managed.some((s) => s.shopId === params.preferredShopId)
+  ) {
+    return params.preferredShopId;
+  }
+  return managed[0].shopId;
+}
+
+export function formatFriendlyErrorMessage(err: unknown, fallback: string): string {
+  const raw = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+  if (!raw.trim()) return fallback;
+  if (raw.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(raw) as { error?: string; path?: string };
+      if (parsed.error) {
+        if (
+          parsed.error.toLowerCase().includes('missing or insufficient permissions') ||
+          parsed.error.toLowerCase().includes('permission-denied')
+        ) {
+          return 'Permission denied by Firestore security rules. Make sure your account owns this shop and your business verification is approved.';
+        }
+        return parsed.error;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return raw;
+}
+
+
+
 

@@ -17,9 +17,9 @@ export const LoginFooter: React.FC = () => {
           <defs>
             <linearGradient id="ac-skyline-stroke" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#00C8D7" stopOpacity="0.1" />
-              <stop offset="30%" stopColor="#00D68F" stopOpacity="0.8" />
-              <stop offset="70%" stopColor="#00C8D7" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#00D68F" stopOpacity="0.1" />
+              <stop offset="30%" stopColor="#00C8D7" stopOpacity="0.8" />
+              <stop offset="70%" stopColor="#00D68F" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#00C8D7" stopOpacity="0.1" />
             </linearGradient>
           </defs>
           {/* Distant Mount Tabor ridge & Hawassa skyline silhouettes */}
@@ -35,8 +35,8 @@ export const LoginFooter: React.FC = () => {
           <path
             d="M120 69 H1080"
             fill="none"
-            stroke="#00D68F"
-            strokeOpacity="0.35"
+            stroke="#00C8D7"
+            strokeOpacity="0.3"
             strokeWidth="1"
           />
         </svg>

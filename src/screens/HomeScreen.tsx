@@ -180,10 +180,11 @@ export const HomeScreen: React.FC = () => {
       <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
         <div className="flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#00D68F]/35 shrink-0 shadow-md shadow-[#00D68F]/10">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#14443F] shrink-0 shadow-sm">
               <img
                 src={BRAND_ASSETS.logo}
                 alt="Affin Connect"
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -218,7 +219,7 @@ export const HomeScreen: React.FC = () => {
               aria-label={t('openProfileAria')}
               className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#092825] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
                 {firebaseUser?.photoURL ? (
                   <img
                     src={firebaseUser.photoURL}
@@ -249,7 +250,7 @@ export const HomeScreen: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('homeSearchPlaceholder')}
             aria-label={t('homeSearchPlaceholder')}
-            className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD] focus:outline-none"
+            className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/70 focus:outline-none"
           />
           {searchQuery ? (
             <button
@@ -264,7 +265,7 @@ export const HomeScreen: React.FC = () => {
           <button
             type="submit"
             aria-label={t('navSearch')}
-            className="mr-1.5 min-w-[36px] min-h-[36px] rounded-xl bg-[#0D3531] hover:bg-[#00D68F] text-[#00D68F] hover:text-[#031719] flex items-center justify-center transition-colors shrink-0"
+            className="mr-1.5 min-w-[36px] min-h-[36px] rounded-xl bg-[#00D68F]/15 hover:bg-[#00D68F] text-[#00D68F] hover:text-[#031719] flex items-center justify-center transition-colors shrink-0"
           >
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -273,31 +274,32 @@ export const HomeScreen: React.FC = () => {
 
       <div className="px-4 pt-4 space-y-6">
         {governanceConfig.orderingPaused && (
-          <div className="p-3 rounded-2xl bg-[#2A1D12] border border-amber-400/30 text-xs text-amber-200 font-medium">
+          <div className="p-3 rounded-2xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-xs text-[#FDE68A] font-medium">
             {governanceConfig.maintenanceBanner?.trim() || t('governanceOrderingPaused')}
           </div>
         )}
 
         {/* C. Hero Banner */}
-        <section className="relative rounded-2xl overflow-hidden border border-[#14443F] bg-gradient-to-br from-[#083833] via-[#092825] to-[#031719] shadow-xl shadow-black/35">
+        <section className="relative rounded-2xl overflow-hidden border border-[#14443F] bg-gradient-to-br from-[#062825] via-[#051F22] to-[#031719] shadow-lg shadow-black/30">
           {!heroBannerFailed ? (
             <img
               src={BRAND_ASSETS.banner}
               alt="Lake Hawassa local market"
+              referrerPolicy="no-referrer"
               onError={() => setHeroBannerFailed(true)}
-              className="absolute inset-0 w-full h-full object-cover object-[center_40%] opacity-55"
+              className="absolute inset-0 w-full h-full object-cover object-[center_40%] opacity-40 mix-blend-luminosity"
             />
           ) : (
             <svg
               aria-hidden="true"
               viewBox="0 0 400 220"
-              className="absolute inset-0 w-full h-full opacity-35"
+              className="absolute inset-0 w-full h-full opacity-45"
               preserveAspectRatio="none"
             >
               <path
                 d="M0 150 Q 95 110, 200 145 T 400 130 L 400 220 L 0 220 Z"
                 fill="#00D68F"
-                fillOpacity="0.18"
+                fillOpacity="0.16"
               />
               <path
                 d="M0 175 Q 110 140, 220 172 T 400 165 L 400 220 L 0 220 Z"
@@ -306,21 +308,21 @@ export const HomeScreen: React.FC = () => {
               />
             </svg>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#031719] via-[#031719]/75 to-[#031719]/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#031719] via-[#031719]/75 to-[#062E2B]/40" />
 
           <div className="relative p-4 pt-5 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 border border-[#00D68F]/35 text-[11px] font-semibold text-[#00D68F] backdrop-blur-xs">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 backdrop-blur-xs border border-[#00D68F]/35 text-[11px] font-semibold text-[#00D68F]">
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
                 <span>{t('homeLocationBadge')}</span>
               </span>
 
-              <div className="relative inline-flex items-center rounded-xl bg-[#031719]/75 border border-white/15 px-2.5 py-1 backdrop-blur-xs max-w-[175px]">
+              <div className="relative inline-flex items-center rounded-xl bg-[#031719]/80 backdrop-blur-xs border border-[#14443F] px-2.5 py-1 max-w-[175px]">
                 <select
                   aria-label={t('selectNeighborhood')}
                   value={selectedNeighborhood}
                   onChange={(e) => setSelectedNeighborhood(e.target.value)}
-                  className="appearance-none bg-transparent text-[11px] font-medium text-[#F5FAFA] pr-4 truncate focus:outline-none cursor-pointer"
+                  className="appearance-none bg-transparent text-[11px] font-semibold text-[#F5FAFA] pr-4 truncate focus:outline-none cursor-pointer"
                 >
                   <option value="All Hawassa" className="bg-[#092825] text-[#F5FAFA]">
                     {t('allHawassaAreas')}
@@ -348,7 +350,7 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate({ name: 'search' })}
-                className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-2 shadow-lg shadow-[#00D68F]/25 active:scale-[0.98] transition-all"
+                className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-2 shadow-lg shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
               >
                 <span>{t('homeStartShopping')}</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
@@ -377,7 +379,7 @@ export const HomeScreen: React.FC = () => {
               {Array.from({ length: 5 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-[84px] h-[88px] rounded-2xl bg-[#092825] border border-[#123E39] animate-pulse shrink-0"
+                  className="w-[84px] h-[88px] rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse shrink-0"
                 />
               ))}
             </div>
@@ -390,9 +392,9 @@ export const HomeScreen: React.FC = () => {
                     key={cat.slug}
                     type="button"
                     onClick={() => navigate({ name: 'search', initialCategory: cat.slug })}
-                    className="shrink-0 w-[86px] min-h-[44px] rounded-2xl bg-[#092825] border border-[#123E39] hover:border-[#00D68F]/50 px-2 py-2.5 flex flex-col items-center justify-center gap-2 group transition-all active:scale-95"
+                    className="shrink-0 w-[86px] min-h-[44px] rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/60 px-2 py-2.5 flex flex-col items-center justify-center gap-2 group transition-all active:scale-95"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#051C1A] border border-[#00D68F]/20 flex items-center justify-center text-[#00D68F] group-hover:bg-[#00D68F]/15 group-hover:border-[#00D68F]/45 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F] group-hover:bg-[#00D68F]/15 transition-colors">
                       <CategoryIcon iconName={iconKey} className="w-5 h-5" />
                     </div>
                     <span className="text-[11px] font-medium text-[#F5FAFA] text-center line-clamp-2 leading-tight">
@@ -425,12 +427,12 @@ export const HomeScreen: React.FC = () => {
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-56 h-52 rounded-2xl bg-[#092825] border border-[#123E39] animate-pulse shrink-0"
+                  className="w-56 h-52 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse shrink-0"
                 />
               ))}
             </div>
           ) : approvedShops.length === 0 ? (
-            <div className="rounded-2xl bg-[#092825] border border-[#123E39] p-5 text-center">
+            <div className="rounded-2xl bg-[#092825] border border-[#14443F] p-5 text-center">
               <Store className="w-6 h-6 text-[#00D68F] mx-auto mb-2" />
               <p className="text-xs text-[#A9C0BD]">{t('noFollowedShopsDesc')}</p>
             </div>
@@ -468,8 +470,8 @@ export const HomeScreen: React.FC = () => {
                 disabled={detectingLocation}
                 className={`min-h-[34px] px-2.5 rounded-xl border text-[11px] font-semibold flex items-center gap-1 transition-colors ${
                   productSort === 'nearest'
-                    ? 'bg-[#00D68F]/15 border-[#00D68F]/45 text-[#00D68F]'
-                    : 'bg-[#092825] border-[#123E39] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/35'
+                    ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
+                    : 'bg-[#092825] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/50'
                 }`}
               >
                 {detectingLocation ? (
@@ -491,7 +493,7 @@ export const HomeScreen: React.FC = () => {
           </div>
 
           {selectedNeighborhood !== 'All Hawassa' && (
-            <div className="mb-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#092825] border border-[#123E39] text-[11px]">
+            <div className="mb-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#092825] border border-[#14443F] text-[11px]">
               <span className="text-[#A9C0BD] truncate">
                 {activeProducts.length === 0
                   ? t('noNeighborhoodListings', {
@@ -516,12 +518,12 @@ export const HomeScreen: React.FC = () => {
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-60 rounded-2xl bg-[#092825] border border-[#123E39] animate-pulse"
+                  className="h-60 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
           ) : displayProducts.length === 0 ? (
-            <div className="rounded-2xl bg-[#092825] border border-[#123E39]">
+            <div className="rounded-2xl bg-[#092825] border border-[#14443F]">
               <EmptyState
                 title={t('noMatchingProducts')}
                 description={t('noMatchingDesc')}
@@ -543,7 +545,7 @@ export const HomeScreen: React.FC = () => {
         </section>
 
         {/* G. Compact Local Business Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-[#092825] via-[#0B3530] to-[#072320] border border-[#00D68F]/30 p-4 shadow-lg shadow-black/25 flex items-center justify-between gap-3">
+        <section className="rounded-2xl bg-gradient-to-r from-[#092825] via-[#061D1B] to-[#092825] border border-[#14443F] p-4 shadow-md shadow-black/25 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00D68F]">
               <Sparkles className="w-3.5 h-3.5 shrink-0" />
@@ -559,7 +561,7 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate({ name: 'profile', section: 'help' })}
-                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-sm shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
+                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
               >
                 <span>{t('learnMore')}</span>
                 <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -567,13 +569,13 @@ export const HomeScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-20 h-24 rounded-2xl overflow-hidden bg-[#061D1B] border border-[#00D68F]/25 shrink-0 shadow-md relative">
+          <div className="w-20 h-24 rounded-2xl overflow-hidden bg-[#031719] border border-[#14443F] shrink-0 relative">
             <img
               src={BRAND_ASSETS.coffee}
               alt="Support Hawassa Local Merchants"
+              referrerPolicy="no-referrer"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#031719]/60 via-transparent to-transparent" />
           </div>
         </section>
       </div>

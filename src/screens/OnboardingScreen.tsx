@@ -15,14 +15,14 @@ import { HAWASSA_NEIGHBORHOODS } from '../utils/marketplaceLogic';
 
 const AtmosphericBackdrop: React.FC = () => (
   <div aria-hidden="true" className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    {/* Deep Midnight Teal Base */}
-    <div className="absolute inset-0 bg-[#031719]" />
-    {/* Ambient Top-Left Emerald Glow */}
-    <div className="hidden sm:block absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-[#00D68F]/10 blur-[120px]" />
-    {/* Ambient Right Turquoise Glow */}
-    <div className="hidden sm:block absolute top-1/4 -right-32 w-[480px] h-[480px] rounded-full bg-[#00C8D7]/10 blur-[130px]" />
-    {/* Subtle Bottom Center Atmospheric Fill */}
-    <div className="hidden md:block absolute -bottom-48 left-1/3 w-[560px] h-[360px] rounded-full bg-[#00D68F]/6 blur-[140px]" />
+    {/* Deep Obsidian Night Base */}
+    <div className="absolute inset-0 bg-gradient-to-br from-[#021113] via-[#031B1E] to-[#05292E]" />
+    {/* Soft Cyan-Teal Lake Hawassa Glow */}
+    <div className="hidden sm:block absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-[#00C8D7]/12 blur-[120px]" />
+    {/* Soft Emerald Accent Glow */}
+    <div className="hidden sm:block absolute top-1/4 -right-32 w-[480px] h-[480px] rounded-full bg-[#00D68F]/10 blur-[130px]" />
+    {/* Bottom Horizon Glow */}
+    <div className="hidden md:block absolute -bottom-48 left-1/3 w-[640px] h-[360px] rounded-full bg-[#008899]/10 blur-[140px]" />
   </div>
 );
 
@@ -47,7 +47,7 @@ export const OnboardingScreen: React.FC = () => {
 
         <main className="relative z-10 flex-1 flex items-center justify-center w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
           <div className="w-full rounded-3xl bg-[#062326]/78 backdrop-blur-xl border border-[#00C8D7]/22 shadow-2xl shadow-black/50 p-5 sm:p-7 space-y-6">
-            <div className="p-4 rounded-2xl bg-[#00D68F]/12 border border-[#00D68F]/30 space-y-2">
+            <div className="p-4 rounded-2xl bg-[#00D68F]/10 border border-[#00D68F]/25 space-y-2">
               <div className="flex items-center gap-2.5 text-sm sm:text-base font-bold text-[#00D68F]">
                 <CheckCircle2 className="w-5 h-5 shrink-0" />
                 <span>
@@ -93,8 +93,8 @@ export const OnboardingScreen: React.FC = () => {
                     onClick={() => setSelectedNeighborhood('All Hawassa')}
                     className={`col-span-2 min-h-[44px] p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
                       selectedNeighborhood === 'All Hawassa'
-                        ? 'border-[#00D68F] bg-[#00D68F]/15 text-[#00D68F] shadow-sm'
-                        : 'border-[#123E42] bg-[#021113]/75 text-[#E5F5F5] hover:border-[#00C8D7]/50'
+                        ? 'border-[#00D68F] bg-[#00D68F]/15 text-[#F5FAFA] shadow-sm shadow-[#00D68F]/10'
+                        : 'border-[#123E42] bg-[#021113]/75 text-[#B4CFD1] hover:border-[#00C8D7]/45 hover:text-[#F5FAFA]'
                     }`}
                   >
                     <span>{t('allHawassaAreas')}</span>
@@ -109,8 +109,8 @@ export const OnboardingScreen: React.FC = () => {
                       onClick={() => setSelectedNeighborhood(n)}
                       className={`min-h-[44px] p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
                         selectedNeighborhood === n
-                          ? 'border-[#00D68F] bg-[#00D68F]/15 text-[#00D68F] shadow-sm'
-                          : 'border-[#123E42] bg-[#021113]/75 text-[#E5F5F5] hover:border-[#00C8D7]/50'
+                          ? 'border-[#00D68F] bg-[#00D68F]/15 text-[#F5FAFA] shadow-sm shadow-[#00D68F]/10'
+                          : 'border-[#123E42] bg-[#021113]/75 text-[#B4CFD1] hover:border-[#00C8D7]/45 hover:text-[#F5FAFA]'
                       }`}
                     >
                       <span className="truncate">{getLocalizedNeighborhood(n, language)}</span>
@@ -158,7 +158,7 @@ export const OnboardingScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={continueAsGuest}
-                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-[#072427]/80 border border-[#00C8D7]/30 hover:border-[#00D68F] text-[#CBE3E4] hover:text-[#F5FAFA] text-xs font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#00C8D7]"
+                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-[#072427]/80 border border-[#00C8D7]/25 hover:border-[#00D68F]/55 hover:bg-[#0B3034] text-[#D7ECEC] hover:text-white text-xs font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#00D68F]"
                 >
                   <span>{t('browseAsGuest')}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#00D68F]" />
@@ -167,11 +167,11 @@ export const OnboardingScreen: React.FC = () => {
             )}
           </div>
 
-          {/* Prominent Glassmorphic Authentication Card */}
+          {/* Prominent Authentication Card */}
           <div className="lg:col-span-6 xl:col-span-5 w-full max-w-[460px] mx-auto lg:ml-auto lg:mr-0 space-y-4">
             <section
               aria-label="Account authentication"
-              className="w-full rounded-3xl bg-[#062326]/78 backdrop-blur-xl border border-[#00C8D7]/22 shadow-2xl shadow-black/55 p-4 sm:p-6"
+              className="w-full rounded-3xl bg-[#062326]/78 backdrop-blur-xl border border-[#00C8D7]/22 shadow-2xl shadow-black/50 p-4 sm:p-6"
             >
               <AuthSignInPanel
                 variant="glass"
@@ -186,7 +186,7 @@ export const OnboardingScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={continueAsGuest}
-                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-[#072427]/80 border border-[#00C8D7]/25 hover:border-[#00D68F] text-[#CBE3E4] hover:text-[#F5FAFA] text-xs font-semibold transition-all duration-200 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-[#072427]/80 border border-[#00C8D7]/25 hover:border-[#00D68F]/55 text-[#D7ECEC] hover:text-white text-xs font-semibold transition-all duration-200 cursor-pointer"
                 >
                   <span>{t('browseAsGuest')}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#00D68F]" />

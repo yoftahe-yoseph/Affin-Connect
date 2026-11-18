@@ -55,6 +55,8 @@ export function compressImageSourceToDataUrl(
     if (!ctx) {
       throw new Error('Canvas 2D context unavailable');
     }
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, width, height);
     ctx.drawImage(drawSource, 0, 0, width, height);
 
     for (const quality of qualitySteps) {

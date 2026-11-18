@@ -459,6 +459,25 @@ export async function updateOrderStatusInFirestore(
   }
 }
 
+export async function updateOrderPaymentInFirestore(
+  orderId: string,
+  paymentStatus: PaymentStatus,
+  paymentReference?: string
+): Promise<void> {
+  try {
+    const payload: Record<string, unknown> = {
+      paymentStatus,
+      updatedAt: new Date().toISOString(),
+    };
+    if (paymentReference) {
+      payload.paymentReference = paymentReference;
+    }
+    await updateDoc(doc(db, 'orders', orderId), payload);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
+  }
+}
+
 export async function saveAddressInFirestore(address: CustomerAddress): Promise<void> {
   try {
     await setDoc(doc(db, 'addresses', address.addressId), address);
@@ -475,9 +494,20 @@ export async function deleteAddressInFirestore(addressId: string): Promise<void>
   }
 }
 
+function stripUndefinedProps<T extends object>(record: T): T {
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record as Record<string, unknown>)) {
+    if (value !== undefined) {
+      clean[key] = value;
+    }
+  }
+  return clean as T;
+}
+
 export async function saveProductInFirestore(product: Product): Promise<void> {
   try {
-    await setDoc(doc(db, 'products', product.productId), product);
+    const cleanProduct = stripUndefinedProps(product);
+    await setDoc(doc(db, 'products', cleanProduct.productId), cleanProduct);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `products/${product.productId}`);
   }
@@ -485,7 +515,8 @@ export async function saveProductInFirestore(product: Product): Promise<void> {
 
 export async function saveShopInFirestore(shop: Shop): Promise<void> {
   try {
-    await setDoc(doc(db, 'shops', shop.shopId), shop);
+    const cleanShop = stripUndefinedProps(shop);
+    await setDoc(doc(db, 'shops', cleanShop.shopId), cleanShop);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `shops/${shop.shopId}`);
   }

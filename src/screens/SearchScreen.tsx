@@ -552,7 +552,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#092825] border border-[#00D68F]/35 shrink-0 shadow-md shadow-[#00D68F]/10">
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#092825] border border-[#14443F] shrink-0 shadow-sm">
               <img
                 src={BRAND_ASSETS.logo}
                 alt="Affin Connect"
@@ -591,7 +591,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               aria-label={t('openProfileAria')}
               className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#092825] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
                 {firebaseUser?.photoURL ? (
                   <img
                     src={firebaseUser.photoURL}
@@ -626,7 +626,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             onChange={(e) => setQueryInput(e.target.value)}
             placeholder={t('homeSearchPlaceholder')}
             aria-label={t('homeSearchPlaceholder')}
-            className="w-full min-h-[46px] bg-transparent px-2.5 text-xs sm:text-sm text-[#F5FAFA] placeholder:text-[#A9C0BD] focus:outline-none"
+            className="w-full min-h-[46px] bg-transparent px-2.5 text-xs sm:text-sm text-[#F5FAFA] placeholder:text-[#A9C0BD]/70 focus:outline-none"
           />
           {queryInput && (
             <button
@@ -663,7 +663,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                   className={`min-h-[40px] px-3.5 rounded-xl text-xs whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                     selected
                       ? 'bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] font-bold shadow-md shadow-[#00D68F]/20'
-                      : 'bg-[#092825] border border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/40 font-semibold'
+                      : 'bg-[#092825] border border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/50 font-semibold'
                   }`}
                 >
                   {opt.label}
@@ -679,8 +679,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             aria-expanded={isDrawerOpen}
             className={`min-h-[40px] px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors ${
               isDrawerOpen || activeFilterCount > 0
-                ? 'bg-[#092825] border-[#00D68F] text-[#00D68F]'
-                : 'bg-transparent border-[#00D68F]/45 hover:border-[#00D68F] text-[#F5FAFA]'
+                ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
+                : 'bg-[#092825] border-[#00D68F]/40 hover:border-[#00D68F] text-[#F5FAFA]'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
@@ -700,7 +700,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ category: 'all' })}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0"
               >
                 <span>{getCategoryLabel(activeCategoryObj)}</span>
                 <X className="w-3 h-3" />
@@ -711,7 +711,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ minPrice: '', maxPrice: '' })}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0 tabular-nums"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#00C8D7]/15 border border-[#00C8D7]/40 text-[11px] font-semibold text-[#00C8D7] whitespace-nowrap shrink-0 tabular-nums"
               >
                 <span>
                   {committedMinPrice != null && committedMaxPrice != null
@@ -728,7 +728,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ verifiedOnly: false })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0"
               >
                 <BadgeCheck className="w-3 h-3" />
                 <span>{t('verifiedMerchantLabel')}</span>
@@ -740,9 +740,9 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ minShopRating: null })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-amber-400/40 text-[11px] font-semibold text-amber-300 whitespace-nowrap shrink-0 tabular-nums"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[11px] font-semibold text-[#FDE68A] whitespace-nowrap shrink-0 tabular-nums"
               >
-                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current text-[#F59E0B]" />
                 <span>{minShopRating.toFixed(1)}+</span>
                 <X className="w-3 h-3" />
               </button>
@@ -759,7 +759,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                 }
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] text-[11px] font-semibold text-[#F5FAFA] whitespace-nowrap shrink-0"
               >
-                <MapPin className="w-3 h-3 text-[#00C8D7]" />
+                <MapPin className="w-3 h-3 text-[#00D68F]" />
                 <span>{getLocalizedNeighborhood(area, language)}</span>
                 <X className="w-3 h-3 text-[#A9C0BD]" />
               </button>
@@ -823,8 +823,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
       {/* Main Content Body */}
       <div className="px-4 pt-4 space-y-5 flex-1">
         {searchError ? (
-          <div className="rounded-3xl bg-[#092825] border border-rose-500/40 p-6 text-center space-y-3 shadow-lg">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/15 border border-rose-500/35 flex items-center justify-center text-rose-300">
+          <div className="rounded-3xl bg-[#092825] border border-rose-500/35 p-6 text-center space-y-3 shadow-lg shadow-black/25">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
@@ -852,7 +852,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               {Array.from({ length: 2 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-56 h-52 shrink-0 rounded-2xl bg-[#092825] border border-[#123E39] animate-pulse"
+                  className="w-56 h-52 shrink-0 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
@@ -860,7 +860,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-56 rounded-2xl bg-[#092825] border border-[#123E39] animate-pulse"
+                  className="h-56 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
@@ -868,7 +868,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
         ) : !hasAnySearchOrFilter ? (
           /* Initial State */
           <div className="space-y-5">
-            <section className="rounded-2xl bg-gradient-to-br from-[#092825] to-[#061D1B] border border-[#14443F] p-4 shadow-lg space-y-1.5">
+            <section className="rounded-2xl bg-gradient-to-br from-[#092825] via-[#061D1B] to-[#031719] border border-[#14443F] p-4 space-y-1.5">
               <h1 className="text-lg font-display font-bold text-[#F5FAFA] text-balance">
                 {t('searchInitialTitle')}
               </h1>
@@ -894,9 +894,9 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       key={cat.slug}
                       type="button"
                       onClick={() => updateSearchState({ category: cat.slug })}
-                      className="min-h-[48px] px-3 py-2.5 rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center gap-2.5 text-left transition-colors active:scale-[0.99]"
+                      className="min-h-[48px] px-3 py-2.5 rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/55 flex items-center gap-2.5 text-left transition-colors active:scale-[0.99]"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-[#031719] border border-[#00D68F]/25 flex items-center justify-center text-[#00D68F] shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F] shrink-0">
                         <CategoryIcon iconName={cat.iconName} className="w-4 h-4" />
                       </div>
                       <span className="text-xs font-semibold text-[#F5FAFA] line-clamp-2 leading-tight">
@@ -914,7 +914,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                   id="recent-searches-heading"
                   className="text-xs font-bold uppercase tracking-wider text-[#A9C0BD] flex items-center gap-1.5"
                 >
-                  <History className="w-3.5 h-3.5 text-[#00C8D7]" />
+                  <History className="w-3.5 h-3.5 text-[#00D68F]" />
                   <span>{t('recentSearches')}</span>
                 </h2>
                 <div className="flex flex-wrap gap-2">
@@ -923,7 +923,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       key={term}
                       type="button"
                       onClick={() => commitQueryImmediately(term, false)}
-                      className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 text-xs font-medium text-[#F5FAFA] transition-colors"
+                      className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/55 text-xs font-medium text-[#F5FAFA] transition-colors"
                     >
                       {term}
                     </button>
@@ -947,7 +947,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       key={item.productId}
                       type="button"
                       onClick={() => navigate({ name: 'product', productId: item.productId })}
-                      className="w-32 shrink-0 bg-[#092825] rounded-2xl border border-[#123E39] hover:border-[#00D68F]/45 overflow-hidden text-left shadow-md transition-all"
+                      className="w-32 shrink-0 bg-[#092825] rounded-2xl border border-[#14443F] hover:border-[#00D68F]/50 overflow-hidden text-left transition-all"
                     >
                       <div className="aspect-[4/3] bg-[#061D1B]">
                         <ResilientImage
@@ -976,7 +976,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
           /* Results View */
           <div className="space-y-5">
             {/* Search Results Header */}
-            <div className="flex items-start justify-between gap-2 pb-1 border-b border-white/10">
+            <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-white/10">
               <div className="min-w-0">
                 {hasCommittedQuery ? (
                   <h1 className="text-sm font-display font-bold text-[#F5FAFA] break-words">
@@ -1013,8 +1013,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
 
             {totalResultCount === 0 ? (
               /* No Results State */
-              <div className="rounded-3xl bg-[#092825] border border-[#14443F] p-6 text-center shadow-lg space-y-4">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#031719] border border-[#00D68F]/30 flex items-center justify-center text-[#00D68F]">
+              <div className="rounded-3xl bg-[#092825] border border-[#14443F] p-6 text-center space-y-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F]">
                   <Search className="w-7 h-7" />
                 </div>
                 <div className="space-y-1.5 max-w-xs mx-auto">
@@ -1053,7 +1053,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         <button
                           type="button"
                           onClick={() => updateSearchState({ searchType: 'shops' })}
-                          className="text-xs font-semibold text-[#00C8D7] hover:text-[#00D68F] transition-colors"
+                          className="text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
                         >
                           {t('viewAll')}
                         </button>
@@ -1109,7 +1109,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           <button
                             type="button"
                             onClick={() => updateSearchState({ searchType: 'products' })}
-                            className="text-xs font-semibold text-[#00C8D7] hover:text-[#00D68F] transition-colors"
+                            className="text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
                           >
                             {t('viewAll')}
                           </button>
@@ -1136,23 +1136,23 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
       {/* Bottom-Sheet Advanced Filter Panel */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/70 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/65 backdrop-blur-xs"
           onClick={() => setIsDrawerOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="filter-drawer-heading"
         >
           <div
-            className="w-full sm:max-w-md max-h-[88vh] bg-[#031719] border-t sm:border border-[#14443F] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden"
+            className="w-full sm:max-w-md max-h-[88vh] bg-[#041D1F] border-t sm:border border-[#14443F] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Mobile Drag Handle */}
             <div className="sm:hidden pt-2.5 pb-1 flex justify-center shrink-0">
-              <div className="w-10 h-1.5 rounded-full bg-[#1C4D47]" aria-hidden="true" />
+              <div className="w-10 h-1.5 rounded-full bg-white/20" aria-hidden="true" />
             </div>
 
             {/* Drawer Header */}
-            <div className="bg-[#092825] border-b border-[#14443F] px-4 py-3.5 flex items-start justify-between gap-3 shrink-0">
+            <div className="bg-[#041D1F] border-b border-white/10 px-4 py-3.5 flex items-start justify-between gap-3 shrink-0">
               <div className="min-w-0">
                 <h2
                   id="filter-drawer-heading"
@@ -1168,7 +1168,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
                 aria-label="Close filter drawer"
-                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-[#031719] border border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/40 shrink-0 transition-colors"
+                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-[#092825] border border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/50 shrink-0 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1190,7 +1190,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-semibold text-left flex items-center justify-between gap-2 transition-colors ${
                           active
                             ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                            : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/40'
+                            : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/45'
                         }`}
                       >
                         <span className="leading-tight">{option.label}</span>
@@ -1320,7 +1320,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           setDraftMinPrice(String(nextMax));
                         }
                       }}
-                      className="w-full accent-[#00C8D7] cursor-pointer"
+                      className="w-full accent-[#00D68F] cursor-pointer"
                     />
                   </div>
 
@@ -1344,7 +1344,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           className={`min-h-[42px] px-3 py-2 rounded-xl border text-xs font-semibold tabular-nums transition-colors ${
                             isSelected
                               ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/40'
+                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/45'
                           }`}
                         >
                           {preset.label}
@@ -1363,7 +1363,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                   className={`w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border flex items-center justify-between gap-2 text-left transition-colors ${
                     draftVerifiedOnly
                       ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                      : 'bg-[#031719] border-[#14443F] text-[#F5FAFA] hover:border-[#00D68F]/40'
+                      : 'bg-[#031719] border-[#14443F] text-[#F5FAFA] hover:border-[#00D68F]/45'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -1397,11 +1397,11 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           onClick={() => setDraftMinShopRating(opt.value)}
                           className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 tabular-nums transition-colors ${
                             active
-                              ? 'bg-amber-500/15 border-amber-400 text-amber-300'
-                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-amber-400/40'
+                              ? 'bg-[#F59E0B]/15 border-[#F59E0B] text-[#FDE68A]'
+                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#F59E0B]/45'
                           }`}
                         >
-                          {opt.value != null && <Star className="w-3.5 h-3.5 fill-current shrink-0" />}
+                          {opt.value != null && <Star className="w-3.5 h-3.5 fill-current text-[#F59E0B] shrink-0" />}
                           <span>{opt.label}</span>
                         </button>
                       );
@@ -1504,7 +1504,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         className={`min-h-[48px] px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-colors ${
                           active
                             ? 'bg-[#00D68F]/15 border-[#00D68F]'
-                            : 'bg-[#031719] border-[#14443F] hover:border-[#00D68F]/40'
+                            : 'bg-[#031719] border-[#14443F] hover:border-[#00D68F]/45'
                         }`}
                       >
                         <div className="min-w-0">
@@ -1526,7 +1526,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
                             active
                               ? 'bg-[#00D68F] border-[#00D68F] text-[#031719]'
-                              : 'border-[#1C4D47] bg-[#092825]'
+                              : 'border-[#14443F] bg-[#041D1F]'
                           }`}
                         >
                           {active && <Check className="w-3.5 h-3.5" />}
@@ -1539,11 +1539,11 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             </div>
 
             {/* Sticky Bottom Sheet Footer */}
-            <div className="bg-[#092825] border-t border-[#14443F] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2.5 shrink-0">
+            <div className="bg-[#041D1F] border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={clearDraftFilters}
-                className="min-h-[44px] px-4 rounded-xl border border-[#14443F] bg-[#031719] hover:border-[#00D68F]/40 text-xs font-semibold text-[#F5FAFA] shrink-0 transition-colors"
+                className="min-h-[44px] px-4 rounded-xl border border-[#14443F] bg-[#092825] hover:border-[#00D68F]/50 text-xs font-semibold text-[#F5FAFA] shrink-0 transition-colors"
               >
                 {t('searchResetFiltersBtn')}
               </button>

@@ -32,9 +32,11 @@ import {
   buildShopSlug,
   canShopListProducts,
   formatETB,
+  formatFriendlyErrorMessage,
   getEffectiveShopVerificationStatus,
   HAWASSA_ISSUING_AUTHORITIES,
   HAWASSA_NEIGHBORHOODS,
+  resolveSellerManagedShops,
   validateMerchantVerificationInput,
   validateProductImageUrl,
   validateProductInput,
@@ -101,6 +103,11 @@ export const SellerPortalScreen: React.FC<{
   const [prodSubmitError, setProdSubmitError] = useState<string | null>(null);
   const [prodSuccessMsg, setProdSuccessMsg] = useState<string | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isProcessingProductPhoto, setIsProcessingProductPhoto] = useState(false);
+  const [productCameraOpen, setProductCameraOpen] = useState(false);
+  const [productCameraError, setProductCameraError] = useState<string | null>(null);
+  const productVideoRef = useRef<HTMLVideoElement | null>(null);
+  const productStreamRef = useRef<MediaStream | null>(null);
 
   // Virtual Shop Creation & Editing State
   const [isCreatingShop, setIsCreatingShop] = useState(false);
@@ -129,11 +136,19 @@ export const SellerPortalScreen: React.FC<{
   const [editShopErrors, setEditShopErrors] = useState<Record<string, string>>({});
   const [editShopError, setEditShopError] = useState<string | null>(null);
 
-  const currentShop = shops.find((s) => s.shopId === activeSellerShopId) ?? shops[0];
+  const managedShops = resolveSellerManagedShops(
+    shops,
+    firebaseUser?.uid,
+    activeRoleView === 'admin'
+  );
+  const currentShop =
+    managedShops.find((s) => s.shopId === activeSellerShopId) ?? managedShops[0] ?? null;
   const currentVerification = currentShop ? getShopVerification(currentShop.shopId) : null;
   const docStatus = getEffectiveShopVerificationStatus(currentShop, currentVerification);
-  const isListingUnlocked =
-    activeRoleView === 'admin' || canShopListProducts(currentShop, currentVerification);
+  const isListingUnlocked = Boolean(
+    currentShop &&
+      (activeRoleView === 'admin' || canShopListProducts(currentShop, currentVerification))
+  );
 
   // Document Verification Form State
   const [businessLegalName, setBusinessLegalName] = useState('');
@@ -167,6 +182,19 @@ export const SellerPortalScreen: React.FC<{
     setCameraOpen(false);
   };
 
+  const stopProductCameraStream = () => {
+    if (productStreamRef.current) {
+      for (const track of productStreamRef.current.getTracks()) {
+        track.stop();
+      }
+      productStreamRef.current = null;
+    }
+    if (productVideoRef.current) {
+      productVideoRef.current.srcObject = null;
+    }
+    setProductCameraOpen(false);
+  };
+
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -174,6 +202,12 @@ export const SellerPortalScreen: React.FC<{
           track.stop();
         }
         streamRef.current = null;
+      }
+      if (productStreamRef.current) {
+        for (const track of productStreamRef.current.getTracks()) {
+          track.stop();
+        }
+        productStreamRef.current = null;
       }
     };
   }, []);
@@ -184,6 +218,13 @@ export const SellerPortalScreen: React.FC<{
       void videoRef.current.play().catch(() => {});
     }
   }, [cameraOpen]);
+
+  useEffect(() => {
+    if (productCameraOpen && productVideoRef.current && productStreamRef.current) {
+      productVideoRef.current.srcObject = productStreamRef.current;
+      void productVideoRef.current.play().catch(() => {});
+    }
+  }, [productCameraOpen]);
 
   // Sync verification form values when switching active shop or loading record
   useEffect(() => {
@@ -236,10 +277,16 @@ export const SellerPortalScreen: React.FC<{
     .reduce((acc, o) => acc + o.totalAmount, 0);
 
   const openCreateForm = () => {
+    if (!currentShop) {
+      setActiveTab('shop');
+      return;
+    }
     if (!isListingUnlocked) {
       setActiveTab('verification');
       return;
     }
+    stopProductCameraStream();
+    setProductCameraError(null);
     setEditingProductId(null);
     setProdName('');
     setProdPrice('');
@@ -247,9 +294,13 @@ export const SellerPortalScreen: React.FC<{
     setProdStock('10');
     setProdCategory(categories[0]?.slug ?? 'groceries');
     setProdDesc('');
-    setProdImageUrl(currentShop?.logoUrl ?? BRAND_ASSETS.coffee);
-    setProdDeliveryAvailable(currentShop?.deliveryAvailable ?? true);
-    setProdPickupAvailable(currentShop?.pickupAvailable ?? true);
+    setProdImageUrl(
+      currentShop.logoUrl && validateProductImageUrl(currentShop.logoUrl)
+        ? currentShop.logoUrl
+        : BRAND_ASSETS.coffee
+    );
+    setProdDeliveryAvailable(currentShop.deliveryAvailable ?? true);
+    setProdPickupAvailable(currentShop.pickupAvailable ?? true);
     setProdErrors({});
     setProdSubmitError(null);
     setProdSuccessMsg(null);
@@ -257,10 +308,16 @@ export const SellerPortalScreen: React.FC<{
   };
 
   const openEditForm = (p: Product) => {
+    if (!currentShop) {
+      setActiveTab('shop');
+      return;
+    }
     if (!isListingUnlocked) {
       setActiveTab('verification');
       return;
     }
+    stopProductCameraStream();
+    setProductCameraError(null);
     setEditingProductId(p.productId);
     setProdName(p.name);
     setProdPrice(String(p.price));
@@ -282,19 +339,69 @@ export const SellerPortalScreen: React.FC<{
     e.target.value = '';
     if (!file) return;
     setProdSubmitError(null);
+    setProductCameraError(null);
+    setIsProcessingProductPhoto(true);
     try {
       const processed = await processUploadedPhotoFile(file);
       setProdImageUrl(processed);
+      stopProductCameraStream();
     } catch (err) {
       setProdSubmitError(
-        err instanceof Error ? err.message : t('imageSizeTooLargeError')
+        formatFriendlyErrorMessage(err, t('imageSizeTooLargeError'))
       );
+    } finally {
+      setIsProcessingProductPhoto(false);
+    }
+  };
+
+  const handleOpenProductCamera = async () => {
+    setProductCameraError(null);
+    setProdSubmitError(null);
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices ||
+      typeof navigator.mediaDevices.getUserMedia !== 'function'
+    ) {
+      setProductCameraError(t('returnCameraUnavailable'));
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      productStreamRef.current = stream;
+      setProductCameraOpen(true);
+    } catch {
+      setProductCameraError(t('returnCameraUnavailable'));
+    }
+  };
+
+  const handleCaptureProductCameraFrame = () => {
+    const video = productVideoRef.current;
+    if (!video) return;
+    setIsProcessingProductPhoto(true);
+    try {
+      const width = video.videoWidth || 800;
+      const height = video.videoHeight || 600;
+      const captured = compressImageSourceToDataUrl(video, width, height);
+      setProdImageUrl(captured);
+      setProductCameraError(null);
+      setProdSubmitError(null);
+      stopProductCameraStream();
+    } catch (err) {
+      setProductCameraError(
+        formatFriendlyErrorMessage(err, t('returnCameraUnavailable'))
+      );
+      stopProductCameraStream();
+    } finally {
+      setIsProcessingProductPhoto(false);
     }
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentShop || isSavingProduct) return;
+    if (!currentShop || isSavingProduct || isProcessingProductPhoto) return;
     setProdSubmitError(null);
     setProdSuccessMsg(null);
     setProdErrors({});
@@ -325,10 +432,20 @@ export const SellerPortalScreen: React.FC<{
       ? products.find((p) => p.productId === editingProductId)
       : undefined;
 
-    const finalImageUrl =
-      prodImageUrl.trim() || existing?.imageUrl || currentShop.logoUrl || BRAND_ASSETS.coffee;
+    const candidateUrl = prodImageUrl.trim();
+    const fallbackUrl =
+      existing?.imageUrl ||
+      (currentShop.logoUrl && validateProductImageUrl(currentShop.logoUrl)
+        ? currentShop.logoUrl
+        : BRAND_ASSETS.coffee);
+    const finalImageUrl = candidateUrl || fallbackUrl;
+
     if (!validateProductImageUrl(finalImageUrl)) {
-      setProdSubmitError(t('imageSizeTooLargeError'));
+      setProdSubmitError(
+        candidateUrl.startsWith('http://')
+          ? 'Image URL must use https:// or upload a JPG/PNG/WebP photo under 350 KB.'
+          : t('imageSizeTooLargeError')
+      );
       return;
     }
 
@@ -343,22 +460,24 @@ export const SellerPortalScreen: React.FC<{
 
     const now = new Date().toISOString();
     const product: Product = {
-      productId: existing?.productId ?? `prod-${Date.now()}`,
+      productId:
+        existing?.productId ??
+        `prod-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       shopId: currentShop.shopId,
       shopName: currentShop.name,
       name: prodName.trim(),
       description: prodDesc.trim(),
       category: prodCategory,
       price: roundedPrice,
-      previousPrice: resolvedPreviousPrice,
+      ...(resolvedPreviousPrice !== undefined ? { previousPrice: resolvedPreviousPrice } : {}),
       stock: Math.floor(parsedStock),
       isAvailable: Math.floor(parsedStock) > 0,
       imageUrl: finalImageUrl,
       pickupAvailable: prodPickupAvailable,
       deliveryAvailable: prodDeliveryAvailable,
       status: 'active',
-      rating: existing?.rating,
-      reviewCount: existing?.reviewCount,
+      ...(existing?.rating !== undefined ? { rating: existing.rating } : {}),
+      ...(existing?.reviewCount !== undefined ? { reviewCount: existing.reviewCount } : {}),
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -366,6 +485,7 @@ export const SellerPortalScreen: React.FC<{
     setIsSavingProduct(true);
     try {
       await saveSellerProduct(product);
+      stopProductCameraStream();
       setShowProductForm(false);
       setProdSuccessMsg(
         existing
@@ -374,7 +494,7 @@ export const SellerPortalScreen: React.FC<{
       );
     } catch (err) {
       setProdSubmitError(
-        err instanceof Error ? err.message : 'Unable to save product listing.'
+        formatFriendlyErrorMessage(err, 'Unable to save product listing.')
       );
     } finally {
       setIsSavingProduct(false);
@@ -399,7 +519,7 @@ export const SellerPortalScreen: React.FC<{
       );
     } catch (err) {
       setProdSubmitError(
-        err instanceof Error ? err.message : 'Unable to update product status.'
+        formatFriendlyErrorMessage(err, 'Unable to update product status.')
       );
     }
   };
@@ -712,22 +832,32 @@ export const SellerPortalScreen: React.FC<{
               </span>
             </button>
 
-            <select
-              aria-label="Select Active Shop"
-              value={currentShop?.shopId}
-              onChange={(e) => setActiveSellerShopId(e.target.value)}
-              className="max-w-[150px] px-2.5 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-800 dark:text-stone-100 bg-[#FAF8F5] dark:bg-[#141A17] truncate focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
-            >
-              {shops.map((s) => (
-                <option
-                  key={s.shopId}
-                  value={s.shopId}
-                  className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
-                >
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            {managedShops.length > 0 ? (
+              <select
+                aria-label="Select Active Shop"
+                value={currentShop?.shopId ?? ''}
+                onChange={(e) => setActiveSellerShopId(e.target.value)}
+                className="max-w-[150px] px-2.5 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-800 dark:text-stone-100 bg-[#FAF8F5] dark:bg-[#141A17] truncate focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              >
+                {managedShops.map((s) => (
+                  <option
+                    key={s.shopId}
+                    value={s.shopId}
+                    className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                  >
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveTab('shop')}
+                className="px-2.5 py-1.5 rounded-lg border border-[#10B981]/30 bg-[#10B981]/15 text-[#10B981] text-xs font-bold whitespace-nowrap"
+              >
+                + Create Shop
+              </button>
+            )}
           </div>
         </div>
 
@@ -769,6 +899,28 @@ export const SellerPortalScreen: React.FC<{
       </header>
 
       <div className="p-4 space-y-4">
+        {!currentShop && activeTab !== 'shop' && (
+          <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#10B981]/30 shadow-sm p-5 text-center space-y-3">
+            <Store className="w-8 h-8 text-[#10B981] mx-auto" />
+            <div className="space-y-1">
+              <h2 className="text-sm font-bold text-stone-900 dark:text-stone-100">
+                Create Your Hawassa Virtual Shop
+              </h2>
+              <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                You need your own virtual shop before verifying your license or uploading products.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('shop')}
+              className="w-full min-h-[44px] px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-bold inline-flex items-center justify-center gap-2 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Virtual Shop</span>
+            </button>
+          </div>
+        )}
+
         {activeTab === 'dashboard' && currentShop && (
           <>
             <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
@@ -1097,7 +1249,7 @@ export const SellerPortalScreen: React.FC<{
           </div>
         )}
 
-        {activeTab === 'products' && (
+        {activeTab === 'products' && currentShop && (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
@@ -1281,24 +1433,79 @@ export const SellerPortalScreen: React.FC<{
                   <p className="text-[11px] text-rose-600 dark:text-rose-400">{prodErrors.fulfillment}</p>
                 )}
 
-                {/* Product Catalog Photo Upload or URL */}
-                <div className="space-y-2 pt-1">
+                {/* Product Catalog Photo Capture, File Upload, or URL */}
+                <div className="space-y-2.5 pt-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-semibold text-stone-700 dark:text-stone-300">
                       {t('productPhotoUploadLabel')}
                     </span>
-                    <label className="min-h-[36px] px-3 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer transition-colors">
-                      <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
-                      <span>{t('uploadProductPhoto')}</span>
-                      <input
-                        id="seller-product-photo-input"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProductPhotoChange}
-                        className="sr-only"
-                      />
-                    </label>
+                    {isProcessingProductPhoto && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#10B981]">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Optimizing photo...</span>
+                      </span>
+                    )}
                   </div>
+
+                  {productCameraOpen ? (
+                    <div className="space-y-2">
+                      <video
+                        ref={productVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-44 object-cover rounded-xl bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630]"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCaptureProductCameraFrame}
+                          className="min-h-[40px] px-3 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Camera className="w-4 h-4 shrink-0" />
+                          <span>{t('returnCapturePhoto')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopProductCameraStream}
+                          className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                        >
+                          {t('returnCancelCamera')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={isProcessingProductPhoto}
+                        onClick={handleOpenProductCamera}
+                        className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] disabled:opacity-50 text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
+                        <span>{t('docVerifyTakePhoto')}</span>
+                      </button>
+
+                      <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap">
+                        <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
+                        <span>{t('uploadProductPhoto')}</span>
+                        <input
+                          id="seller-product-photo-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProductPhotoChange}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  {productCameraError && (
+                    <p className="text-[11px] text-[#B45309] dark:text-[#F59E0B] bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border border-[#FDE68A] dark:border-[#F59E0B]/30 rounded-xl px-3 py-2">
+                      {productCameraError}
+                    </p>
+                  )}
+
                   <input
                     type="text"
                     value={prodImageUrl.startsWith('data:image/') ? '' : prodImageUrl}
@@ -1306,6 +1513,7 @@ export const SellerPortalScreen: React.FC<{
                     placeholder="Or paste https:// image URL (optional)"
                     className="w-full min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                   />
+
                   {prodImageUrl && (
                     <div className="flex items-center gap-3 p-2 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17]">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-[#1C2420] shrink-0">
@@ -1322,6 +1530,14 @@ export const SellerPortalScreen: React.FC<{
                           <span className="truncate block">{prodImageUrl}</span>
                         )}
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setProdImageUrl('')}
+                        aria-label="Clear selected product photo"
+                        className="min-h-[34px] px-2 rounded-lg text-[11px] font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 inline-flex items-center gap-1 shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1334,10 +1550,12 @@ export const SellerPortalScreen: React.FC<{
 
                 <button
                   type="submit"
-                  disabled={isSavingProduct}
+                  disabled={isSavingProduct || isProcessingProductPhoto}
                   className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:opacity-60 text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-colors"
                 >
-                  {isSavingProduct && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+                  {(isSavingProduct || isProcessingProductPhoto) && (
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  )}
                   <span>{isSavingProduct ? t('saving') : 'Save Product'}</span>
                 </button>
               </form>

@@ -339,30 +339,30 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
     await signOutUser();
   };
 
-  // Theme-adaptive style tokens (Obsidian Glass vs Marketplace Card)
+  // Shared style tokens based on variant (glass obsidian vs embedded card)
   const labelClass = isGlass
-    ? 'block text-xs font-medium text-[#CBE3E4] mb-1.5'
-    : 'block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1';
+    ? 'block text-xs font-semibold text-[#CBE3E4] mb-1.5'
+    : 'block text-[11px] font-semibold text-stone-600 dark:text-stone-300 mb-1';
 
   const iconClass = isGlass
-    ? 'w-4 h-4 text-[#00D68F]/85 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none'
-    : 'w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none';
+    ? 'w-4 h-4 text-[#00C8D7]/70 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none'
+    : 'w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none';
 
   const inputBaseClass = isGlass
-    ? 'w-full min-h-[46px] rounded-xl border border-[#123E42] bg-[#021113]/75 text-sm font-medium text-[#F5FAFA] placeholder:text-[#668B8E] focus:outline-none focus:border-[#00D68F] focus:ring-4 focus:ring-[#00D68F]/15 transition-all duration-200'
-    : 'w-full min-h-[44px] rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-medium text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981] transition-colors';
+    ? 'w-full min-h-[46px] rounded-xl border border-[#123E42] bg-[#021113]/75 text-sm font-medium text-[#F5FAFA] placeholder:text-[#6B9396] focus:outline-none focus:border-[#00C8D7] focus:ring-4 focus:ring-[#00C8D7]/15 transition-all duration-200'
+    : 'w-full min-h-[44px] rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-medium text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981] transition-colors';
 
   const primaryGradientBtnClass = isGlass
     ? 'w-full min-h-[48px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 active:scale-[0.99] disabled:opacity-70 text-[#031719] text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00C8D7]'
-    : 'w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#0D9488] hover:from-[#065F46] hover:to-[#047857] disabled:opacity-85 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer';
+    : 'w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#0D9488] hover:from-[#065F46] hover:to-[#047857] disabled:opacity-85 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-emerald-900/15 transition-all duration-200 cursor-pointer';
 
   const errorBannerClass = isGlass
-    ? 'p-3 rounded-xl bg-rose-500/12 border border-rose-400/30 text-xs text-rose-200 flex items-start gap-2.5 leading-relaxed'
-    : 'p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200 flex items-start gap-2 leading-relaxed';
+    ? 'p-3 rounded-xl bg-rose-500/12 border border-rose-400/35 text-xs text-rose-200 flex items-start gap-2.5 leading-relaxed'
+    : 'p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/35 border border-rose-200 dark:border-rose-800/60 text-[11px] text-rose-800 dark:text-rose-200 flex items-start gap-2 leading-relaxed';
 
   const successBannerClass = isGlass
     ? 'p-3 rounded-xl bg-[#00D68F]/12 border border-[#00D68F]/35 text-xs text-[#9EF5D7] flex items-start gap-2.5 leading-relaxed font-medium'
-    : 'p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/25 dark:border-[#10B981]/30 text-[11px] text-[#047857] dark:text-[#10B981] flex items-start gap-2 leading-relaxed font-medium';
+    : 'p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/25 dark:border-[#10B981]/35 text-[11px] text-[#065F46] dark:text-[#6EE7B7] flex items-start gap-2 leading-relaxed font-medium';
 
   if (firebaseUser && needsEmailVerification) {
     const resolvedDisplayName =
@@ -374,10 +374,10 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
       <div className="space-y-4">
         <div className="flex flex-col items-center text-center space-y-2.5 pt-1">
           <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${
               isGlass
-                ? 'bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719] ring-4 ring-[#00D68F]/20'
-                : 'bg-gradient-to-br from-[#047857] to-[#059669] text-white shadow-emerald-900/20 ring-4 ring-[#FFFBEB] dark:ring-[#F59E0B]/20'
+                ? 'bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719] ring-4 ring-[#00C8D7]/20 shadow-[#00D68F]/20'
+                : 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] ring-4 ring-[#047857]/10'
             }`}
           >
             <MailCheck className="w-7 h-7" />
@@ -385,7 +385,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
 
           <span
             className={`text-xs font-semibold tracking-wide ${
-              isGlass ? 'text-[#00D68F]' : 'text-[#B45309] dark:text-[#FBBF24]'
+              isGlass ? 'text-[#00D68F]' : 'text-[#047857] dark:text-[#10B981]'
             }`}
           >
             {t('emailVerifySubtitle')}
@@ -424,18 +424,18 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             role="status"
             className={`p-3 rounded-xl border text-xs flex items-start gap-2 leading-relaxed font-medium ${
               isGlass
-                ? 'bg-amber-400/10 border-amber-400/30 text-amber-200'
-                : 'bg-[#FFFBEB] dark:bg-[#2A2418] border-[#FDE68A] dark:border-[#78350F] text-[#9A3412] dark:text-[#FCD34D]'
+                ? 'bg-[#F59E0B]/12 border-[#F59E0B]/35 text-[#FDE68A]'
+                : 'bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border-[#FDE68A] dark:border-[#F59E0B]/30 text-[#9A3412] dark:text-[#FCD34D]'
             }`}
           >
-            <Inbox className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+            <Inbox className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{verifyPromptMsg}</span>
           </div>
         )}
 
         {authError && (
           <div role="alert" className={errorBannerClass}>
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{authError}</span>
           </div>
         )}
@@ -466,14 +466,14 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             onClick={handleResendVerificationEmail}
             className={`w-full min-h-[44px] px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-60 cursor-pointer ${
               isGlass
-                ? 'bg-[#072427]/80 border-[#00C8D7]/25 hover:border-[#00D68F]/60 text-[#F5FAFA]'
-                : 'bg-white dark:bg-[#232D28] border-[#E7E5E4] dark:border-[#34423B] hover:border-[#047857] dark:hover:border-[#10B981] text-stone-800 dark:text-stone-100'
+                ? 'bg-[#03191B] border-[#123E42] hover:border-[#00C8D7]/45 text-[#E8F6F6]'
+                : 'bg-white dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] hover:border-[#047857] text-stone-800 dark:text-stone-100'
             }`}
           >
             {resendingVerify ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00D68F]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <RotateCcw className="w-3.5 h-3.5 text-[#00D68F]" />
+              <RotateCcw className="w-3.5 h-3.5" />
             )}
             <span>
               {emailVerificationCooldown > 0
@@ -483,18 +483,14 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
           </button>
         </div>
 
-        <div
-          className={`pt-2 border-t flex flex-wrap items-center justify-between gap-2 ${
-            isGlass ? 'border-[#00C8D7]/15' : 'border-[#E7E5E4] dark:border-[#2A3630]'
-          }`}
-        >
+        <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
           <button
             type="button"
             onClick={handleChangeEmailOrSignOut}
             className={`inline-flex items-center gap-1.5 text-xs font-semibold py-1 transition-colors cursor-pointer ${
               isGlass
-                ? 'text-[#A7C4C5] hover:text-[#F5FAFA]'
-                : 'text-stone-600 dark:text-stone-300 hover:text-[#C2410C] dark:hover:text-[#FB923C]'
+                ? 'text-[#A7C4C5] hover:text-white'
+                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -505,7 +501,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             type="button"
             onClick={continueAsGuest}
             className={`inline-flex items-center gap-1.5 text-xs font-semibold hover:underline py-1 cursor-pointer ${
-              isGlass ? 'text-[#00C8D7]' : 'text-[#B45309] dark:text-[#FBBF24]'
+              isGlass ? 'text-[#00C8D7]' : 'text-[#047857] dark:text-[#10B981]'
             }`}
           >
             <span>{t('browseAsGuest')}</span>
@@ -524,8 +520,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
         aria-label="Authentication methods"
         className={`grid grid-cols-3 gap-1 p-1 rounded-2xl border ${
           isGlass
-            ? 'bg-[#021214]/90 border-[#123E42]'
-            : 'bg-[#F3EFEA] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630]'
+            ? 'bg-[#021113]/85 border-[#123E42]'
+            : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630]'
         }`}
       >
         {(
@@ -544,13 +540,13 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
               aria-selected={isActive}
               onClick={() => switchTab(id)}
               className={`min-h-[42px] px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all duration-200 whitespace-nowrap cursor-pointer focus-visible:outline-2 focus-visible:outline-[#00C8D7] ${
-                isActive
-                  ? isGlass
-                    ? 'bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] font-bold shadow-md shadow-[#00D68F]/20'
-                    : 'bg-gradient-to-r from-[#047857] to-[#059669] text-white shadow-md shadow-emerald-900/20 ring-1 ring-[#F59E0B]/45 font-semibold'
-                  : isGlass
-                    ? 'text-[#9CC0C2] hover:text-[#F5FAFA] hover:bg-[#082A2E] font-medium'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-white/60 dark:hover:bg-[#1C2420]/70 font-medium'
+                isGlass
+                  ? isActive
+                    ? 'bg-gradient-to-r from-[#00D68F]/22 to-[#00C8D7]/22 border border-[#00C8D7]/40 text-[#F5FAFA] shadow-sm font-semibold'
+                    : 'text-[#89AFB2] hover:text-[#DCEFEF] font-medium'
+                  : isActive
+                  ? 'bg-white dark:bg-[#1C2420] text-[#047857] dark:text-[#10B981] shadow-xs font-semibold'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-medium'
               }`}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -563,22 +559,14 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
       {/* Feedback Alerts */}
       {authError && (
         <div role="alert" className={errorBannerClass}>
-          <AlertCircle
-            className={`w-4 h-4 shrink-0 mt-0.5 ${
-              isGlass ? 'text-rose-400' : 'text-rose-600 dark:text-rose-400'
-            }`}
-          />
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{authError}</span>
         </div>
       )}
 
       {authSuccessMsg && !authError && (
         <div role="status" className={successBannerClass}>
-          <CheckCircle2
-            className={`w-4 h-4 shrink-0 mt-0.5 ${
-              isGlass ? 'text-[#00D68F]' : 'text-[#047857] dark:text-[#10B981]'
-            }`}
-          />
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{authSuccessMsg}</span>
         </div>
       )}
@@ -604,7 +592,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
               </div>
               <p
                 className={`text-xs leading-relaxed ${
-                  isGlass ? 'text-[#9CC0C2]' : 'text-stone-600 dark:text-stone-300'
+                  isGlass ? 'text-[#9AC2C4]' : 'text-stone-500 dark:text-stone-400'
                 }`}
               >
                 {t('authForgotPasswordDesc')}
@@ -613,7 +601,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
 
             {resetSuccessMsg && (
               <div role="status" className={successBannerClass}>
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#00D68F]" />
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{resetSuccessMsg}</span>
               </div>
             )}
@@ -660,7 +648,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 }}
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold py-1.5 cursor-pointer transition-colors ${
                   isGlass
-                    ? 'text-[#00C8D7] hover:text-[#00D68F]'
+                    ? 'text-[#00C8D7] hover:text-[#66E5F0]'
                     : 'text-[#047857] dark:text-[#10B981] hover:underline'
                 }`}
               >
@@ -712,8 +700,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                   }
                   className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors cursor-pointer ${
                     isGlass
-                      ? 'text-[#89AFB2] hover:text-[#00D68F]'
-                      : 'text-stone-400 hover:text-[#047857] dark:hover:text-[#10B981]'
+                      ? 'text-[#7DA4A7] hover:text-[#00C8D7]'
+                      : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
                   }`}
                 >
                   {showSignInPassword ? (
@@ -734,13 +722,13 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                   aria-checked={rememberMe}
                   onClick={() => setRememberMe((v) => !v)}
                   className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
-                    rememberMe
-                      ? isGlass
+                    isGlass
+                      ? rememberMe
                         ? 'bg-[#00D68F] border-[#00D68F] text-[#031719]'
-                        : 'bg-[#047857] border-[#047857] text-white'
-                      : isGlass
-                        ? 'bg-[#021113] border-[#1D5156] group-hover:border-[#00C8D7]'
-                        : 'bg-white dark:bg-[#141A17] border-stone-300 dark:border-[#34423B]'
+                        : 'bg-[#021113]/80 border-[#1A5156] group-hover:border-[#00C8D7]'
+                      : rememberMe
+                      ? 'bg-[#047857] dark:bg-[#10B981] border-[#047857] dark:border-[#10B981] text-white dark:text-[#0B1410]'
+                      : 'bg-white dark:bg-[#141A17] border-stone-300 dark:border-stone-600'
                   }`}
                 >
                   {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
@@ -748,7 +736,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 <span
                   onClick={() => setRememberMe((v) => !v)}
                   className={`text-xs font-medium ${
-                    isGlass ? 'text-[#B3CFD1]' : 'text-stone-600 dark:text-stone-300'
+                    isGlass ? 'text-[#A7C4C5]' : 'text-stone-600 dark:text-stone-300'
                   }`}
                 >
                   {t('authRememberMe')}
@@ -760,7 +748,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 onClick={handleOpenForgotPassword}
                 className={`text-xs font-semibold transition-colors cursor-pointer py-1 ${
                   isGlass
-                    ? 'text-[#00C8D7] hover:text-[#00D68F]'
+                    ? 'text-[#00C8D7] hover:text-[#6EEAF3]'
                     : 'text-[#047857] dark:text-[#10B981] hover:underline'
                 }`}
               >
@@ -788,8 +776,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 onClick={handleShortcutToPhoneOtp}
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors py-1 cursor-pointer ${
                   isGlass
-                    ? 'text-[#00D68F] hover:text-[#00C8D7]'
-                    : 'text-[#047857] dark:text-[#10B981] hover:text-[#D97706] dark:hover:text-[#FBBF24]'
+                    ? 'text-[#00D68F] hover:text-[#5FF2BE]'
+                    : 'text-[#047857] dark:text-[#10B981] hover:underline'
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
@@ -846,8 +834,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                   htmlFor={`reg-phone-${variant}`}
                   className={`truncate ${
                     isGlass
-                      ? 'text-xs font-medium text-[#CBE3E4]'
-                      : 'text-[11px] font-semibold text-stone-700 dark:text-stone-300'
+                      ? 'text-xs font-semibold text-[#CBE3E4]'
+                      : 'text-[11px] font-semibold text-stone-600 dark:text-stone-300'
                   }`}
                 >
                   {t('phoneAuthNumberLabel')}
@@ -885,11 +873,11 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             </label>
             <div className="relative">
               <MapPin
-                className={`${
+                className={
                   isGlass
-                    ? 'w-4 h-4 text-[#00C8D7] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none'
-                    : 'w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none'
-                }`}
+                    ? 'w-4 h-4 text-[#00D68F] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none'
+                    : 'w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none'
+                }
               />
               <select
                 id={`reg-neighborhood-${variant}`}
@@ -901,11 +889,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                   <option
                     key={n}
                     value={n}
-                    className={
-                      isGlass
-                        ? 'bg-[#051F22] text-[#F5FAFA]'
-                        : 'bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100'
-                    }
+                    className={isGlass ? 'bg-[#052023] text-[#F5FAFA]' : undefined}
                   >
                     {getLocalizedNeighborhood(n, language)}
                   </option>
@@ -928,21 +912,17 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 aria-checked={accountType === 'customer'}
                 onClick={() => setAccountType('customer')}
                 className={`p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
-                  accountType === 'customer'
-                    ? isGlass
+                  isGlass
+                    ? accountType === 'customer'
                       ? 'border-[#00D68F] bg-[#00D68F]/14 text-[#F5FAFA] shadow-sm shadow-[#00D68F]/10'
-                      : 'border-2 border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                    : isGlass
-                      ? 'border-[#123E42] bg-[#021113]/70 text-[#B3CFD1] hover:border-[#00C8D7]/45'
-                      : 'border-2 border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300 hover:border-[#047857]/40'
+                      : 'border-[#123E42] bg-[#021113]/75 text-[#B4CFD1] hover:border-[#00C8D7]/45'
+                    : accountType === 'customer'
+                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
+                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300'
                 }`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold">
-                  <ShoppingBag
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      accountType === 'customer' && isGlass ? 'text-[#00D68F]' : ''
-                    }`}
-                  />
+                  <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{t('authAccountTypeCustomer')}</span>
                 </div>
                 <div className="text-[11px] opacity-80 mt-0.5 leading-snug line-clamp-2">
@@ -956,21 +936,17 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 aria-checked={accountType === 'seller'}
                 onClick={() => setAccountType('seller')}
                 className={`p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
-                  accountType === 'seller'
-                    ? isGlass
-                      ? 'border-[#00D68F] bg-[#00D68F]/14 text-[#F5FAFA] shadow-sm shadow-[#00D68F]/10'
-                      : 'border-2 border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                    : isGlass
-                      ? 'border-[#123E42] bg-[#021113]/70 text-[#B3CFD1] hover:border-[#00C8D7]/45'
-                      : 'border-2 border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300 hover:border-[#047857]/40'
+                  isGlass
+                    ? accountType === 'seller'
+                      ? 'border-[#00C8D7] bg-[#00C8D7]/14 text-[#F5FAFA] shadow-sm shadow-[#00C8D7]/10'
+                      : 'border-[#123E42] bg-[#021113]/75 text-[#B4CFD1] hover:border-[#00C8D7]/45'
+                    : accountType === 'seller'
+                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
+                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300'
                 }`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold">
-                  <Store
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      accountType === 'seller' && isGlass ? 'text-[#00D68F]' : ''
-                    }`}
-                  />
+                  <Store className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{t('authAccountTypeSeller')}</span>
                 </div>
                 <div className="text-[11px] opacity-80 mt-0.5 leading-snug line-clamp-2">
@@ -1002,8 +978,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 aria-label={showRegPassword ? t('authHidePassword') : t('authShowPassword')}
                 className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors cursor-pointer ${
                   isGlass
-                    ? 'text-[#89AFB2] hover:text-[#00D68F]'
-                    : 'text-stone-400 hover:text-[#047857] dark:hover:text-[#10B981]'
+                    ? 'text-[#7DA4A7] hover:text-[#00C8D7]'
+                    : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
                 }`}
               >
                 {showRegPassword ? (
@@ -1015,7 +991,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             </div>
             <p
               className={`text-[11px] mt-1 ${
-                isGlass ? 'text-[#89AFB2]' : 'text-stone-500 dark:text-stone-400'
+                isGlass ? 'text-[#7CA3A6]' : 'text-stone-500 dark:text-stone-400'
               }`}
             >
               {t('authPasswordRegisterHint')}
@@ -1044,7 +1020,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
           <form onSubmit={handleVerifyOtp} className="space-y-3.5">
             <div className={`${successBannerClass} items-center justify-between`}>
               <div className="min-w-0 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#00D68F]" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span className="truncate">
                   {t('phoneAuthOtpSentTo', { phone: phoneOtpState.formattedPhone })}
                 </span>
@@ -1107,7 +1083,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                 onClick={handleResend}
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold disabled:opacity-50 cursor-pointer ${
                   isGlass
-                    ? 'text-[#A7C4C5] hover:text-[#00D68F]'
+                    ? 'text-[#A7C4C5] hover:text-[#00C8D7]'
                     : 'text-stone-600 dark:text-stone-300 hover:text-[#047857] dark:hover:text-[#10B981]'
                 }`}
               >
@@ -1148,8 +1124,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                   htmlFor={`phone-number-${variant}`}
                   className={
                     isGlass
-                      ? 'text-xs font-medium text-[#CBE3E4]'
-                      : 'text-[11px] font-semibold text-stone-700 dark:text-stone-300'
+                      ? 'text-xs font-semibold text-[#CBE3E4]'
+                      : 'text-[11px] font-semibold text-stone-600 dark:text-stone-300'
                   }
                 >
                   {t('phoneAuthNumberLabel')}
@@ -1180,7 +1156,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
               {!isCompact && (
                 <p
                   className={`text-[11px] mt-1.5 leading-relaxed ${
-                    isGlass ? 'text-[#89AFB2]' : 'text-stone-500 dark:text-stone-400'
+                    isGlass ? 'text-[#7CA3A6]' : 'text-stone-500 dark:text-stone-400'
                   }`}
                 >
                   {t('phoneAuthHint')}
@@ -1209,7 +1185,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
         <div className="space-y-3 pt-1">
           <div
             className={`flex items-center gap-2.5 text-[11px] font-medium ${
-              isGlass ? 'text-[#7CA3A6]' : 'text-stone-400 dark:text-stone-500'
+              isGlass ? 'text-[#7DA4A7]' : 'text-stone-400 dark:text-stone-500'
             }`}
           >
             <span
@@ -1231,12 +1207,12 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             onClick={handleGoogleSignIn}
             className={`w-full min-h-[46px] px-4 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer ${
               isGlass
-                ? 'bg-[#072427]/80 border-[#123E42] hover:border-[#00C8D7]/60 hover:bg-[#0B3034] text-[#F5FAFA] shadow-sm shadow-black/20 focus-visible:outline-2 focus-visible:outline-[#00C8D7]'
-                : 'bg-white dark:bg-[#232D28] border-2 border-[#E7E5E4] dark:border-[#34423B] hover:border-[#D97706] dark:hover:border-[#F59E0B] hover:bg-[#FFFDF9] dark:hover:bg-[#29342E] text-stone-900 dark:text-stone-100 shadow-sm hover:shadow-md hover:shadow-amber-900/10'
+                ? 'bg-[#03191B] border-[#13464B] hover:border-[#00C8D7]/55 hover:bg-[#06272A] text-[#F5FAFA] shadow-sm shadow-black/25'
+                : 'bg-white dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] hover:border-[#047857] dark:hover:border-[#10B981] text-stone-800 dark:text-stone-100'
             }`}
           >
             {googleBusy ? (
-              <Loader2 className="w-4 h-4 animate-spin text-[#00D68F]" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <GoogleGIcon className="w-4 h-4 shrink-0" />
             )}
@@ -1246,7 +1222,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
           {/* Security & Trust Assurance */}
           <p
             className={`flex items-center justify-center gap-1.5 text-[11px] text-center pt-0.5 ${
-              isGlass ? 'text-[#89AFB2]' : 'text-stone-500 dark:text-stone-400'
+              isGlass ? 'text-[#7CA3A6]' : 'text-stone-500 dark:text-stone-400'
             }`}
           >
             <ShieldCheck
@@ -1265,7 +1241,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
           className={`${successBannerClass} items-start justify-between`}
         >
           <div className="flex items-start gap-2 min-w-0">
-            <MailCheck className="w-4 h-4 text-[#00D68F] shrink-0 mt-0.5" />
+            <MailCheck className="w-4 h-4 shrink-0 mt-0.5" />
             <div className="min-w-0">
               <div className="text-xs font-bold">
                 {t('welcomeBackSubtitle', { name: welcomeBackNotice.displayName })}

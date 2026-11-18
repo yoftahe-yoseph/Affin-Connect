@@ -18,6 +18,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const { language, setLanguage, t } = useMarketplace();
   const [menuOpen, setMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isObsidian = tone === 'obsidian';
 
   const activeOption =
     LANGUAGE_OPTIONS.find((opt) => opt.code === language) ?? LANGUAGE_OPTIONS[0];
@@ -48,7 +49,6 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   };
 
   if (variant === 'compact') {
-    const isObsidian = tone === 'obsidian';
     return (
       <div ref={containerRef} className={`relative ${className}`}>
         <button
@@ -59,8 +59,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           aria-expanded={menuOpen}
           className={`min-h-[44px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
             isObsidian
-              ? 'bg-[#072427]/80 backdrop-blur-md border-[#00C8D7]/25 hover:border-[#00D68F]/60 hover:bg-[#0B3034]/90 text-[#F5FAFA] focus-visible:outline-2 focus-visible:outline-[#00D68F]'
-              : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] hover:bg-[#ECFDF5] dark:hover:bg-[#10B981]/10 text-stone-800 dark:text-stone-100 focus-visible:outline-2 focus-visible:outline-[#047857] dark:focus-visible:outline-[#10B981]'
+              ? 'bg-[#092825] border-[#14443F] hover:border-[#00D68F]/60 text-[#F5FAFA] focus-visible:outline-2 focus-visible:outline-[#00D68F]'
+              : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] hover:bg-[#ECFDF5] dark:hover:bg-[#10B981]/10 text-stone-800 dark:text-stone-100 focus-visible:outline-2 focus-visible:outline-[#047857]'
           }`}
         >
           <Globe
@@ -71,7 +71,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           <span className="tabular-nums">{activeOption.shortLabel}</span>
           <ChevronDown
             className={`w-3.5 h-3.5 transition-transform ${
-              isObsidian ? 'text-[#89AFB2]' : 'text-stone-500 dark:text-stone-400'
+              isObsidian ? 'text-[#A9C0BD]' : 'text-stone-500 dark:text-stone-400'
             } ${menuOpen ? 'rotate-180' : ''}`}
           />
         </button>
@@ -80,16 +80,16 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           <div
             role="listbox"
             aria-label={t('selectLanguage')}
-            className={`absolute right-0 mt-2 w-56 rounded-2xl border shadow-2xl p-1.5 z-50 space-y-0.5 ${
+            className={`absolute right-0 mt-2 w-56 rounded-2xl border p-1.5 z-50 space-y-0.5 shadow-xl ${
               isObsidian
-                ? 'bg-[#051F22]/95 backdrop-blur-xl border-[#00C8D7]/25 shadow-black/60'
-                : 'bg-white dark:bg-[#1C2420] border-[#E7E5E4] dark:border-[#2A3630] shadow-lg'
+                ? 'bg-[#092825] border-[#14443F]'
+                : 'bg-white dark:bg-[#1C2420] border-[#E7E5E4] dark:border-[#2A3630]'
             }`}
           >
             <div
               className={`px-2.5 py-1.5 text-[11px] font-semibold border-b mb-1 ${
                 isObsidian
-                  ? 'text-[#89AFB2] border-[#00C8D7]/15'
+                  ? 'text-[#A9C0BD] border-[#14443F]'
                   : 'text-stone-500 dark:text-stone-400 border-[#E7E5E4] dark:border-[#2A3630]'
               }`}
             >
@@ -105,20 +105,20 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   aria-selected={selected}
                   onClick={() => handleSelect(option.code)}
                   className={`w-full min-h-[44px] px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
-                    selected
-                      ? isObsidian
+                    isObsidian
+                      ? selected
                         ? 'bg-[#00D68F]/15 text-[#00D68F]'
-                        : 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
-                      : isObsidian
-                        ? 'text-[#F5FAFA] hover:bg-[#0B3034]/80'
-                        : 'text-stone-800 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]'
+                        : 'text-[#F5FAFA] hover:bg-[#061D1B]'
+                      : selected
+                      ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
+                      : 'text-stone-800 dark:text-stone-100 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]'
                   }`}
                 >
                   <div className="min-w-0">
                     <div className="text-xs font-bold leading-tight">{option.label}</div>
                     <div
                       className={`text-[11px] truncate mt-0.5 ${
-                        isObsidian ? 'text-[#89AFB2]' : 'text-stone-500 dark:text-stone-400'
+                        isObsidian ? 'text-[#A9C0BD]' : 'text-stone-500 dark:text-stone-400'
                       }`}
                     >
                       {option.nativeSubtitle}
@@ -145,7 +145,6 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   }
 
   if (variant === 'cards') {
-    const isObsidian = tone === 'obsidian';
     return (
       <div
         role="radiogroup"
@@ -164,11 +163,11 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               className={`w-full min-h-[56px] p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
                 isObsidian
                   ? active
-                    ? 'border-[#00D68F] bg-[#00D68F]/14 focus-visible:outline-2 focus-visible:outline-[#00C8D7]'
-                    : 'border-[#123E42] bg-[#021113]/75 hover:border-[#00C8D7]/50 focus-visible:outline-2 focus-visible:outline-[#00C8D7]'
+                    ? 'border-[#00D68F] bg-[#00D68F]/15 focus-visible:outline-2 focus-visible:outline-[#00D68F]'
+                    : 'border-[#123E42] bg-[#021113]/75 hover:border-[#00C8D7]/45 focus-visible:outline-2 focus-visible:outline-[#00D68F]'
                   : active
-                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 focus-visible:outline-2 focus-visible:outline-[#047857] dark:focus-visible:outline-[#10B981]'
-                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#1C2420] hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] focus-visible:outline-2 focus-visible:outline-[#047857] dark:focus-visible:outline-[#10B981]'
+                  ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 focus-visible:outline-2 focus-visible:outline-[#047857]'
+                  : 'border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] hover:bg-[#FAF8F5] dark:hover:bg-[#1C2420] focus-visible:outline-2 focus-visible:outline-[#047857]'
               }`}
             >
               <div className="min-w-0">
@@ -180,7 +179,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   <span>{option.label}</span>
                   <span
                     className={`text-[11px] font-medium ${
-                      isObsidian ? 'text-[#89AFB2]' : 'text-stone-400 dark:text-stone-500'
+                      isObsidian ? 'text-[#A9C0BD]' : 'text-stone-500 dark:text-stone-400'
                     }`}
                   >
                     {option.shortLabel}
@@ -188,7 +187,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 </div>
                 <div
                   className={`text-xs mt-0.5 ${
-                    isObsidian ? 'text-[#89AFB2]' : 'text-stone-500 dark:text-stone-400'
+                    isObsidian ? 'text-[#A9C0BD]' : 'text-stone-500 dark:text-stone-400'
                   }`}
                 >
                   {option.nativeSubtitle}

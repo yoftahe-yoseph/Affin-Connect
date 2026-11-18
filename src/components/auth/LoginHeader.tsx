@@ -15,10 +15,10 @@ export const LoginHeader: React.FC = () => {
           <div className="relative shrink-0">
             <div
               aria-hidden="true"
-              className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-[#00D68F]/40 to-[#00C8D7]/35 blur-[2px]"
+              className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-[#00D68F]/40 to-[#00C8D7]/40 blur-sm opacity-75"
             />
             {logoFailed ? (
-              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#072427] border border-[#00C8D7]/30 flex items-center justify-center text-[#00D68F]">
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#072629] border border-[#00C8D7]/35 flex items-center justify-center text-[#00D68F]">
                 <Store className="w-5 h-5" />
               </div>
             ) : (
@@ -27,7 +27,7 @@ export const LoginHeader: React.FC = () => {
                 alt={t('appName')}
                 referrerPolicy="no-referrer"
                 onError={() => setLogoFailed(true)}
-                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-[#00C8D7]/35 shadow-lg shadow-black/40"
+                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-[#00C8D7]/35 shadow-md shadow-black/40"
               />
             )}
           </div>

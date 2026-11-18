@@ -70,6 +70,7 @@ import {
   subscribeToUserOrders,
   subscribeToUserPriceAlerts,
   subscribeToUserReturnRequests,
+  updateOrderPaymentInFirestore,
   updateOrderStatusInFirestore,
   updateReviewInFirestore,
   updateUserGovernanceInFirestore,
@@ -95,6 +96,7 @@ import {
   findUserByNormalizedEmail,
   findNearbyDiscountedDeals,
   formatETB,
+  formatFriendlyErrorMessage,
   generateDeliveryPin,
   getCartItemKey,
   getItemReturnRequest,
@@ -114,7 +116,9 @@ import {
   normalizePhoneToE164,
   parseSharedWishlistFallbackIds,
   rankShopsByProximity,
+  resolveActiveSellerShopId,
   resolveClosestNeighborhood,
+  resolveInitialOrderPaymentStatus,
   sanitizeWishlistProductIds,
   shouldTriggerPriceAlert,
   validateEmailSignInInput,
@@ -469,7 +473,19 @@ interface MarketplaceContextValue {
     notes?: string;
     promoCode?: string;
     pointsToRedeem?: number;
+    idempotencyKey?: string;
   }) => Promise<Order>;
+  verifyOrderPayment: (orderId: string) => Promise<{
+    verifiedPaid: boolean;
+    paymentStatus: PaymentStatus;
+    configured: boolean;
+    message?: string;
+    missingEnvVars?: string[];
+  }>;
+  paymentProviders: Record<
+    'telebirr' | 'cbe_birr' | 'chapa',
+    { configured: boolean; missingEnvVars: string[] }
+  > | null;
   reorderFromOrder: (order: Order) => { addedCount: number; skippedCount: number };
   updateOrderStatus: (
     orderId: string,
@@ -853,7 +869,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const resolvedTheme: ResolvedTheme = 'dark';
 
-  // Enforce permanent dark obsidian class & colorScheme on <html>
+  // Enforce dark mode class & colorScheme on <html>
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.classList.add('dark');
@@ -1119,6 +1135,20 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       unsubSellerChats();
     };
   }, [firebaseUser, isCloudAdmin]);
+
+  // Automatically keep activeSellerShopId aligned with the signed-in seller's owned shop
+  useEffect(() => {
+    const resolved = resolveActiveSellerShopId({
+      shops,
+      currentShopId: activeSellerShopId,
+      userUid: firebaseUser?.uid,
+      isAdminMode: activeRoleView === 'admin' || isCloudAdmin,
+      preferredShopId: userProfile?.shopId,
+    });
+    if (resolved !== activeSellerShopId) {
+      setActiveSellerShopId(resolved);
+    }
+  }, [shops, activeSellerShopId, firebaseUser?.uid, activeRoleView, isCloudAdmin, userProfile?.shopId]);
 
   // Seller shop orders listener only when authenticated as shop owner or admin
   useEffect(() => {
@@ -2292,6 +2322,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     notes,
     promoCode: explicitPromo,
     pointsToRedeem: explicitPointsToRedeem,
+    idempotencyKey,
   }: {
     shopId: string;
     fulfillmentMethod: 'delivery' | 'pickup';
@@ -2301,6 +2332,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     notes?: string;
     promoCode?: string;
     pointsToRedeem?: number;
+    idempotencyKey?: string;
   }): Promise<Order> => {
     const rawShopItems = cart.filter((c) => c.shopId === shopId);
     const shop = shopsById[shopId];
@@ -2356,16 +2388,68 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const nowMs = Date.now();
     const now = new Date(nowMs).toISOString();
-    const orderId = `ord-${nowMs}-${Math.random().toString(36).slice(2, 6)}`;
+    let orderId = `ord-${nowMs}-${Math.random().toString(36).slice(2, 6)}`;
+    let deliveryPin = generateDeliveryPin();
+    let serverVerifiedPaid = false;
+
+    try {
+      const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
+      const initRes = await fetch('/api/payments/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+        },
+        body: JSON.stringify({
+          idempotencyKey,
+          shopId: shop.shopId,
+          shop,
+          catalogProducts: products,
+          cartItems: shopItems,
+          fulfillmentMethod,
+          deliveryAddress,
+          deliveryFeeEtb,
+          promoCode: activeCode,
+          pointsToRedeem: requestedRedeem,
+          availableLoyaltyPoints: loyaltyStats.balance,
+          paymentMethod,
+          paymentReference: refValidation.normalizedRef || undefined,
+          governanceConfig,
+          userProfile,
+          customerEmail: firebaseUser?.email || userProfile?.email || undefined,
+          customerName:
+            deliveryAddress?.recipientName || firebaseUser?.displayName || undefined,
+          customerPhone: deliveryAddress?.phoneNumber || undefined,
+        }),
+      });
+      if (initRes.ok) {
+        const initData = (await initRes.json()) as {
+          orderId?: string;
+          deliveryPin?: string;
+          verifiedPaid?: boolean;
+        };
+        if (initData.orderId) orderId = initData.orderId;
+        if (initData.deliveryPin && /^\d{4}$/.test(initData.deliveryPin)) {
+          deliveryPin = initData.deliveryPin;
+        }
+        if (initData.verifiedPaid === true) {
+          serverVerifiedPaid = true;
+        }
+      }
+    } catch {
+      // Offline / network fallback keeps serverVerifiedPaid false so electronic payments remain 'pending'
+    }
+
     const customerUid = firebaseUser?.uid ?? 'guest-local';
-    const deliveryPin = generateDeliveryPin();
     const deliveryEtaLabel =
       fulfillmentMethod === 'delivery'
         ? getNeighborhoodDeliveryEstimate(deliveryAddress?.neighborhood).label
         : '15–25 min';
-    const initialPaymentStatus: PaymentStatus = isElectronicPaymentMethod(paymentMethod)
-      ? 'paid'
-      : 'pending';
+    const initialPaymentStatus: PaymentStatus = resolveInitialOrderPaymentStatus({
+      paymentMethod,
+      serverVerifiedPaid,
+    });
 
     const order: Order = {
       orderId,
@@ -2506,6 +2590,105 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setPromoCodeState('');
     setRedeemLoyaltyPointsState(0);
     return order;
+  };
+
+  const [paymentProviders, setPaymentProviders] = useState<
+    Record<'telebirr' | 'cbe_birr' | 'chapa', { configured: boolean; missingEnvVars: string[] }> | null
+  >(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/payments/providers')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.providers) {
+          setPaymentProviders(data.providers);
+        }
+      })
+      .catch(() => {
+        // Provider readiness check fails closed
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const verifyOrderPayment = async (
+    orderId: string
+  ): Promise<{
+    verifiedPaid: boolean;
+    paymentStatus: PaymentStatus;
+    configured: boolean;
+    message?: string;
+    missingEnvVars?: string[];
+  }> => {
+    const target = orders.find((o) => o.orderId === orderId);
+    if (!target) {
+      return {
+        verifiedPaid: false,
+        paymentStatus: 'pending',
+        configured: false,
+        message: 'Order not found.',
+      };
+    }
+    if (target.paymentStatus === 'paid') {
+      return {
+        verifiedPaid: true,
+        paymentStatus: 'paid',
+        configured: true,
+        message: 'Payment already verified.',
+      };
+    }
+
+    const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
+    const res = await fetch('/api/payments/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
+      body: JSON.stringify({
+        paymentMethod: target.paymentMethod,
+        paymentReference: target.paymentReference,
+        expectedAmountEtb: target.totalAmount,
+      }),
+    });
+
+    const data = (await res.json().catch(() => ({}))) as {
+      verifiedPaid?: boolean;
+      paymentStatus?: PaymentStatus;
+      configured?: boolean;
+      message?: string;
+      missingEnvVars?: string[];
+    };
+
+    const verifiedPaid = data.verifiedPaid === true && data.paymentStatus === 'paid';
+    if (verifiedPaid) {
+      if (firebaseUser) {
+        await updateOrderPaymentInFirestore(orderId, 'paid', target.paymentReference);
+      }
+      const nowIso = new Date().toISOString();
+      const patchOrder = (list: Order[]) =>
+        list.map((o) =>
+          o.orderId === orderId ? { ...o, paymentStatus: 'paid' as PaymentStatus, updatedAt: nowIso } : o
+        );
+      setOrders((prev) => {
+        const next = patchOrder(prev);
+        if (!firebaseUser) {
+          localStorage.setItem(STORAGE_KEYS.LOCAL_ORDERS, JSON.stringify(next));
+        }
+        return next;
+      });
+      setSellerOrders(patchOrder);
+    }
+
+    return {
+      verifiedPaid,
+      paymentStatus: verifiedPaid ? 'paid' : target.paymentStatus,
+      configured: Boolean(data.configured),
+      message: data.message,
+      missingEnvVars: data.missingEnvVars,
+    };
   };
 
   const updateOrderStatus = async (
@@ -2703,8 +2886,19 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       throw new Error(t('governanceUserSuspended'));
     }
     const targetShop = shopsById[product.shopId];
-    if (targetShop?.status === 'suspended' && activeRoleView !== 'admin') {
+    if (!targetShop) {
+      throw new Error('Selected virtual shop was not found. Please create or select your shop first.');
+    }
+    if (targetShop.status === 'suspended' && activeRoleView !== 'admin') {
       throw new Error('Suspended shops cannot create or edit product listings.');
+    }
+    if (
+      firebaseUser &&
+      !isCloudAdmin &&
+      activeRoleView !== 'admin' &&
+      targetShop.ownerUid !== firebaseUser.uid
+    ) {
+      throw new Error('You can only upload products to a virtual shop owned by your account.');
     }
     const shopVerification = getShopVerification(product.shopId);
     if (activeRoleView !== 'admin' && !canShopListProducts(targetShop, shopVerification)) {
@@ -2714,7 +2908,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       throw new Error(t('imageSizeTooLargeError'));
     }
     if (firebaseUser) {
-      await saveProductInFirestore(product);
+      try {
+        await saveProductInFirestore(product);
+      } catch (err) {
+        throw new Error(
+          formatFriendlyErrorMessage(err, 'Unable to save product listing to Firestore.')
+        );
+      }
     }
     setProducts((prev) => {
       const exists = prev.some((p) => p.productId === product.productId);
@@ -5041,6 +5241,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         redeemLoyaltyPoints,
         setRedeemLoyaltyPoints,
         placeOrder,
+        verifyOrderPayment,
+        paymentProviders,
         reorderFromOrder,
         updateOrderStatus,
         saveAddress,

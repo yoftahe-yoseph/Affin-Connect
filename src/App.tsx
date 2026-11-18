@@ -91,10 +91,11 @@ const ScreenRouter: React.FC = () => {
         <img
           src={BRAND_ASSETS.logo}
           alt="Affin Connect"
-          className="w-16 h-16 rounded-2xl object-cover border border-[#00C8D7]/30 shadow-xl shadow-black/50 mb-5"
+          referrerPolicy="no-referrer"
+          className="w-16 h-16 rounded-2xl object-cover border border-[#00C8D7]/35 shadow-lg mb-5"
         />
         <Loader2 className="w-6 h-6 animate-spin text-[#00D68F] mb-3" />
-        <p className="text-xs sm:text-sm font-medium text-[#A7C4C5]">
+        <p className="text-xs sm:text-sm font-medium text-[#A9C0BD]">
           {t('authCheckingSession')}
         </p>
       </div>

@@ -29,6 +29,13 @@ import {
   dispatchWelcomeBackEmail,
   isValidEmailAddress,
 } from './src/server/welcomeBackEmail.ts';
+import {
+  getPaymentProvidersStatus,
+  handleChapaWebhook,
+  handleInitiatePayment,
+  handleProviderWebhook,
+  handleVerifyPayment,
+} from './src/server/payments.ts';
 
 dotenv.config();
 
@@ -410,6 +417,17 @@ async function startServer() {
       return res.status(500).json({ error: 'Failed to process welcome-back email.' });
     }
   });
+
+  // Ethiopian payment provider readiness, idempotent initiation, verification, and webhooks
+  app.get('/api/payments/providers', (_req, res) => {
+    res.json({ providers: getPaymentProvidersStatus() });
+  });
+
+  app.post('/api/payments/initiate', handleInitiatePayment);
+  app.post('/api/payments/verify', handleVerifyPayment);
+  app.post('/api/payments/webhook/chapa', handleChapaWebhook);
+  app.post('/api/payments/webhook/telebirr', handleProviderWebhook('telebirr'));
+  app.post('/api/payments/webhook/cbe', handleProviderWebhook('cbe_birr'));
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });

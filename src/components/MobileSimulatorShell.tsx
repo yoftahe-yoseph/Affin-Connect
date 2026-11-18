@@ -53,11 +53,6 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
   const isFullPageAuth = authLoading || isAuthGateActive || route.name === 'onboarding';
   const showBottomTabs = !isFullPageAuth;
   const showDesktopSidebar = !isFullPageAuth;
-  const isEmeraldHome =
-    route.name === 'home' ||
-    route.name === 'shops' ||
-    route.name === 'cart' ||
-    route.name === 'search';
 
   const handleRoleSwitch = (role: UserRole) => {
     setActiveRoleView(role);
@@ -80,29 +75,23 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
   }
 
   return (
-    <div className="min-h-screen bg-[#0E1310] text-stone-100 flex flex-col md:flex-row items-center md:items-stretch justify-center md:gap-8 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#0E1310] text-[#F5FAFA] flex flex-col md:flex-row items-center md:items-stretch justify-center md:gap-8 md:p-6 lg:p-8">
       <div id="hg-phone-recaptcha-container" className="sr-only" aria-hidden="true" />
       {/* Android / Expo Mobile Viewport Frame */}
       <div
-        className={`w-full md:w-[404px] md:max-w-[404px] h-dvh md:h-[824px] md:rounded-[40px] md:border-[7px] md:border-stone-900 dark:md:border-[#232D28] md:shadow-2xl flex flex-col overflow-hidden relative shrink-0 ${
-          isEmeraldHome ? 'bg-[#031719]' : 'bg-[#FAF8F5] dark:bg-[#141A17]'
-        }`}
+        className="w-full md:w-[404px] md:max-w-[404px] h-dvh md:h-[824px] md:rounded-[40px] md:border-[7px] md:border-[#142624] md:shadow-2xl flex flex-col overflow-hidden relative shrink-0 bg-[#031719]"
       >
         {/* Android Status Bar (visible on desktop simulator frame) */}
         <div
-          className={`hidden md:flex items-center justify-between px-6 pt-2.5 pb-1.5 text-[11px] font-semibold border-b shrink-0 select-none ${
-            isEmeraldHome
-              ? 'bg-[#031719] text-[#A9C0BD] border-white/10'
-              : 'bg-white dark:bg-[#1C2420] text-stone-700 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
-          }`}
+          className="hidden md:flex items-center justify-between px-6 pt-2.5 pb-1.5 text-[11px] font-semibold border-b shrink-0 select-none bg-[#031719] text-[#A9C0BD] border-white/10"
         >
           <span className="tabular-nums">12:50</span>
-          <div className="w-16 h-3.5 bg-stone-900 dark:bg-[#0E1310] rounded-full" aria-hidden="true" />
+          <div className="w-16 h-3.5 bg-[#020E0F] border border-white/10 rounded-full" aria-hidden="true" />
           <div className="flex items-center gap-1.5">
             {firebaseConnected ? (
-              <Wifi className={`w-3.5 h-3.5 ${isEmeraldHome ? 'text-[#00D68F]' : 'text-[#047857] dark:text-[#10B981]'}`} />
+              <Wifi className="w-3.5 h-3.5 text-[#00D68F]" />
             ) : (
-              <WifiOff className="w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B]" />
+              <WifiOff className="w-3.5 h-3.5 text-[#F59E0B]" />
             )}
             <span className="tabular-nums">5G</span>
           </div>
@@ -143,11 +132,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
         )}
 
         {/* Main Scrollable Screen Area */}
-        <main
-          className={`flex-1 overflow-y-auto overflow-x-hidden mobile-scroll flex flex-col ${
-            isEmeraldHome ? 'bg-[#031719]' : 'bg-[#FAF8F5] dark:bg-[#141A17]'
-          }`}
-        >
+        <main className="flex-1 overflow-y-auto overflow-x-hidden mobile-scroll flex flex-col bg-[#031719]">
           {children}
         </main>
 
@@ -192,11 +177,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
         {showBottomTabs && (
           <nav
             aria-label="Primary Marketplace Navigation"
-            className={`backdrop-blur-md border-t px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] grid grid-cols-4 gap-1 items-center shrink-0 ${
-              isEmeraldHome
-                ? 'bg-[#041D1F]/95 border-[#123E39]'
-                : 'bg-white/95 dark:bg-[#051B1C]/95 border-[#E7E5E4] dark:border-[#123E39]'
-            }`}
+            className="backdrop-blur-md border-t px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] grid grid-cols-4 gap-1 items-center shrink-0 bg-[#041D1F]/95 border-white/10"
           >
             <button
               type="button"
@@ -209,9 +190,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
               className={`min-h-[48px] flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
                 route.name === 'home'
                   ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
-                  : isEmeraldHome
-                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
-                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
+                  : 'text-[#A9C0BD] hover:text-[#F5FAFA]'
               }`}
             >
               <Home className="w-5 h-5" />
@@ -225,12 +204,8 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
               aria-current={route.name === 'shops' || route.name === 'map' || route.name === 'shop' ? 'page' : undefined}
               className={`min-h-[48px] flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
                 route.name === 'shops' || route.name === 'map' || route.name === 'shop'
-                  ? isEmeraldHome
-                    ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
-                    : 'bg-[#ECFDF5] text-[#047857] dark:bg-[#00D68F]/15 dark:text-[#00D68F] font-semibold'
-                  : isEmeraldHome
-                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
-                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
+                  ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                  : 'text-[#A9C0BD] hover:text-[#F5FAFA]'
               }`}
             >
               <Store className="w-5 h-5" />
@@ -244,12 +219,8 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
               aria-current={route.name === 'cart' || route.name === 'checkout' ? 'page' : undefined}
               className={`min-h-[48px] relative flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
                 route.name === 'cart' || route.name === 'checkout'
-                  ? isEmeraldHome
-                    ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
-                    : 'bg-[#ECFDF5] text-[#047857] dark:bg-[#00D68F]/15 dark:text-[#00D68F] font-semibold'
-                  : isEmeraldHome
-                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
-                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
+                  ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                  : 'text-[#A9C0BD] hover:text-[#F5FAFA]'
               }`}
             >
               <div className="relative">
@@ -286,12 +257,8 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
                 route.name === 'loyalty' ||
                 route.name === 'seller' ||
                 route.name === 'admin'
-                  ? isEmeraldHome
-                    ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
-                    : 'bg-[#ECFDF5] text-[#047857] dark:bg-[#00D68F]/15 dark:text-[#00D68F] font-semibold'
-                  : isEmeraldHome
-                    ? 'text-[#A9C0BD] hover:text-[#F5FAFA]'
-                    : 'text-stone-500 dark:text-[#A9C0BD] hover:text-stone-800 dark:hover:text-[#F5FAFA]'
+                  ? 'bg-[#00D68F]/15 text-[#00D68F] font-semibold'
+                  : 'text-[#A9C0BD] hover:text-[#F5FAFA]'
               }`}
             >
               <div className="relative">
@@ -306,17 +273,8 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
         )}
 
         {/* Android Gesture Home Pill (desktop simulator frame only) */}
-        <div
-          className={`hidden md:flex justify-center py-1.5 shrink-0 ${
-            isEmeraldHome ? 'bg-[#041D1F]' : 'bg-white dark:bg-[#051B1C]'
-          }`}
-        >
-          <div
-            className={`w-28 h-1 rounded-full ${
-              isEmeraldHome ? 'bg-[#174D47]' : 'bg-stone-300 dark:bg-[#174D47]'
-            }`}
-            aria-hidden="true"
-          />
+        <div className="hidden md:flex justify-center py-1.5 shrink-0 bg-[#031719]">
+          <div className="w-28 h-1 rounded-full bg-white/25" aria-hidden="true" />
         </div>
       </div>
 

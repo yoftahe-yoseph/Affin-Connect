@@ -7,9 +7,12 @@ import {
   translations,
 } from '../constants/translations';
 import {
+  buildProductGalleryImages,
   buildShopSlug,
   buildSocialShareUrls,
   buildWishlistShareUrl,
+  clampProductQuantity,
+  deriveProductBadges,
   formatETB,
   FREE_DELIVERY_THRESHOLD_ETB,
   calculateCartSummary,
@@ -61,6 +64,7 @@ import {
   validateProductInput,
   validateShopInput,
   validateRegistrationInput,
+  validateAddToCartRequest,
   validateAddressInput,
   validateLoyaltyRedemption,
   validatePromoCode,
@@ -85,6 +89,16 @@ import {
   filterShopsForDirectory,
   filterShopsForSearch,
   reconcileCartWithCatalog,
+  resolveInitialOrderPaymentStatus,
+  canNavigateToCheckoutStep,
+  formatReceiptNumber,
+  formatOrderReference,
+  formatPaymentMethodDisplay,
+  buildFinancialReceiptData,
+  getTailwindWidthClass,
+  resolveSellerManagedShops,
+  resolveActiveSellerShopId,
+  formatFriendlyErrorMessage,
 } from './marketplaceLogic';
 import {
   buildWelcomeBackEmail,
@@ -1841,5 +1855,284 @@ test('filterAndSortProducts supports relevance ranking, verifiedOnly, localized 
   );
 });
 
+test('Product details helpers enforce data-backed badges, gallery deduplication, quantity bounds, and stock limits', () => {
+  const gallery = buildProductGalleryImages({
+    imageUrl: 'https://example.com/a.jpg',
+    additionalImages: ['https://example.com/a.jpg', '', 'https://example.com/b.jpg'],
+  });
+  assert.deepEqual(gallery, ['https://example.com/a.jpg', 'https://example.com/b.jpg']);
 
+  const verifiedShop: Shop = {
+    ...sampleShop,
+    shopId: 'shop-verified',
+    status: 'approved',
+    verificationStatus: 'approved',
+    deliveryAvailable: true,
+  };
+  const unverifiedShop: Shop = {
+    ...sampleShop,
+    shopId: 'shop-unverified',
+    status: 'approved',
+    verificationStatus: 'pending_review',
+    deliveryAvailable: false,
+  };
 
+  const organicCoffee: Product = {
+    ...sampleProductA,
+    name: 'Sidama Organic Coffee 250g',
+    description: '100% natural highland beans.',
+    deliveryAvailable: true,
+  };
+  assert.deepEqual(deriveProductBadges(organicCoffee, verifiedShop), {
+    isOrganic: true,
+    isVerified: true,
+    hasFastDelivery: true,
+  });
+
+  const phoneAccessory: Product = {
+    ...sampleProductB,
+    name: 'USB-C Fast Charger',
+    description: 'Durable braided charging cable.',
+    deliveryAvailable: true,
+  };
+  assert.deepEqual(deriveProductBadges(phoneAccessory, unverifiedShop), {
+    isOrganic: false,
+    isVerified: false,
+    hasFastDelivery: false,
+  });
+
+  assert.equal(clampProductQuantity(0, 10), 1);
+  assert.equal(clampProductQuantity(-4, 10), 1);
+  assert.equal(clampProductQuantity(15, 6), 6);
+  assert.equal(clampProductQuantity(3, 0), 1);
+
+  const validAdd = validateAddToCartRequest({
+    product: { isAvailable: true, status: 'active', stock: 5 },
+    shop: verifiedShop,
+    quantity: 2,
+    existingCartQty: 1,
+  });
+  assert.equal(validAdd.allowed, true);
+  assert.equal(validAdd.maxAllowedToAdd, 4);
+
+  const exceedsCartLimit = validateAddToCartRequest({
+    product: { isAvailable: true, status: 'active', stock: 5 },
+    shop: verifiedShop,
+    quantity: 3,
+    existingCartQty: 4,
+  });
+  assert.equal(exceedsCartLimit.allowed, false);
+  assert.equal(exceedsCartLimit.errorKey, 'stockLimitReached');
+  assert.equal(exceedsCartLimit.maxAllowedToAdd, 1);
+
+  const fullInCart = validateAddToCartRequest({
+    product: { isAvailable: true, status: 'active', stock: 5 },
+    shop: verifiedShop,
+    quantity: 1,
+    existingCartQty: 5,
+  });
+  assert.equal(fullInCart.allowed, false);
+  assert.equal(fullInCart.errorKey, 'maxCartStockReached');
+
+  const unavailableProd = validateAddToCartRequest({
+    product: { isAvailable: false, status: 'active', stock: 5 },
+    shop: verifiedShop,
+    quantity: 1,
+    existingCartQty: 0,
+  });
+  assert.equal(unavailableProd.allowed, false);
+  assert.equal(unavailableProd.errorKey, 'productUnavailableError');
+});
+
+test('Checkout step gating, truthful payment status resolution, receipt sanitization, and progress helpers work accurately', () => {
+  // Payment status truthfulness: only verified electronic payments start as paid
+  assert.equal(
+    resolveInitialOrderPaymentStatus({ paymentMethod: 'telebirr', serverVerifiedPaid: false }),
+    'pending'
+  );
+  assert.equal(
+    resolveInitialOrderPaymentStatus({ paymentMethod: 'telebirr', serverVerifiedPaid: undefined }),
+    'pending'
+  );
+  assert.equal(
+    resolveInitialOrderPaymentStatus({ paymentMethod: 'cbe_birr', serverVerifiedPaid: false }),
+    'pending'
+  );
+  assert.equal(
+    resolveInitialOrderPaymentStatus({ paymentMethod: 'chapa', serverVerifiedPaid: true }),
+    'paid'
+  );
+  assert.equal(
+    resolveInitialOrderPaymentStatus({ paymentMethod: 'cash_on_delivery', serverVerifiedPaid: true }),
+    'pending'
+  );
+  assert.equal(
+    resolveInitialOrderPaymentStatus({ paymentMethod: 'pay_at_pickup', serverVerifiedPaid: true }),
+    'pending'
+  );
+
+  // Checkout 3-step gating prevents skipping mandatory steps while allowing backward navigation
+  assert.equal(
+    canNavigateToCheckoutStep({ targetStep: 1, isStep1Valid: false, step2Confirmed: false }),
+    true
+  );
+  assert.equal(
+    canNavigateToCheckoutStep({ targetStep: 2, isStep1Valid: false, step2Confirmed: false }),
+    false
+  );
+  assert.equal(
+    canNavigateToCheckoutStep({ targetStep: 2, isStep1Valid: true, step2Confirmed: false }),
+    true
+  );
+  assert.equal(
+    canNavigateToCheckoutStep({ targetStep: 3, isStep1Valid: true, step2Confirmed: false }),
+    false
+  );
+  assert.equal(
+    canNavigateToCheckoutStep({ targetStep: 3, isStep1Valid: true, step2Confirmed: true }),
+    true
+  );
+
+  // Financial receipt builder excludes sensitive PINs/OTPs and preserves accurate line totals
+  const paidOrder: Order = {
+    orderId: 'ord-20261118-9a4f',
+    customerUid: 'buyer-1',
+    customerName: 'Selamawit Bekele',
+    customerPhone: '+251911223344',
+    shopId: 'shop-1',
+    shopName: 'Sidama Coffee House',
+    neighborhood: 'Piazza',
+    items: [
+      {
+        productId: 'prod-a',
+        name: 'Sidama Coffee 250g',
+        price: 170,
+        quantity: 2,
+        imageUrl: '/coffee.jpg',
+        variantLabel: '250g Whole Bean',
+      },
+    ],
+    subtotal: 340,
+    deliveryFee: 30,
+    promoCode: 'HAWASSA10',
+    promoDiscountAmount: 34,
+    pointsRedeemed: 20,
+    pointsDiscountAmount: 20,
+    discountAmount: 54,
+    totalAmount: 316,
+    currency: 'ETB',
+    fulfillmentMethod: 'delivery',
+    paymentMethod: 'telebirr',
+    paymentStatus: 'paid',
+    paymentReference: 'TB-VERIFIED-9012',
+    deliveryPin: '4829',
+    orderStatus: 'pending',
+    createdAt: '2026-11-18T09:45:00.000Z',
+    updatedAt: '2026-11-18T09:45:00.000Z',
+  };
+
+  assert.equal(formatReceiptNumber(paidOrder), 'AC2026111809459A4F');
+  assert.equal(formatOrderReference(paidOrder.orderId), '#2611189A4F'.slice(0, 1) + '02611189A4F'.slice(-8));
+  assert.equal(formatPaymentMethodDisplay('telebirr'), 'Telebirr');
+  assert.equal(formatPaymentMethodDisplay('cbe_birr'), 'CBE');
+
+  const receipt = buildFinancialReceiptData(paidOrder, sampleShop);
+  assert.equal(receipt.receiptNumber, 'AC2026111809459A4F');
+  assert.equal(receipt.bannerTone, 'paid');
+  assert.equal(receipt.merchantName, 'Sidama Heritage Roasters');
+  assert.equal(receipt.items[0].lineTotal, 340);
+  assert.equal(receipt.totalDiscountAmount, 54);
+  assert.equal(receipt.totalAmount, 316);
+  assert.equal(receipt.paymentReference, 'TB-VERIFIED-9012');
+  assert.equal('deliveryPin' in receipt, false);
+  assert.equal('pin' in receipt, false);
+  assert.equal(JSON.stringify(receipt).includes('4829'), false);
+
+  const pendingReceipt = buildFinancialReceiptData({
+    ...paidOrder,
+    paymentStatus: 'pending',
+    paymentReference: 'TB-PENDING-001',
+  });
+  assert.equal(pendingReceipt.bannerTone, 'pending');
+
+  // Tailwind progress width classes
+  assert.equal(getTailwindWidthClass(0), 'w-0');
+  assert.equal(getTailwindWidthClass(25), 'w-1/4');
+  assert.equal(getTailwindWidthClass(50), 'w-1/2');
+  assert.equal(getTailwindWidthClass(75), 'w-3/4');
+  assert.equal(getTailwindWidthClass(100), 'w-full');
+});
+
+test('Seller shop scoping, active seller shop resolution, and friendly error formatting prevent cross-owner product upload errors', () => {
+  const seedShop: Shop = { ...sampleShop, shopId: 'shop-seed-1', ownerUid: 'seed-seller-1', name: 'Seed Shop' };
+  const sellerOwnedShop: Shop = { ...sampleShop, shopId: 'shop-user-1', ownerUid: 'uid-seller-abc', name: 'Abebe Coffee' };
+  const otherSellerShop: Shop = { ...sampleShop, shopId: 'shop-user-2', ownerUid: 'uid-other', name: 'Other Coffee' };
+  const allShops = [seedShop, sellerOwnedShop, otherSellerShop];
+
+  // Non-admin authenticated seller sees only their owned shops
+  const sellerScoped = resolveSellerManagedShops(allShops, 'uid-seller-abc', false);
+  assert.deepEqual(sellerScoped.map((s) => s.shopId), ['shop-user-1']);
+
+  // Seller with no shops gets empty array rather than seed shop
+  assert.equal(resolveSellerManagedShops(allShops, 'uid-brand-new', false).length, 0);
+
+  // Admin supervision mode sees all shops
+  assert.equal(resolveSellerManagedShops(allShops, 'uid-seller-abc', true).length, 3);
+
+  // Active seller shop auto-switches off SEED_SHOPS[0] onto seller's own shop
+  assert.equal(
+    resolveActiveSellerShopId({
+      shops: allShops,
+      currentShopId: 'shop-seed-1',
+      userUid: 'uid-seller-abc',
+      isAdminMode: false,
+    }),
+    'shop-user-1'
+  );
+
+  // Keeps valid current owned shop if already selected
+  assert.equal(
+    resolveActiveSellerShopId({
+      shops: allShops,
+      currentShopId: 'shop-user-1',
+      userUid: 'uid-seller-abc',
+      isAdminMode: false,
+    }),
+    'shop-user-1'
+  );
+
+  // Returns empty string for seller with no owned shop yet (triggers shop creation onboarding)
+  assert.equal(
+    resolveActiveSellerShopId({
+      shops: allShops,
+      currentShopId: 'shop-seed-1',
+      userUid: 'uid-brand-new',
+      isAdminMode: false,
+    }),
+    ''
+  );
+
+  // Admin can keep inspecting any shop
+  assert.equal(
+    resolveActiveSellerShopId({
+      shops: allShops,
+      currentShopId: 'shop-seed-1',
+      userUid: 'uid-admin',
+      isAdminMode: true,
+    }),
+    'shop-seed-1'
+  );
+
+  // Friendly error parser converts raw JSON FirestoreErrorInfo into clear guidance
+  const rawPermJson = JSON.stringify({
+    error: '7 PERMISSION_DENIED: Missing or insufficient permissions.',
+    operationType: 'write',
+    path: 'products/prod-123',
+  });
+  const friendlyPerm = formatFriendlyErrorMessage(new Error(rawPermJson), 'Fallback');
+  assert.ok(friendlyPerm.includes('Permission denied by Firestore security rules'));
+  assert.equal(friendlyPerm.includes('operationType'), false);
+
+  assert.equal(formatFriendlyErrorMessage(new Error('Plain upload error'), 'Fallback'), 'Plain upload error');
+  assert.equal(formatFriendlyErrorMessage(null, 'Fallback message'), 'Fallback message');
+});

@@ -80,6 +80,12 @@ export const ResilientImage: React.FC<{
   darkSurface = false,
 }) => {
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  React.useEffect(() => {
+    setFailed(false);
+    setLoaded(false);
+  }, [src]);
 
   if (failed || !src) {
     return (
@@ -87,27 +93,43 @@ export const ResilientImage: React.FC<{
         className={`w-full h-full flex flex-col items-center justify-center p-3 text-center ${
           darkSurface
             ? 'bg-[#061D1B] text-[#A9C0BD]'
-            : 'bg-[#FAF8F5] dark:bg-[#141A17] text-stone-500 dark:text-stone-400'
+            : 'bg-[#FAF8F5] dark:bg-[#141A17] text-stone-400 dark:text-stone-500'
         }`}
       >
         <ShoppingBag
-          className={`w-6 h-6 mb-1 ${
-            darkSurface ? 'text-[#00D68F]/70' : 'text-[#047857]/60 dark:text-[#10B981]/60'
-          }`}
+          className={`w-6 h-6 mb-1 ${darkSurface ? 'text-[#00D68F]/60' : 'opacity-60'}`}
         />
-        {fallbackTitle && <span className="text-[11px] font-medium line-clamp-2">{fallbackTitle}</span>}
+        {fallbackTitle && (
+          <span className="text-[11px] font-medium line-clamp-2">{fallbackTitle}</span>
+        )}
       </div>
     );
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
-      className={className}
-    />
+    <div className="relative w-full h-full">
+      {!loaded && (
+        <div
+          aria-hidden="true"
+          className={`absolute inset-0 animate-pulse ${
+            darkSurface ? 'bg-[#092825]' : 'bg-stone-200 dark:bg-[#1C2420]'
+          }`}
+        />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          setFailed(true);
+          setLoaded(true);
+        }}
+        className={`${className} transition-opacity duration-300 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    </div>
   );
 };
 
@@ -136,7 +158,7 @@ export const ProductCard: React.FC<{
 
   if (isDarkCard) {
     return (
-      <article className="bg-[#092825] rounded-2xl border border-[#123E39] overflow-hidden flex flex-col shadow-lg shadow-black/25 hover:border-[#00D68F]/45 transition-all">
+      <article className="bg-[#092825] rounded-2xl border border-[#123E39] overflow-hidden flex flex-col shadow-md shadow-black/25 hover:border-[#00D68F]/50 transition-all">
         <div className="relative aspect-[4/3] bg-[#061D1B] overflow-hidden">
           <button
             type="button"
@@ -154,7 +176,7 @@ export const ProductCard: React.FC<{
           </button>
 
           {hasDiscount && discountPct > 0 && (
-            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-[#031719]/85 border border-[#00D68F]/40 text-[#00D68F] text-[10px] font-bold tabular-nums backdrop-blur-xs">
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-[#00D68F] text-[#031719] text-[10px] font-bold tabular-nums shadow-sm">
               -{discountPct}%
             </span>
           )}
@@ -169,8 +191,8 @@ export const ProductCard: React.FC<{
           </button>
 
           {outOfStock && (
-            <div className="absolute inset-0 bg-[#031719]/70 flex items-center justify-center pointer-events-none">
-              <span className="bg-[#092825] text-[#F5FAFA] text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-white/15">
+            <div className="absolute inset-0 bg-[#031719]/75 flex items-center justify-center pointer-events-none">
+              <span className="bg-[#092825] text-[#F5FAFA] text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[#123E39]">
                 {t('outOfStock')}
               </span>
             </div>
@@ -180,7 +202,7 @@ export const ProductCard: React.FC<{
         <div className="p-3 flex-1 flex flex-col justify-between gap-2">
           <div>
             <div className="flex items-center gap-1 text-[11px] text-[#A9C0BD] truncate">
-              <span className="truncate font-medium text-[#00C8D7]">{product.shopName}</span>
+              <span className="truncate font-medium text-[#00D68F]">{product.shopName}</span>
               {shop && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -202,7 +224,7 @@ export const ProductCard: React.FC<{
             <div className="mt-1.5 flex items-center justify-between gap-1 text-[10px]">
               <span
                 className={`font-medium tabular-nums truncate ${
-                  outOfStock ? 'text-rose-300' : 'text-[#A9C0BD]'
+                  outOfStock ? 'text-rose-400' : 'text-[#A9C0BD]'
                 }`}
               >
                 {outOfStock
@@ -230,7 +252,7 @@ export const ProductCard: React.FC<{
                 {formatETB(product.price)}
               </div>
               {hasDiscount && (
-                <div className="text-[11px] text-[#A9C0BD]/70 line-through tabular-nums whitespace-nowrap mt-0.5">
+                <div className="text-[11px] text-[#A9C0BD]/60 line-through tabular-nums whitespace-nowrap mt-0.5">
                   {formatETB(product.previousPrice!)}
                 </div>
               )}
@@ -243,8 +265,8 @@ export const ProductCard: React.FC<{
               aria-label={`Add ${product.name} to cart`}
               className={`min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center shrink-0 transition-all active:scale-95 ${
                 justAdded
-                  ? 'bg-[#00C8D7] text-[#031719] shadow-sm shadow-[#00C8D7]/30'
-                  : 'bg-gradient-to-br from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] font-bold shadow-sm shadow-[#00D68F]/20 disabled:bg-[#0D3531] disabled:bg-none disabled:text-[#A9C0BD]/40 disabled:shadow-none'
+                  ? 'bg-[#00C8D7] text-[#031719] shadow-md shadow-[#00C8D7]/25'
+                  : 'bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] font-bold shadow-md shadow-[#00D68F]/20 disabled:bg-[#061D1B] disabled:from-[#061D1B] disabled:to-[#061D1B] disabled:text-[#A9C0BD]/40 disabled:shadow-none'
               }`}
             >
               {justAdded ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Plus className="w-4 h-4 stroke-[2.5]" />}
@@ -396,10 +418,10 @@ export const ShopCard: React.FC<{
   if (variant === 'emeraldDark') {
     return (
       <article
-        className={`${fullWidth ? 'w-full min-w-0' : 'w-56 shrink-0'} rounded-2xl border overflow-hidden flex flex-col shadow-lg shadow-black/25 transition-all ${
+        className={`${fullWidth ? 'w-full min-w-0' : 'w-56 shrink-0'} rounded-2xl border overflow-hidden flex flex-col shadow-md shadow-black/25 transition-all ${
           isNearestCard
-            ? 'bg-[#0B302C] border-[#00D68F]/70 ring-1 ring-[#00D68F]/30'
-            : 'bg-[#092825] border-[#123E39] hover:border-[#00D68F]/45'
+            ? 'bg-[#092825] border-[#00D68F] ring-1 ring-[#00D68F]/35'
+            : 'bg-[#092825] border-[#123E39] hover:border-[#00D68F]/50'
         }`}
       >
         <div className="relative h-24 w-full bg-[#061D1B] overflow-hidden">
@@ -416,14 +438,14 @@ export const ShopCard: React.FC<{
               darkSurface
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#092825] via-[#092825]/30 to-transparent" />
-            <div className="absolute bottom-2 left-3 w-9 h-9 rounded-xl overflow-hidden bg-[#031719] border border-white/20 shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#031719]/85 via-transparent to-transparent" />
+            <div className="absolute bottom-2 left-3 w-9 h-9 rounded-xl overflow-hidden bg-[#031719] border border-[#14443F] shadow-sm">
               <ResilientImage src={shop.logoUrl} alt={`${shop.name} logo`} fallbackTitle={shop.name} darkSurface />
             </div>
           </button>
 
           {isVerified && (
-            <span className="pointer-events-none absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#031719]/85 border border-[#00D68F]/40 text-[#00D68F] text-[10px] font-semibold backdrop-blur-xs">
+            <span className="pointer-events-none absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#031719]/85 backdrop-blur-xs border border-[#00D68F]/35 text-[#00D68F] text-[10px] font-semibold">
               <BadgeCheck className="w-3 h-3 shrink-0" />
               <span>{t('verifiedMerchantLabel')}</span>
             </span>
@@ -443,7 +465,7 @@ export const ShopCard: React.FC<{
 
           {proximity && (
             <span
-              className={`pointer-events-none absolute right-2 px-2 py-0.5 rounded-lg bg-[#031719]/80 border border-white/10 text-[#F5FAFA] text-[10px] font-medium tabular-nums backdrop-blur-xs ${
+              className={`pointer-events-none absolute right-2 px-2 py-0.5 rounded-lg bg-[#031719]/85 backdrop-blur-xs border border-white/10 text-[#F5FAFA] text-[10px] font-medium tabular-nums ${
                 showFavorite ? 'bottom-2' : 'top-2'
               }`}
             >
@@ -469,7 +491,7 @@ export const ShopCard: React.FC<{
 
             <div className="flex items-center justify-between gap-1.5 mt-1 text-[11px] text-[#A9C0BD] min-w-0">
               <span className="flex items-center gap-1 truncate min-w-0">
-                <MapPin className="w-3 h-3 text-[#00C8D7] shrink-0" />
+                <MapPin className="w-3 h-3 text-[#00D68F] shrink-0" />
                 <span className="truncate">{getLocalizedNeighborhood(shop.neighborhood, language)}</span>
               </span>
 
@@ -482,7 +504,7 @@ export const ShopCard: React.FC<{
                   )}
                 </span>
               ) : (
-                <span className="text-[10px] font-medium text-[#00C8D7] shrink-0">
+                <span className="text-[10px] font-medium text-[#00D68F] shrink-0">
                   {t('newShopBadge')}
                 </span>
               )}
@@ -498,7 +520,7 @@ export const ShopCard: React.FC<{
           <button
             type="button"
             onClick={() => navigate({ name: 'shop', shopId: shop.shopId })}
-            className="w-full min-h-[40px] px-3 rounded-xl bg-[#0D3531] hover:bg-gradient-to-r hover:from-[#00D68F] hover:to-[#00C8D7] text-[#00D68F] hover:text-[#031719] border border-[#00D68F]/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+            className="w-full min-h-[40px] px-3 rounded-xl bg-[#031719] hover:bg-gradient-to-r hover:from-[#00D68F] hover:to-[#00C8D7] text-[#00D68F] hover:text-[#031719] border border-[#00D68F]/35 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
           >
             <Store className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{t('visitShop')}</span>

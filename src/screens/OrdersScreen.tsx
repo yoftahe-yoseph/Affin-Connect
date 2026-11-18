@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Download,
+  FileText,
   MessageSquare,
   Package,
   RotateCcw,
@@ -19,17 +21,21 @@ import {
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { EmptyState, OrderStatusBadge, ResilientImage } from '../components/SharedUI';
+import { OrderReceiptModal } from '../components/OrderReceiptModal';
 import {
   canTransitionOrderStatus,
   formatETB,
   getItemReturnRequest,
   getNeighborhoodDeliveryEstimate,
+  getTailwindWidthClass,
   getUserProductReview,
+  isElectronicPaymentMethod,
   isOrderEligibleForReturn,
   MAX_RETURN_PHOTO_DATA_URL_LENGTH,
   RETURN_REASON_OPTIONS,
   validateReturnRequestInput,
 } from '../utils/marketplaceLogic';
+import { downloadReceiptPdf } from '../utils/receiptPdf';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import type {
   Order,
@@ -207,18 +213,24 @@ const OrderDetailView: React.FC<{
 }> = ({ order, onBack, onCancel, onReviewProduct, getExistingRating }) => {
   const {
     navigate,
+    shopsById,
     reorderFromOrder,
     returnRequests,
     submitReturnRequest,
+    verifyOrderPayment,
     openOrderChat,
     tradeChats,
     language,
     t,
   } = useMarketplace();
   const [receiptCopied, setReceiptCopied] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
   const [returnTargetItem, setReturnTargetItem] = useState<OrderItemSnapshot | null>(null);
   const orderCode = order.orderId.slice(-6).toUpperCase();
   const linkedThread = tradeChats.find((th) => th.orderId === order.orderId);
+  const linkedShop = shopsById[order.shopId];
 
   const milestoneSteps = [
     { key: 'placed', label: t('trackerStepPlaced') },
@@ -347,13 +359,12 @@ const OrderDetailView: React.FC<{
             <div className="space-y-2.5 pt-1" data-testid="order-milestone-tracker">
               <div className="w-full h-1.5 rounded-full bg-[#E7E5E4] dark:bg-[#2A3630] overflow-hidden">
                 <div
-                  className="h-full bg-[#047857] dark:bg-[#10B981] rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.max(
+                  className={`h-full bg-[#047857] dark:bg-[#10B981] rounded-full transition-all duration-300 ${getTailwindWidthClass(
+                    Math.max(
                       12,
                       Math.round(((Math.max(0, currentMilestoneIdx) + 1) / milestoneSteps.length) * 100)
-                    )}%`,
-                  }}
+                    )
+                  )}`}
                 />
               </div>
 
@@ -610,8 +621,48 @@ const OrderDetailView: React.FC<{
           )}
           <div className="flex justify-between">
             <span className="text-stone-500 dark:text-stone-400">{t('paymentStatusLabel')}</span>
-            <span className="font-semibold capitalize text-[#D97706] dark:text-[#F59E0B]">{order.paymentStatus}</span>
+            <span
+              className={`font-semibold capitalize ${
+                order.paymentStatus === 'paid'
+                  ? 'text-[#047857] dark:text-[#10B981]'
+                  : order.paymentStatus === 'refunded'
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-[#D97706] dark:text-[#F59E0B]'
+              }`}
+            >
+              {order.paymentStatus}
+            </span>
           </div>
+          {order.paymentStatus === 'pending' && isElectronicPaymentMethod(order.paymentMethod) && (
+            <div className="pt-1.5 space-y-1.5">
+              <button
+                type="button"
+                disabled={verifyingPayment}
+                onClick={async () => {
+                  setVerifyingPayment(true);
+                  setVerifyNotice(null);
+                  try {
+                    const res = await verifyOrderPayment(order.orderId);
+                    setVerifyNotice(
+                      res.verifiedPaid
+                        ? t('paymentVerifiedNowMsg')
+                        : res.message || t('paymentStillPendingMsg')
+                    );
+                  } finally {
+                    setVerifyingPayment(false);
+                  }
+                }}
+                className="w-full min-h-[38px] px-3 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/30 dark:border-[#10B981]/35 text-[11px] font-bold text-[#047857] dark:text-[#10B981] hover:opacity-90 disabled:opacity-60 transition-opacity"
+              >
+                {verifyingPayment ? t('checkingPaymentStatus') : t('checkPaymentStatusBtn')}
+              </button>
+              {verifyNotice && (
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                  {verifyNotice}
+                </p>
+              )}
+            </div>
+          )}
           {order.orderStatus !== 'canceled' && order.orderStatus !== 'rejected' && (
             <div className="pt-2 border-t border-[#E7E5E4] dark:border-[#2A3630] flex items-center gap-2 text-[11px] font-semibold text-[#047857] dark:text-[#10B981]">
               <ShieldCheck className="w-4 h-4 shrink-0" />
@@ -646,6 +697,29 @@ const OrderDetailView: React.FC<{
             </span>
           )}
         </button>
+
+        {/* Receipt Actions: View Official Receipt + Download PDF */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            data-testid="order-view-receipt-btn"
+            onClick={() => setReceiptModalOpen(true)}
+            className="min-h-[44px] px-3 rounded-xl border border-[#047857]/35 dark:border-[#10B981]/40 bg-[#ECFDF5] dark:bg-[#10B981]/15 hover:opacity-90 text-[#047857] dark:text-[#10B981] text-xs font-bold flex items-center justify-center gap-1.5 transition-opacity"
+          >
+            <FileText className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('viewReceiptBtn')}</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="order-download-pdf-btn"
+            onClick={() => downloadReceiptPdf(order, linkedShop)}
+            className="min-h-[44px] px-3 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition-all"
+          >
+            <Download className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('downloadPdfBtn')}</span>
+          </button>
+        </div>
 
         {/* Quick Actions: Reorder + Copy Receipt */}
         <div className="grid grid-cols-2 gap-2.5">
@@ -687,6 +761,14 @@ const OrderDetailView: React.FC<{
           </button>
         )}
       </div>
+
+      {receiptModalOpen && (
+        <OrderReceiptModal
+          order={order}
+          shop={linkedShop}
+          onClose={() => setReceiptModalOpen(false)}
+        />
+      )}
 
       {returnTargetItem && (
         <EasyReturnModal

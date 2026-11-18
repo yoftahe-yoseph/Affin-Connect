@@ -8,27 +8,29 @@
 
 :root {
   color-scheme: dark;
-  --hg-canvas: #0E1310;
-  --hg-surface: #1C2420;
-  --hg-border: #2A3630;
-  --hg-emerald: #10B981;
-  --hg-emerald-hover: #059669;
-  --hg-sage-tint: rgba(16, 185, 129, 0.14);
+  --hg-canvas: #031719;
+  --hg-surface: #092825;
+  --hg-border: #14443F;
+  --hg-emerald: #00D68F;
+  --hg-emerald-hover: #00C8D7;
+  --hg-sage-tint: rgba(0, 214, 143, 0.14);
   --hg-honey: #F59E0B;
-  --hg-terracotta: #C2410C;
-  --hg-terracotta-tint: rgba(194, 65, 12, 0.14);
+  --hg-terracotta: #FB923C;
+  --hg-terracotta-tint: rgba(251, 146, 60, 0.14);
 }
 
 html,
 html.dark {
   color-scheme: dark;
+  background-color: #031719;
 }
 
 @layer base {
+  html,
   body {
     font-family: var(--font-sans);
-    background-color: #0E1310;
-    color: #F5F5F4;
+    background-color: #031719;
+    color: #F5FAFA;
   }
 
   h1, h2, h3, .font-display {
@@ -45,7 +47,7 @@ html.dark {
   background: transparent;
 }
 .mobile-scroll::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.22);
+  background: rgba(0, 214, 143, 0.35);
   border-radius: 9999px;
 }
 

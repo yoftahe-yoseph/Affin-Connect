@@ -168,7 +168,7 @@ export const ShopsScreen: React.FC<{
       <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
         <div className="flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#00D68F]/35 shrink-0 shadow-md shadow-[#00D68F]/10">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#14443F] shrink-0 shadow-sm">
               <img
                 src={BRAND_ASSETS.logo}
                 alt="Affin Connect"
@@ -207,7 +207,7 @@ export const ShopsScreen: React.FC<{
               aria-label={t('openProfileAria')}
               className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#092825] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
                 {firebaseUser?.photoURL ? (
                   <img
                     src={firebaseUser.photoURL}
@@ -238,7 +238,7 @@ export const ShopsScreen: React.FC<{
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('shopsSearchPlaceholder')}
               aria-label={t('shopsSearchPlaceholder')}
-              className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD] focus:outline-none"
+              className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/70 focus:outline-none"
             />
             {searchQuery ? (
               <button
@@ -252,7 +252,7 @@ export const ShopsScreen: React.FC<{
             ) : null}
           </div>
 
-          <div className="relative inline-flex items-center rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/45 px-2.5 min-h-[44px] max-w-[132px] shrink-0">
+          <div className="relative inline-flex items-center rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 px-2.5 min-h-[44px] max-w-[132px] shrink-0">
             <MapPin className="w-3.5 h-3.5 text-[#00D68F] mr-1.5 shrink-0 pointer-events-none" />
             <select
               aria-label={t('selectNeighborhood')}
@@ -276,26 +276,26 @@ export const ShopsScreen: React.FC<{
 
       <div className="px-4 pt-4 space-y-6">
         {/* Hero Banner */}
-        <section className="relative rounded-2xl overflow-hidden border border-[#14443F] bg-gradient-to-br from-[#083833] via-[#092825] to-[#031719] shadow-xl shadow-black/35">
+        <section className="relative rounded-2xl overflow-hidden border border-[#14443F] bg-gradient-to-br from-[#062825] via-[#051F22] to-[#031719] shadow-lg shadow-black/30">
           {!heroBannerFailed ? (
             <img
               src={BRAND_ASSETS.banner}
               alt="Hawassa local shops"
               referrerPolicy="no-referrer"
               onError={() => setHeroBannerFailed(true)}
-              className="absolute inset-0 w-full h-full object-cover object-[center_40%] opacity-50"
+              className="absolute inset-0 w-full h-full object-cover object-[center_40%] opacity-40 mix-blend-luminosity"
             />
           ) : (
             <svg
               aria-hidden="true"
               viewBox="0 0 400 220"
-              className="absolute inset-0 w-full h-full opacity-35"
+              className="absolute inset-0 w-full h-full opacity-45"
               preserveAspectRatio="none"
             >
               <path
                 d="M0 150 Q 95 110, 200 145 T 400 130 L 400 220 L 0 220 Z"
                 fill="#00D68F"
-                fillOpacity="0.18"
+                fillOpacity="0.16"
               />
               <path
                 d="M0 175 Q 110 140, 220 172 T 400 165 L 400 220 L 0 220 Z"
@@ -304,11 +304,11 @@ export const ShopsScreen: React.FC<{
               />
             </svg>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#031719] via-[#031719]/75 to-[#031719]/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#031719] via-[#031719]/75 to-[#062E2B]/40" />
 
           <div className="relative p-4 pt-5 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 border border-[#00D68F]/35 text-[11px] font-semibold text-[#00D68F] backdrop-blur-xs">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 backdrop-blur-xs border border-[#00D68F]/35 text-[11px] font-semibold text-[#00D68F]">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
                 <span>{t('homeLocationBadge')}</span>
               </span>
@@ -316,7 +316,7 @@ export const ShopsScreen: React.FC<{
               <button
                 type="button"
                 onClick={() => navigate({ name: 'map' })}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 border border-[#00C8D7]/35 hover:border-[#00D68F] text-[11px] font-semibold text-[#00C8D7] hover:text-[#00D68F] backdrop-blur-xs transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 backdrop-blur-xs border border-[#14443F] hover:border-[#00D68F]/60 text-[11px] font-semibold text-[#00C8D7] transition-colors"
               >
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
                 <span>{t('hawassaMapView')}</span>
@@ -336,7 +336,7 @@ export const ShopsScreen: React.FC<{
               <button
                 type="button"
                 onClick={scrollToShops}
-                className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-2 shadow-lg shadow-[#00D68F]/25 active:scale-[0.98] transition-all"
+                className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-2 shadow-lg shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
               >
                 <span>{t('exploreShops')}</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
@@ -376,15 +376,15 @@ export const ShopsScreen: React.FC<{
                   aria-pressed={isSelected}
                   className={`shrink-0 w-[86px] min-h-[44px] rounded-2xl border px-2 py-2.5 flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${
                     isSelected
-                      ? 'bg-[#0D3531] border-[#00D68F] shadow-md shadow-[#00D68F]/15'
-                      : 'bg-[#092825] border-[#123E39] hover:border-[#00D68F]/45'
+                      ? 'bg-[#00D68F]/15 border-[#00D68F] shadow-md shadow-[#00D68F]/15'
+                      : 'bg-[#092825] border-[#14443F] hover:border-[#00D68F]/60'
                   }`}
                 >
                   <div
                     className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
                       isSelected
                         ? 'bg-[#00D68F] border-[#00D68F] text-[#031719]'
-                        : 'bg-[#051C1A] border-[#00D68F]/20 text-[#00D68F]'
+                        : 'bg-[#031719] border-[#14443F] text-[#00D68F]'
                     }`}
                   >
                     <CategoryIcon iconName={iconKey} className="w-5 h-5" />
@@ -403,9 +403,9 @@ export const ShopsScreen: React.FC<{
             <button
               type="button"
               onClick={() => navigate({ name: 'categories' })}
-              className="shrink-0 w-[86px] min-h-[44px] rounded-2xl bg-[#092825] border border-[#123E39] hover:border-[#00C8D7]/50 px-2 py-2.5 flex flex-col items-center justify-center gap-2 transition-all active:scale-95"
+              className="shrink-0 w-[86px] min-h-[44px] rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/60 px-2 py-2.5 flex flex-col items-center justify-center gap-2 transition-all active:scale-95"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#051C1A] border border-[#00C8D7]/25 flex items-center justify-center text-[#00C8D7]">
+              <div className="w-10 h-10 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F]">
                 <LayoutGrid className="w-5 h-5" />
               </div>
               <span className="text-[11px] font-medium text-[#F5FAFA] text-center line-clamp-2 leading-tight">
@@ -441,13 +441,13 @@ export const ShopsScreen: React.FC<{
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-56 rounded-2xl bg-[#092825] border border-[#123E39] animate-pulse"
+                  className="h-56 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
           ) : filteredShops.length === 0 ? (
-            <div className="rounded-2xl bg-[#092825] border border-[#123E39] py-10 px-5 text-center flex flex-col items-center justify-center">
-              <div className="w-12 h-12 rounded-2xl bg-[#051C1A] border border-[#00D68F]/25 text-[#00D68F] flex items-center justify-center mb-3">
+            <div className="rounded-2xl bg-[#092825] border border-[#14443F] py-10 px-5 text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#031719] border border-[#14443F] text-[#00D68F] flex items-center justify-center mb-3">
                 <Store className="w-6 h-6" />
               </div>
               <h3 className="text-sm font-semibold text-[#F5FAFA]">
@@ -460,7 +460,7 @@ export const ShopsScreen: React.FC<{
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="mt-4 px-5 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold transition-all"
+                  className="mt-4 px-5 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] text-xs font-bold transition-all"
                 >
                   {t('showAllShops')}
                 </button>
@@ -484,7 +484,7 @@ export const ShopsScreen: React.FC<{
         </section>
 
         {/* Fast & Reliable Delivery Promotional Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-[#092825] via-[#0B3530] to-[#072320] border border-[#00D68F]/30 p-4 shadow-lg shadow-black/25 flex items-center justify-between gap-3">
+        <section className="rounded-2xl bg-gradient-to-r from-[#092825] via-[#061D1B] to-[#092825] border border-[#14443F] p-4 shadow-md shadow-black/25 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00D68F]">
               <Truck className="w-3.5 h-3.5 shrink-0" />
@@ -500,7 +500,7 @@ export const ShopsScreen: React.FC<{
               <button
                 type="button"
                 onClick={() => navigate({ name: 'profile', section: 'help' })}
-                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-sm shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
+                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
               >
                 <span>{t('learnMore')}</span>
                 <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -508,7 +508,7 @@ export const ShopsScreen: React.FC<{
             </div>
           </div>
 
-          <div className="w-16 h-16 rounded-2xl bg-[#051C1A] border border-[#00D68F]/30 flex items-center justify-center text-[#00D68F] shrink-0 shadow-md">
+          <div className="w-16 h-16 rounded-2xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F] shrink-0">
             <Truck className="w-7 h-7" />
           </div>
         </section>
