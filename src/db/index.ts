@@ -1,9 +1,11 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
+import pg from 'pg';
 import * as schema from './schema.ts';
 
+const { Pool } = pg;
+
 declare global {
-  var _postgresPool: Pool | undefined;
+  var _postgresPool: pg.Pool | undefined;
 }
 
 export function isSqlConfigured(): boolean {
@@ -34,6 +36,20 @@ export const createPool = () => {
   return global._postgresPool;
 };
 
-const pool = createPool();
+type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
+let cachedDb: DrizzleDb | null = null;
 
-export const db = drizzle(pool, { schema });
+export function getDb(): DrizzleDb {
+  if (!cachedDb) {
+    cachedDb = drizzle(createPool(), { schema });
+  }
+  return cachedDb;
+}
+
+export const db: DrizzleDb = new Proxy({} as DrizzleDb, {
+  get(_target, prop, receiver) {
+    const instance = getDb();
+    const value = Reflect.get(instance, prop, receiver);
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});
