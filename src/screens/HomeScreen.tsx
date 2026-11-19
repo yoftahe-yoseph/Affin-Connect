@@ -1,11 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import {
   ArrowRight,
+  ArrowUpRight,
   Bell,
   ChevronDown,
+  ChevronRight,
+  Coffee,
   Loader2,
   MapPin,
   Navigation,
+  RefreshCw,
   Search,
   Sparkles,
   Store,
@@ -14,12 +18,21 @@ import {
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { BRAND_ASSETS, SEED_CATEGORIES } from '../data/seedData';
-import { CategoryIcon, EmptyState, ProductCard, ShopCard } from '../components/SharedUI';
+import {
+  CategoryIcon,
+  EmptyState,
+  getCategoryCardTheme,
+  ProductCard,
+  ShopCard,
+} from '../components/SharedUI';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
   buildHomeCategories,
   filterAndSortProducts,
+  getCoffeeTraderListings,
   HAWASSA_NEIGHBORHOODS,
+  isCoffeeProduct,
+  isDedicatedCoffeeTrader,
 } from '../utils/marketplaceLogic';
 
 const HOME_CATEGORY_LABEL_KEYS: Record<string, string> = {
@@ -63,18 +76,22 @@ export const HomeScreen: React.FC = () => {
     products,
     addRecentSearch,
     governanceConfig,
+    refreshCatalogFromFirestore,
   } = useMarketplace();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [heroBannerFailed, setHeroBannerFailed] = useState(false);
+  const [isRefreshingApp, setIsRefreshingApp] = useState(false);
   const [productSort, setProductSort] = useState<'newest' | 'nearest'>(() =>
     userLocation?.source === 'gps' ? 'nearest' : 'newest'
   );
 
   const approvedShops = useMemo(() => {
-    const base = governanceConfig.strictShopVerification
-      ? shops.filter((s) => s.status === 'approved')
-      : shops.filter((s) => s.status !== 'suspended');
+    const base = (
+      governanceConfig.strictShopVerification
+        ? shops.filter((s) => s.status === 'approved')
+        : shops.filter((s) => s.status !== 'suspended')
+    ).filter((s) => !isDedicatedCoffeeTrader(s, products));
 
     if (proximityRankings.length > 0 && productSort === 'nearest') {
       const rankIndex = new Map<string, number>(
@@ -94,18 +111,43 @@ export const HomeScreen: React.FC = () => {
       }
       return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
     });
-  }, [governanceConfig.strictShopVerification, shops, proximityRankings, productSort]);
+  }, [governanceConfig.strictShopVerification, shops, products, proximityRankings, productSort]);
+
+  const coffeeStats = useMemo(() => {
+    const listings = getCoffeeTraderListings(shops, products, {
+      strictShopVerification: governanceConfig.strictShopVerification,
+    });
+    const lotsCount = listings.reduce((sum, item) => sum + item.coffeeProducts.length, 0);
+    return {
+      tradersCount: listings.length,
+      lotsCount,
+    };
+  }, [shops, products, governanceConfig.strictShopVerification]);
 
   const homeCategories = useMemo(
     () => buildHomeCategories(categories, SEED_CATEGORIES),
     [categories]
   );
 
+  const categoryProductCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const product of products) {
+      if (product.status !== 'active' || !product.isAvailable) continue;
+      if (isCoffeeProduct(product)) continue;
+      const shop = shopsById[product.shopId];
+      if (!shop || shop.status === 'suspended') continue;
+      if (governanceConfig.strictShopVerification && shop.status !== 'approved') continue;
+      counts[product.category] = (counts[product.category] ?? 0) + 1;
+    }
+    return counts;
+  }, [products, shopsById, governanceConfig.strictShopVerification]);
+
   const activeProducts = useMemo(
     () =>
       filterAndSortProducts(products, shopsById, {
         neighborhood: selectedNeighborhood === 'All Hawassa' ? 'all' : selectedNeighborhood,
         strictShopVerification: governanceConfig.strictShopVerification,
+        excludeCoffee: true,
         sortBy: productSort,
         shopDistanceById,
       }),
@@ -125,6 +167,7 @@ export const HomeScreen: React.FC = () => {
         ? activeProducts
         : filterAndSortProducts(products, shopsById, {
             strictShopVerification: governanceConfig.strictShopVerification,
+            excludeCoffee: true,
             sortBy: productSort,
             shopDistanceById,
           }),
@@ -150,6 +193,21 @@ export const HomeScreen: React.FC = () => {
   const handleDetectLocation = async () => {
     await detectUserLocation();
     setProductSort('nearest');
+  };
+
+  const handleRefreshApp = async () => {
+    if (isRefreshingApp) return;
+    setIsRefreshingApp(true);
+    try {
+      await Promise.race([
+        refreshCatalogFromFirestore(),
+        new Promise((resolve) => setTimeout(resolve, 900)),
+      ]);
+    } catch {
+      // Proceed with full app reload even if catalog prefetch fails
+    } finally {
+      window.location.reload();
+    }
   };
 
   const getCategoryLabel = (cat: (typeof homeCategories)[number]) => {
@@ -198,7 +256,18 @@ export const HomeScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleRefreshApp}
+              disabled={isRefreshingApp}
+              aria-label="Refresh app"
+              title="Refresh app"
+              className="min-w-[44px] min-h-[44px] rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#00C8D7] hover:text-[#00D68F] disabled:opacity-70 active:scale-95 transition-all"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshingApp ? 'animate-spin' : ''}`} />
+            </button>
+
             <button
               type="button"
               onClick={() => navigate({ name: 'notifications' })}
@@ -375,36 +444,124 @@ export const HomeScreen: React.FC = () => {
           </div>
 
           {authLoading && homeCategories.length === 0 ? (
-            <div className="flex gap-2.5 overflow-x-auto pb-1 mobile-scroll">
-              {Array.from({ length: 5 }).map((_, idx) => (
+            <div className="flex gap-3 overflow-x-auto pb-2.5 mobile-scroll">
+              {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-[84px] h-[88px] rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse shrink-0"
+                  className="w-[124px] h-[112px] rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse shrink-0"
                 />
               ))}
             </div>
           ) : (
-            <div className="flex gap-2.5 overflow-x-auto pb-1 mobile-scroll">
-              {homeCategories.map((cat) => {
+            <div className="flex gap-3 overflow-x-auto pb-2.5 snap-x snap-mandatory mobile-scroll">
+              {homeCategories.map((cat, idx) => {
                 const iconKey = HOME_CATEGORY_ICON_OVERRIDES[cat.slug] ?? cat.iconName;
+                const theme = getCategoryCardTheme(cat.slug, idx);
+                const itemCount = categoryProductCounts[cat.slug] ?? 0;
+
                 return (
                   <button
                     key={cat.slug}
                     type="button"
                     onClick={() => navigate({ name: 'search', initialCategory: cat.slug })}
-                    className="shrink-0 w-[86px] min-h-[44px] rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/60 px-2 py-2.5 flex flex-col items-center justify-center gap-2 group transition-all active:scale-95"
+                    className={`snap-start shrink-0 relative overflow-hidden w-[124px] min-h-[112px] rounded-2xl bg-gradient-to-br ${theme.surface} border ${theme.border} p-3 flex flex-col justify-between text-left shadow-lg shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00D68F]`}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F] group-hover:bg-[#00D68F]/15 transition-colors">
-                      <CategoryIcon iconName={iconKey} className="w-5 h-5" />
+                    <span
+                      aria-hidden="true"
+                      className={`absolute -top-6 -right-6 w-20 h-20 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity pointer-events-none ${theme.glow}`}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
+                    />
+
+                    <div className="relative z-10 w-full flex items-start justify-between gap-2">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ${theme.iconBox}`}
+                      >
+                        <CategoryIcon iconName={iconKey} className="w-5 h-5" />
+                      </div>
+                      <ArrowUpRight
+                        aria-hidden="true"
+                        className={`w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 ${theme.arrow}`}
+                      />
                     </div>
-                    <span className="text-[11px] font-medium text-[#F5FAFA] text-center line-clamp-2 leading-tight">
-                      {getCategoryLabel(cat)}
-                    </span>
+
+                    <div className="relative z-10 w-full pt-2.5 space-y-1.5">
+                      <span className="block text-[12px] font-bold text-[#F5FAFA] leading-tight line-clamp-2">
+                        {getCategoryLabel(cat)}
+                      </span>
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span
+                          aria-hidden="true"
+                          className={`h-0.5 w-6 group-hover:w-10 rounded-full bg-gradient-to-r ${theme.accentBar} transition-all duration-200`}
+                        />
+                        {itemCount > 0 && (
+                          <span className="text-[10px] font-semibold tabular-nums text-[#A9C0BD]">
+                            {itemCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </button>
                 );
               })}
             </div>
           )}
+        </section>
+
+        {/* D2. Dedicated Coffee Traders Card (Warm Ethiopian Coffee Palette) */}
+        <section aria-label={t('coffeeTradersTitle')}>
+          <button
+            type="button"
+            onClick={() => navigate({ name: 'coffee_traders' })}
+            className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#4B2E24] via-[#3A221A] to-[#241510] border border-[#C68B59]/45 hover:border-[#C68B59]/80 p-3.5 text-left shadow-lg shadow-black/35 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C68B59]"
+          >
+            {/* Subtle warm caramel glow & top highlight */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-8 -right-6 w-28 h-28 rounded-full bg-[#C68B59]/25 blur-2xl opacity-80 group-hover:opacity-100 transition-opacity"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[#F8F4EE]/35 to-transparent"
+            />
+
+            <div className="relative z-10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#C68B59] to-[#8F5A32] text-[#241510] border border-[#F8F4EE]/25 shadow-md shadow-black/30 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                  <Coffee className="w-6 h-6 stroke-[2.2]" />
+                </div>
+
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-sm font-display font-bold text-[#F8F4EE] leading-tight">
+                      {t('coffeeTradersTitle')}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-[#C68B59]/20 border border-[#C68B59]/40 text-[10px] font-bold uppercase tracking-wide text-[#F3D9BF]">
+                      {t('coffeeTradersBadge')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#F8F4EE]/80 truncate">
+                    {t('coffeeTradersSubtitle')}
+                  </p>
+                  {coffeeStats.tradersCount > 0 && (
+                    <div className="flex items-center gap-2 text-[10.5px] font-semibold text-[#C68B59] tabular-nums pt-0.5">
+                      <span>{t('coffeeTradersCountLabel', { count: coffeeStats.tradersCount })}</span>
+                      <span aria-hidden="true" className="text-[#C68B59]/50">
+                        ·
+                      </span>
+                      <span>{t('coffeeLotsCountLabel', { count: coffeeStats.lotsCount })}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="w-9 h-9 rounded-xl bg-[#F8F4EE]/10 border border-[#C68B59]/35 text-[#F8F4EE] flex items-center justify-center shrink-0 group-hover:bg-[#C68B59] group-hover:text-[#241510] transition-colors">
+                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </div>
+          </button>
         </section>
 
         {/* E. Featured Shops Horizontally Scrollable Cards */}

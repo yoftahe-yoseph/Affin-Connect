@@ -66,6 +66,129 @@ export const CategoryIcon: React.FC<{ iconName: string; className?: string }> = 
   }
 };
 
+export interface CategoryCardTheme {
+  surface: string;
+  border: string;
+  selectedBorder: string;
+  iconBox: string;
+  selectedIconBox: string;
+  glow: string;
+  arrow: string;
+  accentBar: string;
+  activeText: string;
+}
+
+export const CATEGORY_CARD_THEMES: Record<string, CategoryCardTheme> = {
+  'clothing-fashion': {
+    surface: 'from-[#3A1624] via-[#22101A] to-[#0B1719]',
+    border: 'border-[#FB7185]/35 hover:border-[#FB7185]/80',
+    selectedBorder: 'border-[#FB7185] ring-2 ring-[#FB7185]/35',
+    iconBox: 'bg-[#F43F5E]/20 text-[#FDA4AF]',
+    selectedIconBox: 'bg-[#F43F5E] text-white',
+    glow: 'bg-[#FB7185]/25',
+    arrow: 'text-[#FDA4AF]',
+    accentBar: 'from-[#F43F5E] to-[#FB7185]',
+    activeText: 'text-[#FDA4AF]',
+  },
+  electronics: {
+    surface: 'from-[#0F2742] via-[#0B1C30] to-[#06161B]',
+    border: 'border-[#38BDF8]/35 hover:border-[#38BDF8]/80',
+    selectedBorder: 'border-[#38BDF8] ring-2 ring-[#38BDF8]/35',
+    iconBox: 'bg-[#0EA5E9]/20 text-[#7DD3FC]',
+    selectedIconBox: 'bg-[#0EA5E9] text-[#031719]',
+    glow: 'bg-[#38BDF8]/25',
+    arrow: 'text-[#7DD3FC]',
+    accentBar: 'from-[#0EA5E9] to-[#38BDF8]',
+    activeText: 'text-[#7DD3FC]',
+  },
+  'home-living': {
+    surface: 'from-[#3B260F] via-[#24180B] to-[#0C1717]',
+    border: 'border-[#FBBF24]/35 hover:border-[#FBBF24]/80',
+    selectedBorder: 'border-[#FBBF24] ring-2 ring-[#FBBF24]/35',
+    iconBox: 'bg-[#F59E0B]/20 text-[#FDE68A]',
+    selectedIconBox: 'bg-[#F59E0B] text-[#031719]',
+    glow: 'bg-[#FBBF24]/25',
+    arrow: 'text-[#FDE68A]',
+    accentBar: 'from-[#F59E0B] to-[#FBBF24]',
+    activeText: 'text-[#FDE68A]',
+  },
+  groceries: {
+    surface: 'from-[#0D3426] via-[#09241B] to-[#051817]',
+    border: 'border-[#34D399]/35 hover:border-[#34D399]/80',
+    selectedBorder: 'border-[#34D399] ring-2 ring-[#34D399]/35',
+    iconBox: 'bg-[#10B981]/20 text-[#6EE7B7]',
+    selectedIconBox: 'bg-[#10B981] text-[#031719]',
+    glow: 'bg-[#34D399]/25',
+    arrow: 'text-[#6EE7B7]',
+    accentBar: 'from-[#10B981] to-[#34D399]',
+    activeText: 'text-[#6EE7B7]',
+  },
+  'food-spices': {
+    surface: 'from-[#3C1C10] via-[#26130C] to-[#0C1617]',
+    border: 'border-[#FB923C]/35 hover:border-[#FB923C]/80',
+    selectedBorder: 'border-[#FB923C] ring-2 ring-[#FB923C]/35',
+    iconBox: 'bg-[#F97316]/20 text-[#FDBA74]',
+    selectedIconBox: 'bg-[#F97316] text-[#031719]',
+    glow: 'bg-[#FB923C]/25',
+    arrow: 'text-[#FDBA74]',
+    accentBar: 'from-[#F97316] to-[#FB923C]',
+    activeText: 'text-[#FDBA74]',
+  },
+  'beauty-cosmetics': {
+    surface: 'from-[#2C1842] via-[#1C112B] to-[#0A161B]',
+    border: 'border-[#C084FC]/35 hover:border-[#C084FC]/80',
+    selectedBorder: 'border-[#C084FC] ring-2 ring-[#C084FC]/35',
+    iconBox: 'bg-[#A855F7]/20 text-[#E9D5FF]',
+    selectedIconBox: 'bg-[#A855F7] text-white',
+    glow: 'bg-[#C084FC]/25',
+    arrow: 'text-[#E9D5FF]',
+    accentBar: 'from-[#A855F7] to-[#C084FC]',
+    activeText: 'text-[#E9D5FF]',
+  },
+  sports: {
+    surface: 'from-[#0D303A] via-[#092129] to-[#05161B]',
+    border: 'border-[#22D3EE]/35 hover:border-[#22D3EE]/80',
+    selectedBorder: 'border-[#22D3EE] ring-2 ring-[#22D3EE]/35',
+    iconBox: 'bg-[#06B6D4]/20 text-[#A5F3FC]',
+    selectedIconBox: 'bg-[#06B6D4] text-[#031719]',
+    glow: 'bg-[#22D3EE]/25',
+    arrow: 'text-[#A5F3FC]',
+    accentBar: 'from-[#06B6D4] to-[#22D3EE]',
+    activeText: 'text-[#A5F3FC]',
+  },
+  automotive: {
+    surface: 'from-[#1B2244] via-[#131830] to-[#08151B]',
+    border: 'border-[#818CF8]/35 hover:border-[#818CF8]/80',
+    selectedBorder: 'border-[#818CF8] ring-2 ring-[#818CF8]/35',
+    iconBox: 'bg-[#6366F1]/20 text-[#C7D2FE]',
+    selectedIconBox: 'bg-[#6366F1] text-white',
+    glow: 'bg-[#818CF8]/25',
+    arrow: 'text-[#C7D2FE]',
+    accentBar: 'from-[#6366F1] to-[#818CF8]',
+    activeText: 'text-[#C7D2FE]',
+  },
+  'coffee-honey': {
+    surface: 'from-[#3B2112] via-[#26160C] to-[#0B1617]',
+    border: 'border-[#F59E0B]/35 hover:border-[#F59E0B]/80',
+    selectedBorder: 'border-[#F59E0B] ring-2 ring-[#F59E0B]/35',
+    iconBox: 'bg-[#D97706]/25 text-[#FCD34D]',
+    selectedIconBox: 'bg-[#D97706] text-white',
+    glow: 'bg-[#F59E0B]/25',
+    arrow: 'text-[#FCD34D]',
+    accentBar: 'from-[#D97706] to-[#FBBF24]',
+    activeText: 'text-[#FCD34D]',
+  },
+};
+
+const FALLBACK_CATEGORY_THEMES = Object.values(CATEGORY_CARD_THEMES);
+
+export function getCategoryCardTheme(slug: string, index: number = 0): CategoryCardTheme {
+  return (
+    CATEGORY_CARD_THEMES[slug] ??
+    FALLBACK_CATEGORY_THEMES[Math.abs(index) % FALLBACK_CATEGORY_THEMES.length]
+  );
+}
+
 export const ResilientImage: React.FC<{
   src: string;
   alt: string;

@@ -1,8 +1,12 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
+  ArrowUpRight,
   Bell,
+  Check,
   ChevronDown,
+  ChevronRight,
+  Coffee,
   LayoutGrid,
   MapPin,
   Search,
@@ -14,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { BRAND_ASSETS, SEED_CATEGORIES } from '../data/seedData';
-import { CategoryIcon, ShopCard } from '../components/SharedUI';
+import { CategoryIcon, getCategoryCardTheme, ShopCard } from '../components/SharedUI';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
   buildHomeCategories,
@@ -92,6 +96,7 @@ export const ShopsScreen: React.FC<{
       categorySlug: selectedCategory,
       neighborhood: selectedNeighborhood,
       strictShopVerification: governanceConfig.strictShopVerification,
+      excludeCoffee: true,
     });
 
     if (userLocation?.source === 'gps' && proximityRankings.length > 0) {
@@ -362,10 +367,12 @@ export const ShopsScreen: React.FC<{
             )}
           </div>
 
-          <div className="flex gap-2.5 overflow-x-auto pb-1 mobile-scroll">
-            {shopCategories.map((cat) => {
+          <div className="flex gap-3 overflow-x-auto pb-2.5 snap-x snap-mandatory mobile-scroll">
+            {shopCategories.map((cat, idx) => {
               const isSelected = selectedCategory === cat.slug;
               const iconKey = SHOPS_CATEGORY_ICON_OVERRIDES[cat.slug] ?? cat.iconName;
+              const theme = getCategoryCardTheme(cat.slug, idx);
+
               return (
                 <button
                   key={cat.slug}
@@ -374,28 +381,59 @@ export const ShopsScreen: React.FC<{
                     setSelectedCategory((prev) => (prev === cat.slug ? 'all' : cat.slug))
                   }
                   aria-pressed={isSelected}
-                  className={`shrink-0 w-[86px] min-h-[44px] rounded-2xl border px-2 py-2.5 flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${
-                    isSelected
-                      ? 'bg-[#00D68F]/15 border-[#00D68F] shadow-md shadow-[#00D68F]/15'
-                      : 'bg-[#092825] border-[#14443F] hover:border-[#00D68F]/60'
-                  }`}
+                  className={`snap-start shrink-0 relative overflow-hidden w-[120px] min-h-[108px] rounded-2xl bg-gradient-to-br ${theme.surface} border ${
+                    isSelected ? theme.selectedBorder : theme.border
+                  } p-3 flex flex-col justify-between text-left shadow-lg shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00D68F]`}
                 >
-                  <div
-                    className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
-                      isSelected
-                        ? 'bg-[#00D68F] border-[#00D68F] text-[#031719]'
-                        : 'bg-[#031719] border-[#14443F] text-[#00D68F]'
-                    }`}
-                  >
-                    <CategoryIcon iconName={iconKey} className="w-5 h-5" />
-                  </div>
                   <span
-                    className={`text-[11px] font-medium text-center line-clamp-2 leading-tight ${
-                      isSelected ? 'text-[#00D68F] font-semibold' : 'text-[#F5FAFA]'
-                    }`}
-                  >
-                    {getCategoryLabel(cat)}
-                  </span>
+                    aria-hidden="true"
+                    className={`absolute -top-6 -right-6 w-20 h-20 rounded-full blur-xl transition-opacity pointer-events-none ${
+                      isSelected ? 'opacity-100' : 'opacity-75 group-hover:opacity-100'
+                    } ${theme.glow}`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
+                  />
+
+                  <div className="relative z-10 w-full flex items-start justify-between gap-2">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${
+                        isSelected ? theme.selectedIconBox : theme.iconBox
+                      }`}
+                    >
+                      <CategoryIcon iconName={iconKey} className="w-5 h-5" />
+                    </div>
+                    {isSelected ? (
+                      <span
+                        aria-hidden="true"
+                        className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${theme.selectedIconBox}`}
+                      >
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </span>
+                    ) : (
+                      <ArrowUpRight
+                        aria-hidden="true"
+                        className={`w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 ${theme.arrow}`}
+                      />
+                    )}
+                  </div>
+
+                  <div className="relative z-10 w-full pt-2.5 space-y-1.5">
+                    <span
+                      className={`block text-[12px] font-bold leading-tight line-clamp-2 ${
+                        isSelected ? theme.activeText : 'text-[#F5FAFA]'
+                      }`}
+                    >
+                      {getCategoryLabel(cat)}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={`block h-0.5 rounded-full bg-gradient-to-r transition-all duration-200 ${
+                        isSelected ? 'w-11' : 'w-6 group-hover:w-10'
+                      } ${theme.accentBar}`}
+                    />
+                  </div>
                 </button>
               );
             })}
@@ -403,17 +441,61 @@ export const ShopsScreen: React.FC<{
             <button
               type="button"
               onClick={() => navigate({ name: 'categories' })}
-              className="shrink-0 w-[86px] min-h-[44px] rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/60 px-2 py-2.5 flex flex-col items-center justify-center gap-2 transition-all active:scale-95"
+              className="snap-start shrink-0 relative overflow-hidden w-[116px] min-h-[108px] rounded-2xl bg-gradient-to-br from-[#0F2F2E] via-[#092123] to-[#051518] border border-[#00D68F]/35 hover:border-[#00C8D7]/80 p-3 flex flex-col justify-between text-left shadow-lg shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00D68F]"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F]">
-                <LayoutGrid className="w-5 h-5" />
+              <span
+                aria-hidden="true"
+                className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-xl opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none bg-[#00C8D7]/25"
+              />
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
+              />
+
+              <div className="relative z-10 w-full flex items-start justify-between gap-2">
+                <div className="w-10 h-10 rounded-xl bg-[#00D68F]/15 text-[#00D68F] flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+                  <LayoutGrid className="w-5 h-5" />
+                </div>
+                <ArrowUpRight
+                  aria-hidden="true"
+                  className="w-3.5 h-3.5 text-[#00C8D7] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0"
+                />
               </div>
-              <span className="text-[11px] font-medium text-[#F5FAFA] text-center line-clamp-2 leading-tight">
-                {t('shopsCategoryMore')}
-              </span>
+
+              <div className="relative z-10 w-full pt-2.5 space-y-1.5">
+                <span className="block text-[12px] font-bold text-[#F5FAFA] leading-tight line-clamp-2">
+                  {t('shopsCategoryMore')}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="block h-0.5 w-6 group-hover:w-10 rounded-full bg-gradient-to-r from-[#00D68F] to-[#00C8D7] transition-all duration-200"
+                />
+              </div>
             </button>
           </div>
         </section>
+
+        {/* Dedicated Coffee Traders Hub Shortcut */}
+        <button
+          type="button"
+          onClick={() => navigate({ name: 'coffee_traders' })}
+          className="w-full rounded-2xl bg-gradient-to-r from-[#4B2E24] via-[#342019] to-[#1D120E] border border-[#C68B59]/40 hover:border-[#C68B59]/75 px-3.5 py-3 flex items-center justify-between gap-3 text-left shadow-md shadow-black/25 transition-all"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#C68B59] to-[#8F5A32] text-[#1F120E] flex items-center justify-center shrink-0">
+              <Coffee className="w-4.5 h-4.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[#F8F4EE] truncate">
+                {t('coffeeTradersTitle')}
+              </div>
+              <div className="text-[11px] text-[#F8F4EE]/75 truncate">
+                {t('coffeeTradersSubtitle')}
+              </div>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-[#C68B59] shrink-0" />
+        </button>
 
         {/* Nearby Shops Section */}
         <section ref={shopsGridRef} aria-labelledby="nearby-shops-heading">

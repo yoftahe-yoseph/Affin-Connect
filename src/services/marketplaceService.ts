@@ -73,6 +73,7 @@ export function subscribeToShops(
   onUpdate: (shops: Shop[]) => void,
   onFallback?: () => void
 ): Unsubscribe {
+  const seedShopById = new Map(SEED_SHOPS.map((s) => [s.shopId, s]));
   return onSnapshot(
     collection(db, 'shops'),
     (snapshot) => {
@@ -80,7 +81,16 @@ export function subscribeToShops(
         onUpdate(SEED_SHOPS);
         onFallback?.();
       } else {
-        const list = snapshot.docs.map((d) => d.data() as Shop);
+        const list = snapshot.docs.map((d) => {
+          const data = d.data() as Shop;
+          const seed = seedShopById.get(data.shopId);
+          return seed
+            ? {
+                ...data,
+                traderType: data.traderType ?? seed.traderType,
+              }
+            : data;
+        });
         onUpdate(list);
       }
     },
@@ -107,8 +117,13 @@ export function subscribeToProducts(
           return seed
             ? {
                 ...data,
+                category:
+                  seed.category === 'coffee' && data.category === 'groceries'
+                    ? 'coffee'
+                    : data.category,
                 variants: data.variants ?? seed.variants,
                 additionalImages: data.additionalImages ?? seed.additionalImages,
+                coffeeDetails: data.coffeeDetails ?? seed.coffeeDetails,
               }
             : data;
         });
@@ -126,6 +141,7 @@ export async function fetchCatalogSnapshotFromFirestore(): Promise<{
   shops: Shop[];
   products: Product[];
 }> {
+  const seedShopById = new Map(SEED_SHOPS.map((s) => [s.shopId, s]));
   const seedById = new Map(SEED_PRODUCTS.map((sp) => [sp.productId, sp]));
   const [shopsSnap, productsSnap] = await Promise.all([
     getDocs(collection(db, 'shops')),
@@ -134,7 +150,16 @@ export async function fetchCatalogSnapshotFromFirestore(): Promise<{
 
   const shops = shopsSnap.empty
     ? SEED_SHOPS
-    : shopsSnap.docs.map((d) => d.data() as Shop);
+    : shopsSnap.docs.map((d) => {
+        const data = d.data() as Shop;
+        const seed = seedShopById.get(data.shopId);
+        return seed
+          ? {
+              ...data,
+              traderType: data.traderType ?? seed.traderType,
+            }
+          : data;
+      });
 
   const products = productsSnap.empty
     ? SEED_PRODUCTS
@@ -144,8 +169,13 @@ export async function fetchCatalogSnapshotFromFirestore(): Promise<{
         return seed
           ? {
               ...data,
+              category:
+                seed.category === 'coffee' && data.category === 'groceries'
+                  ? 'coffee'
+                  : data.category,
               variants: data.variants ?? seed.variants,
               additionalImages: data.additionalImages ?? seed.additionalImages,
+              coffeeDetails: data.coffeeDetails ?? seed.coffeeDetails,
             }
           : data;
       });
@@ -497,11 +527,147 @@ export async function deleteAddressInFirestore(addressId: string): Promise<void>
 function stripUndefinedProps<T extends object>(record: T): T {
   const clean: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record as Record<string, unknown>)) {
-    if (value !== undefined) {
+    if (value === undefined) continue;
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      const nested = stripUndefinedProps(value as Record<string, unknown>);
+      if (Object.keys(nested).length > 0) {
+        clean[key] = nested;
+      }
+    } else {
       clean[key] = value;
     }
   }
   return clean as T;
+}
+
+export interface CoffeeMigrationApiSummary {
+  dryRun: boolean;
+  scanned: number;
+  alreadyCategorized: number;
+  eligible: number;
+  updated: number;
+  skipped: number;
+  ambiguous: number;
+  failed: { productId: string; error: string }[];
+  changes: {
+    productId: string;
+    name: string;
+    previousCategory: string;
+    nextCategory: string;
+    reason: string;
+  }[];
+}
+
+export class ProductCategorizationApiError extends Error {
+  code: string;
+  status: number;
+  categorization?: import('../utils/coffeeCategorizer').CoffeeCategorizationResult;
+
+  constructor(
+    message: string,
+    code: string,
+    status: number,
+    categorization?: import('../utils/coffeeCategorizer').CoffeeCategorizationResult
+  ) {
+    super(message);
+    this.name = 'ProductCategorizationApiError';
+    this.code = code;
+    this.status = status;
+    this.categorization = categorization;
+  }
+}
+
+export async function saveProductViaBackendApi(
+  product: Product,
+  idToken: string,
+  options: {
+    mode: 'create' | 'update';
+    categoryConfirmed?: boolean;
+    confirmedCategory?: string;
+  }
+): Promise<{
+  product: Product;
+  categorization: import('../utils/coffeeCategorizer').CoffeeCategorizationResult;
+}> {
+  const endpoint =
+    options.mode === 'update'
+      ? `/api/products/${encodeURIComponent(product.productId)}`
+      : '/api/products';
+  const method = options.mode === 'update' ? 'PUT' : 'POST';
+
+  const cleanProduct = stripUndefinedProps(product);
+  const res = await fetch(endpoint, {
+    method,
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      ...cleanProduct,
+      ...(options.categoryConfirmed ? { categoryConfirmed: true } : {}),
+      ...(options.confirmedCategory ? { confirmedCategory: options.confirmedCategory } : {}),
+    }),
+  });
+
+  let data: {
+    product?: Product;
+    categorization?: import('../utils/coffeeCategorizer').CoffeeCategorizationResult;
+    code?: string;
+    error?: string;
+  } = {};
+  try {
+    data = (await res.json()) as typeof data;
+  } catch {
+    // ignore malformed JSON
+  }
+
+  if (!res.ok || !data.product || !data.categorization) {
+    throw new ProductCategorizationApiError(
+      data.error || `Unable to save product (HTTP ${res.status}).`,
+      data.code || 'PRODUCT_SAVE_FAILED',
+      res.status,
+      data.categorization
+    );
+  }
+
+  return {
+    product: data.product,
+    categorization: data.categorization,
+  };
+}
+
+export async function runCoffeeProductMigrationViaApi(
+  idToken: string,
+  dryRun: boolean = false
+): Promise<CoffeeMigrationApiSummary> {
+  const res = await fetch('/api/products/migrate-coffee', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ dryRun }),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as Partial<CoffeeMigrationApiSummary> & {
+    error?: string;
+  };
+  if (!res.ok) {
+    throw new Error(data.error || `Coffee migration failed (HTTP ${res.status}).`);
+  }
+  return {
+    dryRun: Boolean(data.dryRun),
+    scanned: data.scanned ?? 0,
+    alreadyCategorized: data.alreadyCategorized ?? 0,
+    eligible: data.eligible ?? 0,
+    updated: data.updated ?? 0,
+    skipped: data.skipped ?? 0,
+    ambiguous: data.ambiguous ?? 0,
+    failed: data.failed ?? [],
+    changes: data.changes ?? [],
+  };
 }
 
 export async function saveProductInFirestore(product: Product): Promise<void> {
@@ -664,7 +830,7 @@ export async function submitReturnRequestInFirestore(
 ): Promise<void> {
   try {
     if (request.photoDataUrl && request.photoDataUrl.length > MAX_IMAGE_UPLOAD_DATA_URL_LENGTH) {
-      throw new Error('Damage photo exceeds 350 KB safe limit.');
+      throw new Error('Damage photo exceeds 150 KB safe limit.');
     }
     const sanitized: ReturnRequest = {
       returnId: request.returnId.trim().slice(0, 128),
@@ -1151,7 +1317,7 @@ export async function submitMerchantVerificationInFirestore(
 ): Promise<void> {
   try {
     if (verification.licenseImageDataUrl.length > MAX_IMAGE_UPLOAD_DATA_URL_LENGTH) {
-      throw new Error('Business license image exceeds 350 KB safe limit.');
+      throw new Error('Business license image exceeds 150 KB safe limit.');
     }
     const cleanTin = verification.tinNumber?.trim().slice(0, 30);
     const cleanExpiry = verification.expiryDate?.trim().slice(0, 30);

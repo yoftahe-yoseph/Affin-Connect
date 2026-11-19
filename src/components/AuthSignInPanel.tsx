@@ -715,12 +715,15 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
 
             {/* Remember Me (Firebase Persistence) & Forgot Password */}
             <div className="flex items-center justify-between gap-2 pt-0.5">
-              <label className="inline-flex items-center gap-2 cursor-pointer select-none group">
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={rememberMe}
-                  onClick={() => setRememberMe((v) => !v)}
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={rememberMe}
+                onClick={() => setRememberMe((v) => !v)}
+                className="inline-flex items-center gap-2 cursor-pointer select-none group text-left"
+              >
+                <span
+                  aria-hidden="true"
                   className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
                     isGlass
                       ? rememberMe
@@ -732,16 +735,15 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                   }`}
                 >
                   {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
-                </button>
+                </span>
                 <span
-                  onClick={() => setRememberMe((v) => !v)}
                   className={`text-xs font-medium ${
                     isGlass ? 'text-[#A7C4C5]' : 'text-stone-600 dark:text-stone-300'
                   }`}
                 >
                   {t('authRememberMe')}
                 </span>
-              </label>
+              </button>
 
               <button
                 type="button"

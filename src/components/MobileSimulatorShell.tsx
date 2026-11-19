@@ -21,6 +21,7 @@ import { getLocalizedNeighborhood } from '../constants/translations';
 import { HAWASSA_NEIGHBORHOODS } from '../utils/marketplaceLogic';
 import { BRAND_ASSETS } from '../data/seedData';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { AffinChatbotFloatingButton, AffinChatbotPopup } from './AffinChatbotPopup';
 import type { UserRole } from '../types';
 
 export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -46,6 +47,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
     language,
     cartToast,
     dismissCartToast,
+    openChatbot,
     t,
   } = useMarketplace();
 
@@ -131,10 +133,13 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
           </div>
         )}
 
-        {/* Main Scrollable Screen Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden mobile-scroll flex flex-col bg-[#031719]">
-          {children}
-        </main>
+        {/* Main Scrollable Screen Area + Floating Chatbot Trigger */}
+        <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden bg-[#031719]">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden mobile-scroll flex flex-col bg-[#031719]">
+            {children}
+          </main>
+          <AffinChatbotFloatingButton />
+        </div>
 
         {/* Cart Feedback Toast */}
         {cartToast && showBottomTabs && route.name !== 'cart' && route.name !== 'checkout' && (
@@ -276,6 +281,9 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
         <div className="hidden md:flex justify-center py-1.5 shrink-0 bg-[#031719]">
           <div className="w-28 h-1 rounded-full bg-white/25" aria-hidden="true" />
         </div>
+
+        {/* Floating Affin Connect Chatbot Popup */}
+        <AffinChatbotPopup />
       </div>
 
       {/* Desktop Companion Panel: Functional Simulator Controls & Role Switcher */}
@@ -419,7 +427,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate({ name: 'chat' })}
+                  onClick={openChatbot}
                   className="px-3 py-2 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] flex items-center gap-1.5"
                 >
                   <MessageSquare className="w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B] shrink-0" />

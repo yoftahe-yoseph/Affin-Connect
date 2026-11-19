@@ -1,5 +1,5 @@
-export const MAX_IMAGE_FILE_BYTES = 350 * 1024;
-export const MAX_IMAGE_UPLOAD_DATA_URL_LENGTH = 475_000;
+export const MAX_IMAGE_FILE_BYTES = 150 * 1024;
+export const MAX_IMAGE_UPLOAD_DATA_URL_LENGTH = 205_000;
 
 export function estimateDataUrlByteSize(dataUrl: string): number {
   const commaIdx = dataUrl.indexOf(',');
@@ -37,10 +37,19 @@ export function compressImageSourceToDataUrl(
   maxLength: number = MAX_IMAGE_UPLOAD_DATA_URL_LENGTH,
   maxBytes: number = MAX_IMAGE_FILE_BYTES
 ): string {
+  const effectiveMaxBytes =
+    Number.isFinite(maxBytes) && maxBytes > 0
+      ? Math.min(maxBytes, MAX_IMAGE_FILE_BYTES)
+      : MAX_IMAGE_FILE_BYTES;
+  const effectiveMaxLength =
+    Number.isFinite(maxLength) && maxLength > 0
+      ? Math.min(maxLength, MAX_IMAGE_UPLOAD_DATA_URL_LENGTH)
+      : MAX_IMAGE_UPLOAD_DATA_URL_LENGTH;
+
   const safeW = Math.max(1, srcWidth);
   const safeH = Math.max(1, srcHeight);
-  const maxDimSteps = [900, 720, 560, 420];
-  const qualitySteps = [0.8, 0.65, 0.5, 0.36, 0.25];
+  const maxDimSteps = [900, 720, 560, 420, 320, 240];
+  const qualitySteps = [0.8, 0.65, 0.5, 0.36, 0.25, 0.16];
 
   let lastResult = '';
   for (const maxDim of maxDimSteps) {
@@ -62,17 +71,25 @@ export function compressImageSourceToDataUrl(
     for (const quality of qualitySteps) {
       const candidate = canvas.toDataURL('image/jpeg', quality);
       lastResult = candidate;
-      const check = validateImagePayloadSize(candidate, maxBytes, maxLength);
+      const check = validateImagePayloadSize(
+        candidate,
+        effectiveMaxBytes,
+        effectiveMaxLength
+      );
       if (check.valid) {
         return candidate;
       }
     }
   }
 
-  const finalCheck = validateImagePayloadSize(lastResult, maxBytes, maxLength);
+  const finalCheck = validateImagePayloadSize(
+    lastResult,
+    effectiveMaxBytes,
+    effectiveMaxLength
+  );
   if (!finalCheck.valid) {
     throw new Error(
-      `Compressed image (${formatImageByteSize(finalCheck.byteSize)}) still exceeds the 350 KB Firestore safety limit.`
+      `Compressed image (${formatImageByteSize(finalCheck.byteSize)}) still exceeds the 150 KB Firestore safety limit.`
     );
   }
   return lastResult;
@@ -86,6 +103,15 @@ export async function processUploadedPhotoFile(
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose a JPG, PNG, or WebP image file.');
   }
+
+  const effectiveMaxBytes =
+    Number.isFinite(maxBytes) && maxBytes > 0
+      ? Math.min(maxBytes, MAX_IMAGE_FILE_BYTES)
+      : MAX_IMAGE_FILE_BYTES;
+  const effectiveMaxLength =
+    Number.isFinite(maxLength) && maxLength > 0
+      ? Math.min(maxLength, MAX_IMAGE_UPLOAD_DATA_URL_LENGTH)
+      : MAX_IMAGE_UPLOAD_DATA_URL_LENGTH;
 
   const rawDataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -111,18 +137,18 @@ export async function processUploadedPhotoFile(
       img,
       img.naturalWidth || img.width,
       img.naturalHeight || img.height,
-      maxLength,
-      maxBytes
+      effectiveMaxLength,
+      effectiveMaxBytes
     );
   } catch (err) {
     if (
       /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(rawDataUrl) &&
-      validateImagePayloadSize(rawDataUrl, maxBytes, maxLength).valid
+      validateImagePayloadSize(rawDataUrl, effectiveMaxBytes, effectiveMaxLength).valid
     ) {
       return rawDataUrl;
     }
     throw err instanceof Error
       ? err
-      : new Error('Could not process image under 350 KB. Please choose a smaller JPG, PNG, or WebP photo.');
+      : new Error('Could not process image under 150 KB. Please choose a smaller JPG, PNG, or WebP photo.');
   }
 }

@@ -18,6 +18,10 @@ import {
   validateOrderAgainstGovernance,
   validatePaymentReference,
 } from '../utils/marketplaceLogic.ts';
+import {
+  validatePaymentInitiateBody,
+  validatePaymentVerifyBody,
+} from './requestValidation.ts';
 
 export type ProviderId = 'telebirr' | 'cbe_birr' | 'chapa';
 
@@ -94,26 +98,31 @@ function pruneExpiredCache(nowMs: number) {
   }
 }
 
-async function resolveOptionalAuthUid(
+async function requireVerifiedAuthUid(
   req: Request
 ): Promise<{ ok: true; uid: string } | { ok: false; status: number; error: string }> {
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return { ok: true, uid: 'guest-local' };
-  }
-  if (!authHeader.startsWith('Bearer ')) {
-    return { ok: false, status: 401, error: 'Invalid Authorization header format.' };
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {
+      ok: false,
+      status: 401,
+      error: 'Unauthorized: Missing Firebase ID token.',
+    };
   }
   const token = authHeader.slice('Bearer '.length).trim();
   if (!token) {
-    return { ok: false, status: 401, error: 'Empty Bearer token.' };
+    return { ok: false, status: 401, error: 'Unauthorized: Empty Bearer token.' };
   }
   try {
     const decoded = await adminAuth.verifyIdToken(token);
     return { ok: true, uid: decoded.uid };
   } catch (error) {
     console.warn('Payment route Bearer token rejected:', error);
-    return { ok: false, status: 401, error: 'Unauthorized: Invalid Firebase ID token.' };
+    return {
+      ok: false,
+      status: 401,
+      error: 'Unauthorized: Invalid or expired Firebase ID token.',
+    };
   }
 }
 
@@ -129,9 +138,14 @@ function resolveProviderId(method: PaymentMethod): ProviderId | null {
 }
 
 export async function handleInitiatePayment(req: Request, res: Response) {
-  const authResult = await resolveOptionalAuthUid(req);
+  const authResult = await requireVerifiedAuthUid(req);
   if (authResult.ok === false) {
     return res.status(authResult.status).json({ error: authResult.error });
+  }
+
+  const inputCheck = validatePaymentInitiateBody(req.body);
+  if (inputCheck.ok === false) {
+    return res.status(400).json({ error: inputCheck.error });
   }
 
   const nowMs = Date.now();
@@ -386,9 +400,14 @@ export async function handleInitiatePayment(req: Request, res: Response) {
 }
 
 export async function handleVerifyPayment(req: Request, res: Response) {
-  const authResult = await resolveOptionalAuthUid(req);
+  const authResult = await requireVerifiedAuthUid(req);
   if (authResult.ok === false) {
     return res.status(authResult.status).json({ error: authResult.error });
+  }
+
+  const inputCheck = validatePaymentVerifyBody(req.body);
+  if (inputCheck.ok === false) {
+    return res.status(400).json({ error: inputCheck.error });
   }
 
   const { paymentMethod, txRef, paymentReference, expectedAmountEtb } = (req.body ?? {}) as {

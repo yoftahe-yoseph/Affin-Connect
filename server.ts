@@ -36,6 +36,22 @@ import {
   handleProviderWebhook,
   handleVerifyPayment,
 } from './src/server/payments.ts';
+import { createRateLimiter } from './src/server/rateLimit.ts';
+import { validateChatRequestPayload } from './src/server/requestValidation.ts';
+import {
+  handleCategorizeProductPreview,
+  handleCreateProduct,
+  handleMigrateCoffeeProducts,
+  handleUpdateProduct,
+} from './src/server/products.ts';
+import {
+  handleAttachListingImages,
+  handleCancelListingDraft,
+  handleConfirmListingCategory,
+  handleListingAssistantMessage,
+  handleListingEligibility,
+  handlePublishListingDraft,
+} from './src/server/listingAssistant.ts';
 
 dotenv.config();
 
@@ -50,7 +66,61 @@ function isSqlUnavailableError(error: unknown): boolean {
 
 async function startServer() {
   const app = express();
-  app.use(express.json({ limit: '15mb' }));
+
+  app.use('/api/chat/listing', express.json({ limit: '750kb' }));
+  app.use('/api/chat', express.json({ limit: '64kb' }));
+  app.use('/api/payments', express.json({ limit: '128kb' }));
+  app.use('/api/products', express.json({ limit: '350kb' }));
+  app.use('/api/video/caption', express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '256kb' }));
+
+  app.use(
+    (
+      err: unknown,
+      _req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      if (err && typeof err === 'object' && 'type' in err && (err as { type?: string }).type === 'entity.too.large') {
+        return res.status(413).json({ error: 'Request payload exceeds the allowed size limit.' });
+      }
+      if (err instanceof SyntaxError && 'body' in err) {
+        return res.status(400).json({ error: 'Malformed JSON request body.' });
+      }
+      return next(err);
+    }
+  );
+
+  const chatRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 15,
+    keyPrefix: 'chat',
+  });
+  const paymentInitiateRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 10,
+    keyPrefix: 'pay-initiate',
+  });
+  const paymentVerifyRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 15,
+    keyPrefix: 'pay-verify',
+  });
+  const paymentWebhookRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 60,
+    keyPrefix: 'pay-webhook',
+  });
+  const productWriteRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 30,
+    keyPrefix: 'products',
+  });
+  const listingAssistantRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 25,
+    keyPrefix: 'chat-listing',
+  });
 
   // Public runtime Maps config (avoids exposing hardcoded keys while supporting AI Studio secrets)
   app.get('/api/maps-config', (_req, res) => {
@@ -289,19 +359,29 @@ async function startServer() {
   });
 
   // Multi-turn Gemini AI Concierge chat (saves turns to Cloud SQL if configured & Bearer token provided)
-  app.post('/api/chat', async (req, res) => {
+  app.post('/api/chat', chatRateLimiter.middleware, async (req, res) => {
     try {
-      const { message, history, mode, systemInstruction, language } = req.body ?? {};
-      if (!message || typeof message !== 'string' || !message.trim()) {
-        return res.status(400).json({ error: 'A chat message is required.' });
+      const validation = validateChatRequestPayload(req.body);
+      if (validation.ok === false) {
+        return res.status(400).json({ error: validation.error });
       }
 
+      const {
+        message,
+        history,
+        mode,
+        systemInstruction,
+        language,
+        contextSummary,
+      } = validation.data;
+
       const result = await chatWithConcierge({
-        message: message.trim(),
-        history: Array.isArray(history) ? history : [],
+        message,
+        history,
         mode: mode as ConciergeMode,
-        systemInstruction: typeof systemInstruction === 'string' ? systemInstruction : undefined,
-        language: typeof language === 'string' ? language : 'en',
+        systemInstruction,
+        language,
+        contextSummary,
       });
 
       const authHeader = req.headers.authorization;
@@ -314,7 +394,7 @@ async function startServer() {
             decoded.name
           );
           await appendChatMessages(user.id, [
-            { role: 'user', model: result.model, content: message.trim() },
+            { role: 'user', model: result.model, content: message },
             { role: 'model', model: result.model, content: result.text },
           ]);
         } catch (syncErr) {
@@ -329,6 +409,44 @@ async function startServer() {
       res.status(parsed.status).json({ error: parsed.message });
     }
   });
+
+  // Verified Seller AI Product Listing Assistant (server-verified authorization + idempotent publish)
+  app.get(
+    '/api/chat/listing/eligibility',
+    listingAssistantRateLimiter.middleware,
+    requireAuth,
+    handleListingEligibility
+  );
+  app.post(
+    '/api/chat/listing/message',
+    listingAssistantRateLimiter.middleware,
+    requireAuth,
+    handleListingAssistantMessage
+  );
+  app.post(
+    '/api/chat/listing/drafts/:draftId/images',
+    listingAssistantRateLimiter.middleware,
+    requireAuth,
+    handleAttachListingImages
+  );
+  app.post(
+    '/api/chat/listing/drafts/:draftId/confirm-category',
+    listingAssistantRateLimiter.middleware,
+    requireAuth,
+    handleConfirmListingCategory
+  );
+  app.post(
+    '/api/chat/listing/drafts/:draftId/publish',
+    listingAssistantRateLimiter.middleware,
+    requireAuth,
+    handlePublishListingDraft
+  );
+  app.post(
+    '/api/chat/listing/drafts/:draftId/cancel',
+    listingAssistantRateLimiter.middleware,
+    requireAuth,
+    handleCancelListingDraft
+  );
 
   // Google Maps Grounding via Gemini API
   app.post('/api/maps-grounding', async (req, res) => {
@@ -423,11 +541,37 @@ async function startServer() {
     res.json({ providers: getPaymentProvidersStatus() });
   });
 
-  app.post('/api/payments/initiate', handleInitiatePayment);
-  app.post('/api/payments/verify', handleVerifyPayment);
-  app.post('/api/payments/webhook/chapa', handleChapaWebhook);
-  app.post('/api/payments/webhook/telebirr', handleProviderWebhook('telebirr'));
-  app.post('/api/payments/webhook/cbe', handleProviderWebhook('cbe_birr'));
+  app.post('/api/payments/initiate', paymentInitiateRateLimiter.middleware, handleInitiatePayment);
+  app.post('/api/payments/verify', paymentVerifyRateLimiter.middleware, handleVerifyPayment);
+  app.post('/api/payments/webhook/chapa', paymentWebhookRateLimiter.middleware, handleChapaWebhook);
+  app.post('/api/payments/webhook/telebirr', paymentWebhookRateLimiter.middleware, handleProviderWebhook('telebirr'));
+  app.post('/api/payments/webhook/cbe', paymentWebhookRateLimiter.middleware, handleProviderWebhook('cbe_birr'));
+
+  // Authoritative product creation, updates, automatic coffee categorization & idempotent backfill
+  app.post(
+    '/api/products/categorize',
+    productWriteRateLimiter.middleware,
+    requireAuth,
+    handleCategorizeProductPreview
+  );
+  app.post(
+    '/api/products/migrate-coffee',
+    productWriteRateLimiter.middleware,
+    requireAuth,
+    handleMigrateCoffeeProducts
+  );
+  app.post(
+    '/api/products',
+    productWriteRateLimiter.middleware,
+    requireAuth,
+    handleCreateProduct
+  );
+  app.put(
+    '/api/products/:productId',
+    productWriteRateLimiter.middleware,
+    requireAuth,
+    handleUpdateProduct
+  );
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Archive,
@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Coffee,
   FileCheck2,
   Loader2,
   Lock,
@@ -31,24 +32,42 @@ import { getLocalizedNeighborhood } from '../constants/translations';
 import {
   buildShopSlug,
   canShopListProducts,
+  classifyProductCoffeeCategory,
+  COFFEE_BEAN_FORMS,
+  COFFEE_CATEGORY_SLUG,
+  COFFEE_PACKAGE_WEIGHTS,
+  COFFEE_PROCESSING_METHODS,
+  COFFEE_PRODUCT_TYPE_SUGGESTIONS,
+  COFFEE_ROAST_LEVELS,
+  ETHIOPIAN_COFFEE_ORIGINS,
   formatETB,
   formatFriendlyErrorMessage,
   getEffectiveShopVerificationStatus,
   HAWASSA_ISSUING_AUTHORITIES,
   HAWASSA_NEIGHBORHOODS,
+  normalizeProductCategory,
   resolveSellerManagedShops,
+  validateCoffeeDetailsInput,
   validateMerchantVerificationInput,
   validateProductImageUrl,
   validateProductInput,
   validateShopInput,
 } from '../utils/marketplaceLogic';
+import { ProductCategorizationApiError } from '../services/marketplaceService';
 import {
   compressImageSourceToDataUrl,
   estimateDataUrlByteSize,
   formatImageByteSize,
   processUploadedPhotoFile,
 } from '../utils/imageUpload';
-import type { OrderStatus, Product } from '../types';
+import type {
+  CoffeeBeanForm,
+  CoffeeProcessMethod,
+  CoffeeRoastLevel,
+  OrderStatus,
+  Product,
+  TraderType,
+} from '../types';
 
 type SellerTabId = 'dashboard' | 'orders' | 'products' | 'verification' | 'shop';
 
@@ -95,10 +114,22 @@ export const SellerPortalScreen: React.FC<{
   const [prodPreviousPrice, setProdPreviousPrice] = useState('');
   const [prodStock, setProdStock] = useState('10');
   const [prodCategory, setProdCategory] = useState(categories[0]?.slug ?? 'groceries');
+  const [prodProductType, setProdProductType] = useState('');
+  const [ambiguousConfirmedTarget, setAmbiguousConfirmedTarget] = useState<
+    null | 'coffee' | 'non_coffee'
+  >(null);
   const [prodDesc, setProdDesc] = useState('');
   const [prodImageUrl, setProdImageUrl] = useState('');
   const [prodDeliveryAvailable, setProdDeliveryAvailable] = useState(true);
   const [prodPickupAvailable, setProdPickupAvailable] = useState(true);
+  // Conditional Coffee-Specific Product Fields (only used when prodCategory === 'coffee')
+  const [coffeeOrigin, setCoffeeOrigin] = useState<string>('Sidama');
+  const [coffeeBrand, setCoffeeBrand] = useState<string>('');
+  const [coffeeRoastLevel, setCoffeeRoastLevel] = useState<CoffeeRoastLevel>('medium');
+  const [coffeeProcessMethod, setCoffeeProcessMethod] = useState<CoffeeProcessMethod>('washed');
+  const [coffeeBeanForm, setCoffeeBeanForm] = useState<CoffeeBeanForm>('whole_bean');
+  const [coffeeWeight, setCoffeeWeight] = useState<string>('500g');
+  const [coffeeRoastDate, setCoffeeRoastDate] = useState<string>('');
   const [prodErrors, setProdErrors] = useState<Record<string, string>>({});
   const [prodSubmitError, setProdSubmitError] = useState<string | null>(null);
   const [prodSuccessMsg, setProdSuccessMsg] = useState<string | null>(null);
@@ -117,6 +148,7 @@ export const SellerPortalScreen: React.FC<{
   const [newShopAddress, setNewShopAddress] = useState('');
   const [newShopPhone, setNewShopPhone] = useState('');
   const [newShopLogoUrl, setNewShopLogoUrl] = useState(BRAND_ASSETS.logo);
+  const [newShopTraderType, setNewShopTraderType] = useState<TraderType>('general');
   const [newShopDeliveryAvailable, setNewShopDeliveryAvailable] = useState(true);
   const [newShopPickupAvailable, setNewShopPickupAvailable] = useState(true);
   const [shopFormErrors, setShopFormErrors] = useState<Record<string, string>>({});
@@ -131,6 +163,7 @@ export const SellerPortalScreen: React.FC<{
   const [editShopAddress, setEditShopAddress] = useState('');
   const [editShopPhone, setEditShopPhone] = useState('');
   const [editShopLogoUrl, setEditShopLogoUrl] = useState(BRAND_ASSETS.logo);
+  const [editShopTraderType, setEditShopTraderType] = useState<TraderType>('general');
   const [editShopDelivery, setEditShopDelivery] = useState(true);
   const [editShopPickup, setEditShopPickup] = useState(true);
   const [editShopErrors, setEditShopErrors] = useState<Record<string, string>>({});
@@ -262,6 +295,7 @@ export const SellerPortalScreen: React.FC<{
       setEditShopAddress(currentShop.address);
       setEditShopPhone(currentShop.phoneNumber);
       setEditShopLogoUrl(currentShop.logoUrl || BRAND_ASSETS.logo);
+      setEditShopTraderType(currentShop.traderType === 'coffee' ? 'coffee' : 'general');
       setEditShopDelivery(currentShop.deliveryAvailable);
       setEditShopPickup(currentShop.pickupAvailable);
     }
@@ -292,7 +326,13 @@ export const SellerPortalScreen: React.FC<{
     setProdPrice('');
     setProdPreviousPrice('');
     setProdStock('10');
-    setProdCategory(categories[0]?.slug ?? 'groceries');
+    setProdCategory(
+      currentShop.traderType === 'coffee'
+        ? COFFEE_CATEGORY_SLUG
+        : categories[0]?.slug ?? 'groceries'
+    );
+    setProdProductType(currentShop.traderType === 'coffee' ? 'Roasted Coffee' : '');
+    setAmbiguousConfirmedTarget(null);
     setProdDesc('');
     setProdImageUrl(
       currentShop.logoUrl && validateProductImageUrl(currentShop.logoUrl)
@@ -301,6 +341,13 @@ export const SellerPortalScreen: React.FC<{
     );
     setProdDeliveryAvailable(currentShop.deliveryAvailable ?? true);
     setProdPickupAvailable(currentShop.pickupAvailable ?? true);
+    setCoffeeOrigin('Sidama');
+    setCoffeeBrand(currentShop.name);
+    setCoffeeRoastLevel('medium');
+    setCoffeeProcessMethod('washed');
+    setCoffeeBeanForm('whole_bean');
+    setCoffeeWeight('500g');
+    setCoffeeRoastDate('');
     setProdErrors({});
     setProdSubmitError(null);
     setProdSuccessMsg(null);
@@ -323,16 +370,47 @@ export const SellerPortalScreen: React.FC<{
     setProdPrice(String(p.price));
     setProdPreviousPrice(p.previousPrice ? String(p.previousPrice) : '');
     setProdStock(String(p.stock));
-    setProdCategory(p.category);
+    setProdCategory(normalizeProductCategory(p.category) || p.category);
+    setProdProductType(p.productType ?? '');
+    setAmbiguousConfirmedTarget(null);
     setProdDesc(p.description);
     setProdImageUrl(p.imageUrl);
     setProdDeliveryAvailable(p.deliveryAvailable);
     setProdPickupAvailable(p.pickupAvailable);
+    setCoffeeOrigin(p.coffeeDetails?.origin ?? 'Sidama');
+    setCoffeeBrand(p.coffeeDetails?.brand ?? currentShop.name);
+    setCoffeeRoastLevel(p.coffeeDetails?.roastLevel ?? 'medium');
+    setCoffeeProcessMethod(p.coffeeDetails?.processingMethod ?? 'washed');
+    setCoffeeBeanForm(p.coffeeDetails?.beanForm ?? 'whole_bean');
+    setCoffeeWeight(p.coffeeDetails?.packageWeight ?? '500g');
+    setCoffeeRoastDate(p.coffeeDetails?.roastDate ?? '');
     setProdErrors({});
     setProdSubmitError(null);
     setProdSuccessMsg(null);
     setShowProductForm(true);
   };
+
+  // Live automatic coffee categorization preview strictly from structured fields
+  // (product name, category, productType) — never from free-text description.
+  const categorizationPreview = useMemo(() => {
+    const confirmedCategoryValue =
+      ambiguousConfirmedTarget === 'coffee'
+        ? COFFEE_CATEGORY_SLUG
+        : ambiguousConfirmedTarget === 'non_coffee'
+          ? prodCategory === COFFEE_CATEGORY_SLUG
+            ? 'home-living'
+            : prodCategory
+          : undefined;
+    return classifyProductCoffeeCategory({
+      name: prodName,
+      category: prodCategory,
+      productType: prodProductType,
+      categoryConfirmed: ambiguousConfirmedTarget !== null,
+      confirmedCategory: confirmedCategoryValue,
+    });
+  }, [prodName, prodCategory, prodProductType, ambiguousConfirmedTarget]);
+
+  const effectiveIsCoffeeListing = categorizationPreview.outcome === 'coffee';
 
   const handleProductPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -423,6 +501,37 @@ export const SellerPortalScreen: React.FC<{
     if (!prodDeliveryAvailable && !prodPickupAvailable) {
       errs.fulfillment = 'Enable delivery or in-shop pickup for this product.';
     }
+
+    if (categorizationPreview.outcome === 'conflict') {
+      setProdSubmitError(categorizationPreview.reason);
+      return;
+    }
+    if (
+      categorizationPreview.outcome === 'ambiguous' &&
+      categorizationPreview.requiresConfirmation
+    ) {
+      setProdSubmitError(
+        'Please confirm below whether this product belongs in Coffee Traders or a general category before publishing.'
+      );
+      return;
+    }
+
+    const isCoffeeListing = categorizationPreview.outcome === 'coffee';
+    let validatedCoffeeDetails: Product['coffeeDetails'] | undefined;
+    if (isCoffeeListing) {
+      const coffeeCheck = validateCoffeeDetailsInput({
+        origin: coffeeOrigin,
+        brand: coffeeBrand,
+        roastLevel: coffeeRoastLevel,
+        processingMethod: coffeeProcessMethod,
+        beanForm: coffeeBeanForm,
+        packageWeight: coffeeWeight,
+        roastDate: coffeeRoastDate || undefined,
+      });
+      Object.assign(errs, coffeeCheck.errors);
+      validatedCoffeeDetails = coffeeCheck.sanitized;
+    }
+
     if (Object.keys(errs).length > 0) {
       setProdErrors(errs);
       return;
@@ -443,7 +552,7 @@ export const SellerPortalScreen: React.FC<{
     if (!validateProductImageUrl(finalImageUrl)) {
       setProdSubmitError(
         candidateUrl.startsWith('http://')
-          ? 'Image URL must use https:// or upload a JPG/PNG/WebP photo under 350 KB.'
+          ? 'Image URL must use https:// or upload a JPG/PNG/WebP photo under 150 KB.'
           : t('imageSizeTooLargeError')
       );
       return;
@@ -459,6 +568,7 @@ export const SellerPortalScreen: React.FC<{
           : undefined;
 
     const now = new Date().toISOString();
+    const trimmedProductType = prodProductType.trim();
     const product: Product = {
       productId:
         existing?.productId ??
@@ -468,11 +578,13 @@ export const SellerPortalScreen: React.FC<{
       name: prodName.trim(),
       description: prodDesc.trim(),
       category: prodCategory,
+      ...(trimmedProductType ? { productType: trimmedProductType } : {}),
       price: roundedPrice,
       ...(resolvedPreviousPrice !== undefined ? { previousPrice: resolvedPreviousPrice } : {}),
       stock: Math.floor(parsedStock),
       isAvailable: Math.floor(parsedStock) > 0,
       imageUrl: finalImageUrl,
+      ...(validatedCoffeeDetails ? { coffeeDetails: validatedCoffeeDetails } : {}),
       pickupAvailable: prodPickupAvailable,
       deliveryAvailable: prodDeliveryAvailable,
       status: 'active',
@@ -482,20 +594,43 @@ export const SellerPortalScreen: React.FC<{
       updatedAt: now,
     };
 
+    const confirmedCategoryArg =
+      ambiguousConfirmedTarget === 'coffee'
+        ? COFFEE_CATEGORY_SLUG
+        : ambiguousConfirmedTarget === 'non_coffee'
+          ? prodCategory === COFFEE_CATEGORY_SLUG
+            ? 'home-living'
+            : prodCategory
+          : undefined;
+
     setIsSavingProduct(true);
     try {
-      await saveSellerProduct(product);
+      const saved = await saveSellerProduct(product, {
+        categoryConfirmed: ambiguousConfirmedTarget !== null,
+        confirmedCategory: confirmedCategoryArg,
+      });
       stopProductCameraStream();
       setShowProductForm(false);
+      setAmbiguousConfirmedTarget(null);
+      const destinationLabel =
+        saved.product.category === COFFEE_CATEGORY_SLUG
+          ? 'Coffee Traders'
+          : currentShop.name;
       setProdSuccessMsg(
         existing
-          ? `Updated "${product.name}" in ${currentShop.name}.`
-          : `Published "${product.name}" to ${currentShop.name}!`
+          ? `Updated "${saved.product.name}" (${saved.product.category === COFFEE_CATEGORY_SLUG ? 'Coffee Traders' : saved.product.category}).`
+          : saved.categorization.autoAssigned
+            ? `Published "${saved.product.name}" — automatically categorized into Coffee Traders!`
+            : `Published "${saved.product.name}" to ${destinationLabel}!`
       );
     } catch (err) {
-      setProdSubmitError(
-        formatFriendlyErrorMessage(err, 'Unable to save product listing.')
-      );
+      if (err instanceof ProductCategorizationApiError) {
+        setProdSubmitError(err.message);
+      } else {
+        setProdSubmitError(
+          formatFriendlyErrorMessage(err, 'Unable to save product listing.')
+        );
+      }
     } finally {
       setIsSavingProduct(false);
     }
@@ -590,6 +725,7 @@ export const SellerPortalScreen: React.FC<{
         pickupAvailable: newShopPickupAvailable,
         status: isAdminCreator ? 'approved' : 'pending',
         verificationStatus: isAdminCreator ? 'approved' : 'unverified',
+        traderType: newShopTraderType,
         rating: 5.0,
         reviewCount: 0,
         createdAt: now,
@@ -601,6 +737,7 @@ export const SellerPortalScreen: React.FC<{
       setNewShopAddress('');
       setNewShopPhone('');
       setNewShopLogoUrl(BRAND_ASSETS.logo);
+      setNewShopTraderType('general');
       setNewShopDeliveryAvailable(true);
       setNewShopPickupAvailable(true);
       setShopSavedMsg(
@@ -650,6 +787,7 @@ export const SellerPortalScreen: React.FC<{
         address: editShopAddress.trim(),
         phoneNumber: editShopPhone.trim(),
         logoUrl: validateProductImageUrl(editShopLogoUrl) ? editShopLogoUrl : currentShop.logoUrl,
+        traderType: editShopTraderType,
         deliveryAvailable: editShopDelivery,
         pickupAvailable: editShopPickup,
         updatedAt: new Date().toISOString(),
@@ -1331,8 +1469,11 @@ export const SellerPortalScreen: React.FC<{
                   <input
                     type="text"
                     value={prodName}
-                    onChange={(e) => setProdName(e.target.value)}
-                    placeholder="Product Name"
+                    onChange={(e) => {
+                      setProdName(e.target.value);
+                      setAmbiguousConfirmedTarget(null);
+                    }}
+                    placeholder="Product Name (e.g., Sidama Roasted Coffee 500g)"
                     className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
                   />
                   {prodErrors.name && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.name}</p>}
@@ -1377,23 +1518,298 @@ export const SellerPortalScreen: React.FC<{
                   </div>
                 </div>
 
-                <select
-                  value={prodCategory}
-                  onChange={(e) => setProdCategory(e.target.value)}
-                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
-                >
-                  {categories.map((c) => (
-                    <option key={c.slug} value={c.slug} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
-                      {language === 'am'
-                        ? c.nameAm
-                        : language === 'om'
-                        ? c.nameOm
-                        : language === 'sid'
-                        ? c.nameSid || c.name
-                        : c.name}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <select
+                    aria-label="Product Category"
+                    value={prodCategory}
+                    onChange={(e) => {
+                      setProdCategory(e.target.value);
+                      setAmbiguousConfirmedTarget(null);
+                    }}
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  >
+                    <option
+                      value={COFFEE_CATEGORY_SLUG}
+                      className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                    >
+                      {t('coffeeCategoryOptionLabel')}
                     </option>
-                  ))}
-                </select>
+                    {categories.map((c) => (
+                      <option key={c.slug} value={c.slug} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
+                        {language === 'am'
+                          ? c.nameAm
+                          : language === 'om'
+                          ? c.nameOm
+                          : language === 'sid'
+                          ? c.nameSid || c.name
+                          : c.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div>
+                    <input
+                      type="text"
+                      list="seller-product-type-suggestions"
+                      maxLength={60}
+                      value={prodProductType}
+                      onChange={(e) => {
+                        setProdProductType(e.target.value);
+                        setAmbiguousConfirmedTarget(null);
+                      }}
+                      placeholder="Product Type (opt, e.g. Roasted Coffee)"
+                      className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    />
+                    <datalist id="seller-product-type-suggestions">
+                      {COFFEE_PRODUCT_TYPE_SUGGESTIONS.map((suggestion) => (
+                        <option key={suggestion} value={suggestion} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+
+                {/* Live Automatic Coffee Categorization Status Banner */}
+                {prodName.trim().length >= 3 && categorizationPreview.outcome === 'coffee' && categorizationPreview.autoAssigned && (
+                  <div className="rounded-xl border border-[#C68B59]/45 bg-[#4B2E24]/15 dark:bg-[#4B2E24]/35 px-3 py-2 flex items-start gap-2 text-[11px] text-[#4B2E24] dark:text-[#F8F4EE]">
+                    <Coffee className="w-4 h-4 text-[#C68B59] shrink-0 mt-0.5" />
+                    <div className="min-w-0 leading-snug">
+                      <span className="font-bold">Auto-detected as Ethiopian Coffee:</span>{' '}
+                      This listing will automatically publish in <span className="font-semibold">Coffee Traders</span> and stay separated from unrelated categories.
+                    </div>
+                  </div>
+                )}
+
+                {prodName.trim().length >= 3 && categorizationPreview.outcome === 'conflict' && (
+                  <div className="rounded-xl border border-rose-300 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-950/40 p-3 space-y-2 text-[11px] text-rose-800 dark:text-rose-200">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span className="leading-snug">{categorizationPreview.reason}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProdCategory(categorizationPreview.suggestedCategory);
+                        setProdSubmitError(null);
+                      }}
+                      className="min-h-[34px] px-3 rounded-lg bg-rose-700 hover:bg-rose-800 dark:bg-rose-600 dark:hover:bg-rose-500 text-white text-[11px] font-semibold transition-colors"
+                    >
+                      {categorizationPreview.suggestedCategory === COFFEE_CATEGORY_SLUG
+                        ? 'Switch Category to Coffee Traders'
+                        : `Switch Category to ${categorizationPreview.suggestedCategory}`}
+                    </button>
+                  </div>
+                )}
+
+                {prodName.trim().length >= 3 &&
+                  categorizationPreview.outcome === 'ambiguous' &&
+                  categorizationPreview.requiresConfirmation && (
+                    <div className="rounded-xl border border-[#F59E0B]/45 bg-[#FFFBEB] dark:bg-[#F59E0B]/10 p-3 space-y-2 text-[11px] text-stone-800 dark:text-[#FDE68A]">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B] shrink-0 mt-0.5" />
+                        <div className="leading-snug">
+                          <span className="font-bold">Confirm Product Category:</span>{' '}
+                          {categorizationPreview.reason}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAmbiguousConfirmedTarget('coffee');
+                            setProdCategory(COFFEE_CATEGORY_SLUG);
+                            setProdSubmitError(null);
+                          }}
+                          className="min-h-[36px] px-2.5 rounded-lg bg-[#4B2E24] hover:bg-[#3A221A] text-[#F8F4EE] border border-[#C68B59]/50 text-[11px] font-semibold transition-colors"
+                        >
+                          List in Coffee Traders
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAmbiguousConfirmedTarget('non_coffee');
+                            if (prodCategory === COFFEE_CATEGORY_SLUG) {
+                              setProdCategory(categorizationPreview.suggestedCategory || 'home-living');
+                            }
+                            setProdSubmitError(null);
+                          }}
+                          className="min-h-[36px] px-2.5 rounded-lg bg-white dark:bg-[#141A17] text-stone-800 dark:text-stone-100 border border-[#E7E5E4] dark:border-[#2A3630] text-[11px] font-semibold transition-colors"
+                        >
+                          Keep Non-Coffee
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Conditional Coffee-Specific Fields (Shown for Specialty Coffee & Auto-Detected Coffee listings) */}
+                {effectiveIsCoffeeListing && (
+                  <fieldset className="rounded-2xl border border-[#C68B59]/45 bg-[#4B2E24]/15 dark:bg-[#4B2E24]/30 p-3 space-y-2.5">
+                    <legend className="px-1.5 text-[11px] font-bold text-[#4B2E24] dark:text-[#F8F4EE] flex items-center gap-1.5">
+                      <Coffee className="w-3.5 h-3.5 text-[#C68B59]" />
+                      <span>{t('coffeeSellerSectionTitle')}</span>
+                    </legend>
+                    <p className="text-[11px] text-stone-600 dark:text-[#D5C3B3] leading-snug">
+                      {t('coffeeSellerSectionHint')}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                          {t('coffeeFilterOrigin')}
+                        </label>
+                        <input
+                          type="text"
+                          list="ethiopian-coffee-origins"
+                          maxLength={80}
+                          value={coffeeOrigin}
+                          onChange={(e) => setCoffeeOrigin(e.target.value)}
+                          placeholder="e.g. Sidama, Yirgacheffe"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                        />
+                        <datalist id="ethiopian-coffee-origins">
+                          {ETHIOPIAN_COFFEE_ORIGINS.map((origin) => (
+                            <option key={origin} value={origin} />
+                          ))}
+                        </datalist>
+                        {prodErrors.coffeeOrigin && (
+                          <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">
+                            {prodErrors.coffeeOrigin}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                          {t('coffeeFilterBrand')} (opt)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={80}
+                          value={coffeeBrand}
+                          onChange={(e) => setCoffeeBrand(e.target.value)}
+                          placeholder={currentShop?.name || 'Roastery / Brand'}
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                        />
+                        {prodErrors.coffeeBrand && (
+                          <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">
+                            {prodErrors.coffeeBrand}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                          {t('coffeeFilterRoast')}
+                        </label>
+                        <select
+                          value={coffeeRoastLevel}
+                          onChange={(e) =>
+                            setCoffeeRoastLevel(e.target.value as CoffeeRoastLevel)
+                          }
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                        >
+                          {COFFEE_ROAST_LEVELS.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                          {t('coffeeProcessMethod')}
+                        </label>
+                        <select
+                          value={coffeeProcessMethod}
+                          onChange={(e) =>
+                            setCoffeeProcessMethod(e.target.value as CoffeeProcessMethod)
+                          }
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                        >
+                          {COFFEE_PROCESSING_METHODS.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Bean Form Segmented Control */}
+                    <div>
+                      <span className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                        {t('coffeeFilterForm')}
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {COFFEE_BEAN_FORMS.map((f) => {
+                          const active = coffeeBeanForm === f.value;
+                          return (
+                            <button
+                              key={f.value}
+                              type="button"
+                              onClick={() => setCoffeeBeanForm(f.value)}
+                              className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold transition-colors ${
+                                active
+                                  ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
+                                  : 'bg-white dark:bg-[#1A100D] border-[#C68B59]/30 text-stone-700 dark:text-[#D5C3B3]'
+                              }`}
+                            >
+                              {f.value === 'whole_bean'
+                                ? t('coffeeWholeBeans')
+                                : t('coffeeGround')}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                          {t('coffeeFilterWeight')}
+                        </label>
+                        <input
+                          type="text"
+                          list="coffee-package-weights"
+                          maxLength={32}
+                          value={coffeeWeight}
+                          onChange={(e) => setCoffeeWeight(e.target.value)}
+                          placeholder="250g, 500g, 1kg"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                        />
+                        <datalist id="coffee-package-weights">
+                          {COFFEE_PACKAGE_WEIGHTS.map((w) => (
+                            <option key={w} value={w} />
+                          ))}
+                        </datalist>
+                        {prodErrors.coffeeWeight && (
+                          <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">
+                            {prodErrors.coffeeWeight}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-semibold text-stone-600 dark:text-[#D5C3B3] mb-1">
+                          {t('coffeeRoastDate')} (opt)
+                        </label>
+                        <input
+                          type="date"
+                          value={coffeeRoastDate}
+                          onChange={(e) => setCoffeeRoastDate(e.target.value)}
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                        />
+                        {prodErrors.coffeeRoastDate && (
+                          <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">
+                            {prodErrors.coffeeRoastDate}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </fieldset>
+                )}
 
                 <div>
                   <textarea
@@ -2078,6 +2494,37 @@ export const SellerPortalScreen: React.FC<{
                       )}
                     </div>
 
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-semibold text-stone-600 dark:text-stone-300">
+                        {t('sellerTraderTypeLabel')}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditShopTraderType('general')}
+                          className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${
+                            editShopTraderType === 'general'
+                              ? 'bg-[#047857] border-[#047857] text-white'
+                              : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                          }`}
+                        >
+                          {t('sellerTraderTypeGeneral')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditShopTraderType('coffee')}
+                          className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                            editShopTraderType === 'coffee'
+                              ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
+                              : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                          }`}
+                        >
+                          <Coffee className="w-3.5 h-3.5 text-[#C68B59] shrink-0" />
+                          <span className="truncate">{t('coffeeTradersTitle')}</span>
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2">
                       <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                         <input
@@ -2178,6 +2625,37 @@ export const SellerPortalScreen: React.FC<{
                 {shopFormErrors.description && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.description}</p>
                 )}
+              </div>
+
+              <div className="space-y-1">
+                <span className="block text-[11px] font-semibold text-stone-600 dark:text-stone-300">
+                  {t('sellerTraderTypeLabel')}
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewShopTraderType('general')}
+                    className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${
+                      newShopTraderType === 'general'
+                        ? 'bg-[#047857] border-[#047857] text-white'
+                        : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                    }`}
+                  >
+                    {t('sellerTraderTypeGeneral')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewShopTraderType('coffee')}
+                    className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                      newShopTraderType === 'coffee'
+                        ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
+                        : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                    }`}
+                  >
+                    <Coffee className="w-3.5 h-3.5 text-[#C68B59] shrink-0" />
+                    <span className="truncate">{t('coffeeTradersTitle')}</span>
+                  </button>
+                </div>
               </div>
 
               <div>

@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Coffee,
   FileText,
   Heart,
   Leaf,
@@ -43,6 +44,9 @@ import {
   calculateThresholdFromPercent,
   clampProductQuantity,
   deriveProductBadges,
+  formatCoffeeBeanForm,
+  formatCoffeeProcessMethod,
+  formatCoffeeRoastLevel,
   formatETB,
   getCartItemKey,
   getProductPriceAlert,
@@ -227,6 +231,11 @@ export const ProductDetailScreen: React.FC<{ productId: string }> = ({ productId
     }
   };
 
+  const relatedProducts = useMemo(
+    () => (product ? getRelatedProducts(product, products, 4) : []),
+    [product, products]
+  );
+
   if (authLoading || isRefreshingCatalog) {
     return (
       <div
@@ -382,11 +391,6 @@ export const ProductDetailScreen: React.FC<{ productId: string }> = ({ productId
   const galleryImages = buildProductGalleryImages(product);
   const badges = deriveProductBadges(product, shop);
   const hasAnyOverlayBadges = badges.isOrganic || badges.isVerified || badges.hasFastDelivery;
-
-  const relatedProducts = useMemo(
-    () => getRelatedProducts(product, products, 4),
-    [product, products]
-  );
 
   const shopUnavailable =
     !shop ||
@@ -1175,6 +1179,74 @@ export const ProductDetailScreen: React.FC<{ productId: string }> = ({ productId
               <p className="text-[13.5px] text-[#A9C0BD] leading-relaxed">
                 {product.description}
               </p>
+
+              {/* Coffee-Specific Metadata (Strictly Data-Backed) */}
+              {product.coffeeDetails && Object.keys(product.coffeeDetails).length > 0 && (
+                <div className="mt-2.5 rounded-2xl bg-gradient-to-br from-[#3A221A]/85 to-[#1B110E]/90 border border-[#C68B59]/35 p-3 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#F8F4EE]">
+                    <Coffee className="w-3.5 h-3.5 text-[#C68B59] shrink-0" />
+                    <span>{t('coffeeDetailsSectionTitle')}</span>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px]">
+                    {product.coffeeDetails.origin && (
+                      <div>
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeFilterOrigin')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE]">
+                          {product.coffeeDetails.origin}
+                        </dd>
+                      </div>
+                    )}
+                    {product.coffeeDetails.brand && (
+                      <div>
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeFilterBrand')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE]">
+                          {product.coffeeDetails.brand}
+                        </dd>
+                      </div>
+                    )}
+                    {product.coffeeDetails.roastLevel && (
+                      <div>
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeFilterRoast')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE]">
+                          {formatCoffeeRoastLevel(product.coffeeDetails.roastLevel)}
+                        </dd>
+                      </div>
+                    )}
+                    {product.coffeeDetails.processingMethod && (
+                      <div>
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeProcessMethod')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE]">
+                          {formatCoffeeProcessMethod(product.coffeeDetails.processingMethod)}
+                        </dd>
+                      </div>
+                    )}
+                    {product.coffeeDetails.beanForm && (
+                      <div>
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeFilterForm')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE]">
+                          {formatCoffeeBeanForm(product.coffeeDetails.beanForm)}
+                        </dd>
+                      </div>
+                    )}
+                    {product.coffeeDetails.packageWeight && (
+                      <div>
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeFilterWeight')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE] tabular-nums">
+                          {product.coffeeDetails.packageWeight}
+                        </dd>
+                      </div>
+                    )}
+                    {product.coffeeDetails.roastDate && (
+                      <div className="col-span-2">
+                        <dt className="text-[#D5C3B3]/75">{t('coffeeRoastDate')}</dt>
+                        <dd className="font-semibold text-[#F8F4EE] tabular-nums">
+                          {product.coffeeDetails.roastDate}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
 
               {/* Availability, Stock & Delivery Metadata */}
               <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">

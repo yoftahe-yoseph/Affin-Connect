@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   ClipboardList,
+  Coffee,
   Crown,
   DollarSign,
   Eye,
@@ -40,6 +41,7 @@ import {
   filterAdminUsers,
   formatETB,
   isSuperAdminEmail,
+  planCoffeeProductMigration,
   type AdminUserRoleFilter,
 } from '../utils/marketplaceLogic';
 import type {
@@ -135,6 +137,7 @@ export const AdminPortalScreen: React.FC<{
     adminReviewMerchantVerification,
     moderateProductGovernance,
     deleteProductAsAdmin,
+    runCoffeeMigrationAsAdmin,
     adminForceOrderAction,
     adminResolveReturnRequest,
     adminUpdateUserAccount,
@@ -174,6 +177,8 @@ export const AdminPortalScreen: React.FC<{
 
   const [productSearch, setProductSearch] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState<'all' | 'active' | 'pending_review' | 'archived'>('all');
+  const [coffeeSyncRunning, setCoffeeSyncRunning] = useState(false);
+  const [coffeeSyncSummary, setCoffeeSyncSummary] = useState<string | null>(null);
 
   const [ordersSubTab, setOrdersSubTab] = useState<'orders' | 'returns'>('orders');
   const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | OrderStatus>('all');
@@ -313,6 +318,11 @@ export const AdminPortalScreen: React.FC<{
       return true;
     });
   }, [products, productSearch, productStatusFilter]);
+
+  const coffeeMigrationPreview = useMemo(
+    () => planCoffeeProductMigration(products),
+    [products]
+  );
 
   const filteredOrders = useMemo(() => {
     return adminOrders.filter((o) => {
@@ -1135,6 +1145,58 @@ export const AdminPortalScreen: React.FC<{
         {/* TAB 3: PRODUCT MODERATION */}
         {activeTab === 'products' && (
           <div className="space-y-3">
+            {/* Idempotent Coffee Categorization Backfill Card */}
+            <div className="rounded-2xl border border-[#C68B59]/40 bg-[#4B2E24]/15 dark:bg-[#4B2E24]/30 p-3.5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Coffee className="w-4 h-4 text-[#C68B59] shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-stone-900 dark:text-[#F8F4EE] truncate">
+                      Coffee Traders Auto-Categorization Sync
+                    </div>
+                    <div className="text-[11px] text-stone-600 dark:text-[#D5C3B3] tabular-nums">
+                      {coffeeMigrationPreview.alreadyCategorized} in Coffee Traders · {coffeeMigrationPreview.eligible} ready to sync · {coffeeMigrationPreview.ambiguous} ambiguous skipped
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={coffeeSyncRunning}
+                  onClick={async () => {
+                    setCoffeeSyncRunning(true);
+                    setCoffeeSyncSummary(null);
+                    try {
+                      const result = await runCoffeeMigrationAsAdmin(false);
+                      setCoffeeSyncSummary(
+                        result.updated > 0
+                          ? `Synced ${result.updated} coffee product${result.updated === 1 ? '' : 's'} to Coffee Traders (${result.alreadyCategorized} already categorized).`
+                          : `Catalog already up to date (${result.alreadyCategorized} in Coffee Traders, 0 changes needed).`
+                      );
+                    } catch (err) {
+                      setCoffeeSyncSummary(
+                        err instanceof Error ? err.message : 'Unable to sync coffee catalog.'
+                      );
+                    } finally {
+                      setCoffeeSyncRunning(false);
+                    }
+                  }}
+                  className="min-h-[36px] px-3 rounded-xl bg-[#4B2E24] hover:bg-[#3A221A] disabled:opacity-60 text-[#F8F4EE] border border-[#C68B59]/50 text-[11px] font-semibold inline-flex items-center gap-1.5 shrink-0 transition-colors"
+                >
+                  {coffeeSyncRunning ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  )}
+                  <span>{coffeeSyncRunning ? 'Syncing...' : 'Sync Catalog'}</span>
+                </button>
+              </div>
+              {coffeeSyncSummary && (
+                <div className="text-[11px] font-medium text-[#047857] dark:text-[#10B981]">
+                  {coffeeSyncSummary}
+                </div>
+              )}
+            </div>
+
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input

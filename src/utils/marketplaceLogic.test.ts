@@ -99,12 +99,58 @@ import {
   resolveSellerManagedShops,
   resolveActiveSellerShopId,
   formatFriendlyErrorMessage,
+  isCoffeeProduct,
+  isCoffeeTrader,
+  isDedicatedCoffeeTrader,
+  filterCoffeeProducts,
+  getCoffeeTraderListings,
+  extractCoffeeFilterOptions,
+  validateCoffeeDetailsInput,
+  classifyProductCoffeeCategory,
+  normalizeProductCategory,
+  planCoffeeProductMigration,
 } from './marketplaceLogic';
+import { validateAndPrepareProductWrite } from '../server/products';
+import {
+  evaluateSellerVerification,
+  type SellerVerificationCheckResult,
+  type VerifiedShopSummary,
+} from '../server/sellerAuth';
+import {
+  buildListingAssistantReply,
+  ListingDraftStore,
+} from '../server/listingAssistant';
+import {
+  MAX_IMAGE_UPLOAD_DATA_URL_LENGTH,
+  validateImagePayloadSize,
+} from './imageUpload';
+import { createRateLimiter } from '../server/rateLimit';
+import {
+  MAX_CHAT_HISTORY_ITEMS,
+  MAX_CHAT_MESSAGE_LENGTH,
+  validateChatRequestPayload,
+  validatePaymentInitiateBody,
+  validatePaymentVerifyBody,
+} from '../server/requestValidation';
 import {
   buildWelcomeBackEmail,
   isValidEmailAddress,
 } from '../server/welcomeBackEmail';
-import type { CartItem, LoyaltyTransaction, Order, Product, ReturnRequest, ReviewItem, Shop } from '../types';
+import {
+  isTransientGeminiOverloadError,
+  normalizeChatHistory,
+  parseGeminiApiError,
+} from '../server/gemini';
+import type {
+  CartItem,
+  LoyaltyTransaction,
+  MerchantVerification,
+  Order,
+  Product,
+  ReturnRequest,
+  ReviewItem,
+  Shop,
+} from '../types';
 
 const sampleShop: Shop = {
   shopId: 'shop-1',
@@ -834,16 +880,20 @@ test('calculateShopRatingSummary incorporates shopRating updates accurately', ()
   assert.equal(summary.averageRating, 4.5);
 });
 
-test('Image payload guardrails enforce < 350 KB limit and valid formats', () => {
+test('Image payload guardrails enforce < 150 KB limit and valid formats', () => {
+  assert.equal(MAX_IMAGE_FILE_BYTES, 150 * 1024);
+  assert.equal(MAX_IMAGE_UPLOAD_DATA_URL_LENGTH, 205_000);
   const smallJpeg = 'data:image/jpeg;base64,' + 'A'.repeat(128);
   assert.equal(validateImageDataUrlSize(smallJpeg), true);
   assert.equal(validateProductImageUrl(smallJpeg), true);
+  assert.equal(validateImagePayloadSize(smallJpeg).valid, true);
 
-  // Exceeds 350 KB raw bytes (~360 KB decoded)
+  // Exceeds 150 KB raw bytes (~151 KB decoded)
   const oversizedBytesBase64Length = Math.ceil(((MAX_IMAGE_FILE_BYTES + 1024) * 4) / 3);
   const hugeJpeg = 'data:image/jpeg;base64,' + 'A'.repeat(oversizedBytesBase64Length);
   assert.equal(validateImageDataUrlSize(hugeJpeg), false);
   assert.equal(validateProductImageUrl(hugeJpeg), false);
+  assert.equal(validateImagePayloadSize(hugeJpeg).valid, false);
 
   assert.equal(validateImageDataUrlSize('data:image/svg+xml;base64,PHN2Zz4='), false);
   assert.equal(validateProductImageUrl('https://cdn.example.com/coffee.jpg'), true);
@@ -2136,3 +2186,1266 @@ test('Seller shop scoping, active seller shop resolution, and friendly error for
   assert.equal(formatFriendlyErrorMessage(new Error('Plain upload error'), 'Fallback'), 'Plain upload error');
   assert.equal(formatFriendlyErrorMessage(null, 'Fallback message'), 'Fallback message');
 });
+
+test('Gemini chat resilience normalizes multi-turn history and identifies transient 503 overloads accurately', () => {
+  // Strips leading model welcome message, merges same-role turns, and drops trailing dangling user turn
+  const normalized = normalizeChatHistory([
+    { role: 'model', content: 'Selam! Welcome.' },
+    { role: 'user', content: 'Recommend coffee' },
+    { role: 'user', content: 'under 1000 ETB' },
+    { role: 'model', content: 'Try Sidama Coffee 250g.' },
+    { role: 'user', content: 'Unsent retry duplicate' },
+  ]);
+  assert.equal(normalized.length, 2);
+  assert.equal(normalized[0].role, 'user');
+  assert.equal(normalized[0].parts?.[0]?.text, 'Recommend coffee\n\nunder 1000 ETB');
+  assert.equal(normalized[1].role, 'model');
+  assert.equal(normalized[1].parts?.[0]?.text, 'Try Sidama Coffee 250g.');
+
+  // Identifies 503 high demand errors for retry/failover while preserving permission errors
+  const overloadErr = new Error(
+    JSON.stringify({
+      error: {
+        code: 503,
+        status: 'UNAVAILABLE',
+        message: 'This model is currently experiencing high demand.',
+      },
+    })
+  );
+  assert.equal(isTransientGeminiOverloadError(overloadErr), true);
+  assert.equal(parseGeminiApiError(overloadErr).status, 503);
+
+  const authErr = new Error(
+    JSON.stringify({
+      error: {
+        code: 403,
+        status: 'PERMISSION_DENIED',
+        message: 'API key invalid.',
+      },
+    })
+  );
+  assert.equal(isTransientGeminiOverloadError(authErr), false);
+  assert.equal(parseGeminiApiError(authErr).status, 403);
+});
+
+test('Security hardening: sliding-window rate limiter blocks bursts and resets after window expiry', () => {
+  const limiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 3,
+    keyPrefix: 'test-chat',
+  });
+
+  const t0 = 1_700_000_000_000;
+  assert.equal(limiter.check('10.0.0.1', t0).allowed, true);
+  assert.equal(limiter.check('10.0.0.1', t0 + 100).allowed, true);
+  const third = limiter.check('10.0.0.1', t0 + 200);
+  assert.equal(third.allowed, true);
+  assert.equal(third.remaining, 0);
+
+  const blocked = limiter.check('10.0.0.1', t0 + 300);
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.remaining, 0);
+  assert.ok(blocked.retryAfterSeconds >= 1);
+
+  // Independent IP remains unaffected
+  assert.equal(limiter.check('10.0.0.2', t0 + 300).allowed, true);
+
+  // Window expires cleanly
+  assert.equal(limiter.check('10.0.0.1', t0 + 60_001).allowed, true);
+});
+
+test('Security hardening: chat and payment validators reject oversized inputs and malformed payloads', () => {
+  const validChat = validateChatRequestPayload({
+    message: 'Best Sidama coffee under 500 ETB?',
+    history: [{ role: 'user', content: 'Hi' }],
+    mode: 'lite',
+    language: 'en',
+  });
+  assert.equal(validChat.ok, true);
+
+  const oversizedMsg = validateChatRequestPayload({
+    message: 'a'.repeat(MAX_CHAT_MESSAGE_LENGTH + 1),
+  });
+  assert.equal(oversizedMsg.ok, false);
+
+  const tooManyTurns = validateChatRequestPayload({
+    message: 'Hello',
+    history: Array.from({ length: MAX_CHAT_HISTORY_ITEMS + 1 }, () => ({
+      role: 'user',
+      content: 'hi',
+    })),
+  });
+  assert.equal(tooManyTurns.ok, false);
+
+  const badMode = validateChatRequestPayload({
+    message: 'Hello',
+    mode: 'unlimited-admin',
+  });
+  assert.equal(badMode.ok, false);
+
+  const validPayInit = validatePaymentInitiateBody({
+    shopId: 'shop-1',
+    shop: { shopId: 'shop-1', name: 'Sidama Coffee House' },
+    cartItems: [{ product: { productId: 'prod-1' }, quantity: 2 }],
+    paymentMethod: 'telebirr',
+    callbackUrl: 'https://hawasagebeya.vercel.app/api/payments/webhook/chapa',
+  });
+  assert.equal(validPayInit.ok, true);
+
+  const badPayUrl = validatePaymentInitiateBody({
+    shopId: 'shop-1',
+    shop: { shopId: 'shop-1', name: 'Sidama Coffee House' },
+    cartItems: [{ product: { productId: 'prod-1' }, quantity: 1 }],
+    returnUrl: 'javascript:alert(1)',
+  });
+  assert.equal(badPayUrl.ok, false);
+
+  const oversizedCart = validatePaymentInitiateBody({
+    shopId: 'shop-1',
+    shop: { shopId: 'shop-1', name: 'Sidama Coffee House' },
+    cartItems: Array.from({ length: 51 }, (_, i) => ({
+      product: { productId: `p-${i}` },
+      quantity: 1,
+    })),
+  });
+  assert.equal(oversizedCart.ok, false);
+
+  assert.equal(
+    validatePaymentVerifyBody({
+      paymentMethod: 'chapa',
+      txRef: 'AC-123456-ABC',
+      expectedAmountEtb: 350,
+    }).ok,
+    true
+  );
+
+  assert.equal(
+    validatePaymentVerifyBody({
+      paymentMethod: 'chapa',
+      txRef: '../admin/override',
+      expectedAmountEtb: 350,
+    }).ok,
+    false
+  );
+});
+
+test('Coffee Traders: classifies coffee products and separates dedicated coffee traders from general marketplace', () => {
+  const coffeeShop: Shop = {
+    ...sampleShop,
+    shopId: 'shop-coffee-1',
+    name: 'Sidama Heritage Roasters',
+    traderType: 'coffee',
+    status: 'approved',
+    verificationStatus: 'approved',
+  };
+  const techShop: Shop = {
+    ...sampleShop,
+    shopId: 'shop-tech-1',
+    name: 'Menhariya Mobile & Tech',
+    traderType: 'general',
+    status: 'approved',
+    verificationStatus: 'approved',
+  };
+
+  const yirgacheffeCoffee: Product = {
+    productId: 'p-coffee-yirga',
+    shopId: 'shop-coffee-1',
+    shopName: 'Sidama Heritage Roasters',
+    name: 'Yirgacheffe Kochere Washed (250g)',
+    description: 'Floral Ethiopian washed Arabica coffee.',
+    category: 'coffee',
+    price: 450,
+    stock: 15,
+    isAvailable: true,
+    imageUrl: 'https://example.com/yirga.jpg',
+    coffeeDetails: {
+      origin: 'Yirgacheffe',
+      brand: 'Kochere Micro-Lot',
+      roastLevel: 'light',
+      processingMethod: 'washed',
+      beanForm: 'whole_bean',
+      packageWeight: '250g',
+      roastDate: '2026-11-12',
+    },
+    pickupAvailable: true,
+    deliveryAvailable: true,
+    status: 'active',
+    rating: 4.9,
+    reviewCount: 12,
+    createdAt: '2026-11-12T09:00:00.000Z',
+    updatedAt: '2026-11-12T09:00:00.000Z',
+  };
+
+  const legacyCoffeeProduct: Product = {
+    ...yirgacheffeCoffee,
+    productId: 'p-coffee-legacy',
+    name: 'Sidama Buna Roasted Coffee (500g)',
+    category: 'groceries',
+    coffeeDetails: undefined,
+  };
+
+  const smartphone: Product = {
+    ...yirgacheffeCoffee,
+    productId: 'p-tech-phone',
+    shopId: 'shop-tech-1',
+    shopName: 'Menhariya Mobile & Tech',
+    name: 'Galaxy A25 Smartphone',
+    description: 'Original smartphone with warranty.',
+    category: 'electronics',
+    price: 18500,
+    coffeeDetails: undefined,
+  };
+
+  assert.equal(isCoffeeProduct(yirgacheffeCoffee), true);
+  assert.equal(isCoffeeProduct(legacyCoffeeProduct), true);
+  assert.equal(isCoffeeProduct(smartphone), false);
+
+  const allProducts = [yirgacheffeCoffee, legacyCoffeeProduct, smartphone];
+  assert.equal(isCoffeeTrader(coffeeShop, allProducts), true);
+  assert.equal(isCoffeeTrader(techShop, allProducts), false);
+  assert.equal(isDedicatedCoffeeTrader(coffeeShop, allProducts), true);
+  assert.equal(isDedicatedCoffeeTrader(techShop, allProducts), false);
+
+  const shopsById = {
+    [coffeeShop.shopId]: coffeeShop,
+    [techShop.shopId]: techShop,
+  };
+
+  const generalProducts = filterAndSortProducts(allProducts, shopsById, {
+    excludeCoffee: true,
+  });
+  assert.deepEqual(
+    generalProducts.map((p) => p.productId),
+    ['p-tech-phone']
+  );
+
+  const generalShops = filterShopsForDirectory([coffeeShop, techShop], allProducts, {
+    excludeCoffee: true,
+  });
+  assert.deepEqual(
+    generalShops.map((s) => s.shopId),
+    ['shop-tech-1']
+  );
+});
+
+test('Coffee Traders: filters coffee products by origin, brand, roast, weight, bean form, price, and seller', () => {
+  const shopA: Shop = {
+    ...sampleShop,
+    shopId: 'shop-a',
+    name: 'Sidama Roasters',
+    traderType: 'coffee',
+    status: 'approved',
+    verificationStatus: 'approved',
+  };
+  const shopB: Shop = {
+    ...sampleShop,
+    shopId: 'shop-b',
+    name: 'Guji Highlands Coffee',
+    traderType: 'coffee',
+    status: 'approved',
+    verificationStatus: 'pending_review',
+  };
+
+  const p1: Product = {
+    productId: 'c-1',
+    shopId: 'shop-a',
+    shopName: 'Sidama Roasters',
+    name: 'Sidama Bensa Medium-Dark (500g)',
+    description: 'Rich Sidama beans',
+    category: 'coffee',
+    price: 680,
+    stock: 20,
+    isAvailable: true,
+    imageUrl: 'https://example.com/c1.jpg',
+    coffeeDetails: {
+      origin: 'Sidama',
+      brand: 'Bensa Reserve',
+      roastLevel: 'medium_dark',
+      processingMethod: 'washed',
+      beanForm: 'whole_bean',
+      packageWeight: '500g',
+      roastDate: '2026-11-10',
+    },
+    pickupAvailable: true,
+    deliveryAvailable: true,
+    status: 'active',
+    rating: 4.9,
+    reviewCount: 15,
+    createdAt: '2026-11-10T08:00:00.000Z',
+    updatedAt: '2026-11-10T08:00:00.000Z',
+  };
+
+  const p2: Product = {
+    ...p1,
+    productId: 'c-2',
+    shopId: 'shop-b',
+    shopName: 'Guji Highlands Coffee',
+    name: 'Guji Natural Ground Coffee (250g)',
+    description: 'Berry-forward ground coffee',
+    price: 390,
+    coffeeDetails: {
+      origin: 'Guji',
+      brand: 'Guji Gold',
+      roastLevel: 'light',
+      processingMethod: 'natural',
+      beanForm: 'ground',
+      packageWeight: '250g',
+      roastDate: '2026-11-14',
+    },
+    rating: 4.7,
+    reviewCount: 7,
+    createdAt: '2026-11-14T08:00:00.000Z',
+  };
+
+  const shopsById = { [shopA.shopId]: shopA, [shopB.shopId]: shopB };
+  const allCoffee = [p1, p2];
+
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { origin: 'Guji' }).map((p) => p.productId),
+    ['c-2']
+  );
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { brand: 'Bensa Reserve' }).map((p) => p.productId),
+    ['c-1']
+  );
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { roastLevel: 'light' }).map((p) => p.productId),
+    ['c-2']
+  );
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { packageWeight: '500g' }).map((p) => p.productId),
+    ['c-1']
+  );
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { beanForm: 'ground' }).map((p) => p.productId),
+    ['c-2']
+  );
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { shopId: 'shop-a' }).map((p) => p.productId),
+    ['c-1']
+  );
+  assert.deepEqual(
+    filterCoffeeProducts(allCoffee, shopsById, { minPrice: 300, maxPrice: 500 }).map((p) => p.productId),
+    ['c-2']
+  );
+
+  const traders = getCoffeeTraderListings([shopA, shopB], allCoffee);
+  assert.equal(traders.length, 2);
+  assert.equal(traders[0].shop.shopId, 'shop-a');
+  assert.equal(traders[0].isVerified, true);
+  assert.equal(traders[1].shop.shopId, 'shop-b');
+  assert.equal(traders[1].isVerified, false);
+
+  const opts = extractCoffeeFilterOptions(allCoffee, shopsById);
+  assert.deepEqual(opts.origins, ['Guji', 'Sidama']);
+  assert.deepEqual(opts.brands, ['Bensa Reserve', 'Guji Gold']);
+  assert.deepEqual(opts.weights, ['250g', '500g']);
+  assert.equal(opts.sellers.length, 2);
+});
+
+test('Coffee Traders: validates seller coffee-specific metadata safely', () => {
+  const valid = validateCoffeeDetailsInput({
+    origin: 'Yirgacheffe',
+    brand: 'Hawassa Roast Co.',
+    roastLevel: 'medium',
+    processingMethod: 'natural',
+    beanForm: 'whole_bean',
+    packageWeight: '500g',
+    roastDate: '2026-11-18',
+  });
+  assert.deepEqual(valid.errors, {});
+  assert.equal(valid.sanitized?.origin, 'Yirgacheffe');
+  assert.equal(valid.sanitized?.roastDate, '2026-11-18');
+
+  const invalid = validateCoffeeDetailsInput({
+    origin: '   ',
+    roastLevel: 'medium',
+    processingMethod: 'washed',
+    beanForm: 'ground',
+    packageWeight: '',
+    roastDate: '18/11/2026',
+  });
+  assert.ok(invalid.errors.coffeeOrigin);
+  assert.ok(invalid.errors.coffeeWeight);
+  assert.ok(invalid.errors.coffeeRoastDate);
+  assert.equal(invalid.sanitized, undefined);
+});
+
+test('Auto Coffee Categorization: normalizes category aliases and auto-detects Sidama/Ground Ethiopian coffee', () => {
+  // Normalization prevents case/alias duplicates
+  for (const variant of [
+    'coffee',
+    'Coffee',
+    'COFFEE',
+    'Ethiopian Coffee',
+    'Roasted Coffee',
+    'Coffee Beans',
+    'Ground Coffee',
+    'Green Coffee Beans',
+    'Specialty Coffee',
+  ]) {
+    assert.equal(normalizeProductCategory(variant), 'coffee', `Expected "${variant}" -> coffee`);
+  }
+
+  // Scenario 1: Seller publishes Sidama roasted coffee (even when dropdown is Groceries)
+  const sidamaWrite = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Roastery',
+      name: 'Sidama Roasted Coffee 500g',
+      description: 'Freshly roasted single-origin beans from Bensa, Sidama.',
+      category: 'groceries',
+      price: 690,
+      stock: 15,
+      imageUrl: 'https://example.com/sidama-coffee.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create', nowIso: '2026-11-19T10:00:00.000Z' }
+  );
+  assert.equal(sidamaWrite.ok, true);
+  if (!sidamaWrite.ok) return;
+  assert.equal(sidamaWrite.product.category, 'coffee');
+  assert.equal(sidamaWrite.categorization.autoAssigned, true);
+  assert.equal(sidamaWrite.product.coffeeDetails?.origin, 'Sidama');
+  assert.equal(sidamaWrite.product.coffeeDetails?.packageWeight, '500g');
+
+  // Scenario 2: Seller publishes Ground Ethiopian Coffee with unnormalized "COFFEE" category
+  const groundWrite = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Roastery',
+      name: 'Ground Ethiopian Coffee 250g',
+      productType: 'Ground Coffee',
+      description: 'Traditional medium grind for jebena brewing.',
+      category: 'COFFEE',
+      price: 380,
+      stock: 20,
+      imageUrl: 'https://example.com/ground-coffee.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create', nowIso: '2026-11-19T10:05:00.000Z' }
+  );
+  assert.equal(groundWrite.ok, true);
+  if (!groundWrite.ok) return;
+  assert.equal(groundWrite.product.category, 'coffee');
+  assert.equal(groundWrite.product.coffeeDetails?.beanForm, 'ground');
+  assert.equal(groundWrite.product.coffeeDetails?.packageWeight, '250g');
+
+  // Verify newly published coffee items appear automatically in Coffee Traders
+  // and do NOT appear in unrelated non-coffee categories
+  const shopsById = { [sampleShop.shopId]: { ...sampleShop, status: 'approved' as const } };
+  const catalog = [sidamaWrite.product, groundWrite.product];
+  const coffeeMatches = filterCoffeeProducts(catalog, shopsById);
+  assert.equal(coffeeMatches.length, 2);
+
+  const groceriesMatches = filterAndSortProducts(catalog, shopsById, {
+    category: 'groceries',
+  });
+  assert.equal(groceriesMatches.length, 0);
+
+  const generalHomeFeed = filterAndSortProducts(catalog, shopsById, {
+    excludeCoffee: true,
+  });
+  assert.equal(generalHomeFeed.length, 0);
+});
+
+test('Auto Coffee Categorization: keeps mobile phones and coffee-described clothing out of Coffee Traders', () => {
+  // Scenario 3: Mobile phone remains in Electronics
+  const phoneWrite = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Tech Hub',
+      name: 'Samsung Galaxy A25 5G Smartphone',
+      productType: 'Smartphone',
+      description: '128GB AMOLED display, official warranty.',
+      category: 'Electronics',
+      price: 28500,
+      stock: 6,
+      imageUrl: 'https://example.com/phone.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create' }
+  );
+  assert.equal(phoneWrite.ok, true);
+  if (!phoneWrite.ok) return;
+  assert.equal(phoneWrite.product.category, 'electronics');
+  assert.equal(phoneWrite.product.coffeeDetails, undefined);
+  assert.equal(isCoffeeProduct(phoneWrite.product), false);
+
+  // Scenario 4: Clothing mentioning "coffee" in description must NOT be classified as coffee
+  const clothingWrite = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Habesha Atelier',
+      name: 'Handwoven Cotton Habesha Dress',
+      productType: 'Traditional Dress',
+      description: 'Rich coffee brown embroidery woven for weekend coffee ceremonies and celebrations.',
+      category: 'clothing-fashion',
+      price: 4200,
+      stock: 4,
+      imageUrl: 'https://example.com/dress.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create' }
+  );
+  assert.equal(clothingWrite.ok, true);
+  if (!clothingWrite.ok) return;
+  assert.equal(clothingWrite.product.category, 'clothing-fashion');
+  assert.equal(clothingWrite.product.coffeeDetails, undefined);
+  assert.equal(isCoffeeProduct(clothingWrite.product), false);
+});
+
+test('Auto Coffee Categorization: requires confirmation for ambiguous products and blocks conflicting API bypass', () => {
+  // Scenario 5: Ambiguous product ("Coffee Mug" / "Coffee Table") requires seller confirmation
+  const mugUnconfirmed = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Home Goods',
+      name: 'Ceramic Coffee Mug Set',
+      description: 'Set of 4 glazed mugs for home kitchens.',
+      category: 'home-living',
+      price: 950,
+      stock: 12,
+      imageUrl: 'https://example.com/mug.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create' }
+  );
+  assert.equal(mugUnconfirmed.ok, false);
+  if (mugUnconfirmed.ok) return;
+  assert.equal(mugUnconfirmed.status, 409);
+  assert.equal(mugUnconfirmed.code, 'CATEGORY_CONFIRMATION_REQUIRED');
+
+  // Once seller explicitly confirms it is non-coffee home-living, backend accepts it
+  const mugConfirmed = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Home Goods',
+      name: 'Ceramic Coffee Mug Set',
+      description: 'Set of 4 glazed mugs for home kitchens.',
+      category: 'home-living',
+      categoryConfirmed: true,
+      confirmedCategory: 'home-living',
+      price: 950,
+      stock: 12,
+      imageUrl: 'https://example.com/mug.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create' }
+  );
+  assert.equal(mugConfirmed.ok, true);
+  if (!mugConfirmed.ok) return;
+  assert.equal(mugConfirmed.product.category, 'home-living');
+  assert.equal(isCoffeeProduct(mugConfirmed.product), false);
+
+  // Scenario 6: Direct API submission with conflicting category is blocked (400 CATEGORY_CONFLICT)
+  const coffeeInElectronics = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Bypass Shop',
+      name: 'Yirgacheffe Washed Coffee Beans 1kg',
+      description: 'Grade 1 washed Ethiopian coffee beans.',
+      category: 'electronics',
+      price: 1350,
+      stock: 10,
+      imageUrl: 'https://example.com/yirga.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create' }
+  );
+  assert.equal(coffeeInElectronics.ok, false);
+  if (coffeeInElectronics.ok) return;
+  assert.equal(coffeeInElectronics.status, 400);
+  assert.equal(coffeeInElectronics.code, 'CATEGORY_CONFLICT');
+  assert.equal(coffeeInElectronics.categorization?.suggestedCategory, 'coffee');
+
+  // Reverse conflict: forcing a Smartphone directly into Coffee Traders is also blocked
+  const phoneInCoffee = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Bypass Shop',
+      name: 'iPhone 15 Smartphone 256GB',
+      description: 'Brand new sealed phone.',
+      category: 'coffee',
+      price: 95000,
+      stock: 2,
+      imageUrl: 'https://example.com/iphone.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    { mode: 'create' }
+  );
+  assert.equal(phoneInCoffee.ok, false);
+  if (phoneInCoffee.ok) return;
+  assert.equal(phoneInCoffee.status, 400);
+  assert.equal(phoneInCoffee.code, 'CATEGORY_CONFLICT');
+  assert.equal(phoneInCoffee.categorization?.suggestedCategory, 'electronics');
+});
+
+test('Auto Coffee Categorization: editing a coffee product into non-coffee clears coffeeDetails and moves it out of Coffee Traders', () => {
+  const existingCoffee: Product = {
+    productId: 'prod-edit-1',
+    shopId: 'shop-1',
+    shopName: 'Hawassa Roasters',
+    name: 'Harar Roasted Coffee 500g',
+    description: 'Sun-dried Harar beans.',
+    category: 'coffee',
+    price: 750,
+    stock: 10,
+    isAvailable: true,
+    imageUrl: 'https://example.com/harar.jpg',
+    coffeeDetails: {
+      origin: 'Harar',
+      roastLevel: 'medium',
+      processingMethod: 'natural',
+      beanForm: 'whole_bean',
+      packageWeight: '500g',
+    },
+    pickupAvailable: true,
+    deliveryAvailable: true,
+    status: 'active',
+    rating: 4.8,
+    reviewCount: 9,
+    createdAt: '2026-11-01T08:00:00.000Z',
+    updatedAt: '2026-11-01T08:00:00.000Z',
+  };
+
+  // Scenario 7: Edit coffee product into a non-coffee spice product
+  const edited = validateAndPrepareProductWrite(
+    {
+      shopId: 'shop-1',
+      shopName: 'Hawassa Roasters',
+      name: 'Pure Sidama Forest Honey 1kg',
+      productType: 'Natural Honey',
+      description: 'Raw highland blossom honey from Sidama.',
+      category: 'food-spices',
+      price: 1200,
+      stock: 8,
+      imageUrl: 'https://example.com/honey.jpg',
+      pickupAvailable: true,
+      deliveryAvailable: true,
+    },
+    {
+      mode: 'update',
+      existingProduct: existingCoffee,
+      productIdOverride: existingCoffee.productId,
+      nowIso: '2026-11-19T11:00:00.000Z',
+    }
+  );
+
+  assert.equal(edited.ok, true);
+  if (!edited.ok) return;
+  assert.equal(edited.product.category, 'food-spices');
+  assert.equal(edited.product.coffeeDetails, undefined);
+  assert.equal(edited.product.createdAt, existingCoffee.createdAt);
+  assert.equal(edited.product.rating, 4.8);
+  assert.equal(edited.product.reviewCount, 9);
+  assert.equal(isCoffeeProduct(edited.product), false);
+
+  const shopsById = { [sampleShop.shopId]: { ...sampleShop, status: 'approved' as const } };
+  assert.equal(filterCoffeeProducts([edited.product], shopsById).length, 0);
+  assert.equal(
+    filterAndSortProducts([edited.product], shopsById, { category: 'food-spices' }).length,
+    1
+  );
+
+  // Unpublished coffee products remain hidden from Coffee Traders
+  const archivedCoffee: Product = { ...existingCoffee, productId: 'prod-arch', status: 'archived' };
+  const outOfStockCoffee: Product = {
+    ...existingCoffee,
+    productId: 'prod-oos',
+    stock: 0,
+    isAvailable: false,
+  };
+  assert.equal(filterCoffeeProducts([archivedCoffee], shopsById).length, 0);
+  const oosResults = filterCoffeeProducts([outOfStockCoffee], shopsById);
+  assert.equal(oosResults.length, 1);
+  assert.equal(oosResults[0].stock, 0);
+  assert.equal(oosResults[0].isAvailable, false);
+});
+
+test('Auto Coffee Categorization: idempotent backfill migration categorizes legacy coffee products safely without side effects', () => {
+  const legacyCatalog: Product[] = [
+    {
+      ...sampleProductA,
+      productId: 'legacy-1',
+      name: 'Jimma Green Coffee Beans 1kg',
+      category: 'groceries',
+      description: 'Unroasted green Arabica beans from Jimma.',
+      price: 540,
+      stock: 25,
+      coffeeDetails: undefined,
+    },
+    {
+      ...sampleProductA,
+      productId: 'legacy-2',
+      name: 'Yirgacheffe Roasted Coffee 500g',
+      category: 'COFFEE',
+      description: 'Washed floral beans.',
+      price: 780,
+      stock: 12,
+      coffeeDetails: undefined,
+    },
+    {
+      ...sampleProductA,
+      productId: 'already-coffee',
+      name: 'Sidama Washed Coffee 500g',
+      category: 'coffee',
+      description: 'Already migrated.',
+      price: 680,
+      stock: 10,
+    },
+    {
+      ...sampleProductB,
+      productId: 'non-coffee-clothing',
+      name: 'Habesha Cotton Scarf',
+      category: 'clothing-fashion',
+      description: 'Warm coffee brown stripes along the border.',
+      price: 650,
+      stock: 7,
+      coffeeDetails: undefined,
+    },
+    {
+      ...sampleProductB,
+      productId: 'ambiguous-mug',
+      name: 'Handcrafted Coffee Mug',
+      category: 'home-living',
+      description: 'Clay mug made in Hawassa.',
+      price: 320,
+      stock: 15,
+      coffeeDetails: undefined,
+    },
+  ];
+
+  // First migration run
+  const firstPlan = planCoffeeProductMigration(legacyCatalog, '2026-11-19T12:00:00.000Z');
+  assert.equal(firstPlan.scanned, 5);
+  assert.equal(firstPlan.alreadyCategorized, 1);
+  assert.equal(firstPlan.eligible, 2);
+  assert.equal(firstPlan.skipped, 1);
+  assert.equal(firstPlan.ambiguous, 1);
+  assert.deepEqual(
+    firstPlan.changes.map((c) => c.productId),
+    ['legacy-1', 'legacy-2']
+  );
+
+  // Verify original fields (price, stock, shopId, imageUrl) are preserved
+  const migratedJimma = firstPlan.changes[0].updatedProduct;
+  assert.equal(migratedJimma.category, 'coffee');
+  assert.equal(migratedJimma.price, 540);
+  assert.equal(migratedJimma.stock, 25);
+  assert.equal(migratedJimma.coffeeDetails?.origin, 'Jimma');
+  assert.equal(migratedJimma.coffeeDetails?.beanForm, 'whole_bean');
+
+  // Apply migration and re-run to verify strict idempotency
+  const changeById = new Map(firstPlan.changes.map((c) => [c.productId, c.updatedProduct]));
+  const migratedCatalog = legacyCatalog.map((p) => changeById.get(p.productId) ?? p);
+
+  const secondPlan = planCoffeeProductMigration(migratedCatalog, '2026-11-19T12:05:00.000Z');
+  assert.equal(secondPlan.eligible, 0);
+  assert.equal(secondPlan.changes.length, 0);
+  assert.equal(secondPlan.alreadyCategorized, 3);
+  assert.equal(secondPlan.skipped, 1);
+  assert.equal(secondPlan.ambiguous, 1);
+
+  // Direct classifier sanity check on non-coffee description mention
+  const descOnlyCheck = classifyProductCoffeeCategory({
+    name: 'Cotton Linen Shirt',
+    category: 'clothing-fashion',
+  });
+  assert.equal(descOnlyCheck.outcome, 'non_coffee');
+  assert.equal(descOnlyCheck.isCoffee, false);
+});
+
+// ---------------------------------------------------------------------------
+// AI-Powered Product Listing Assistant Tests (Verified Seller-Only)
+// ---------------------------------------------------------------------------
+
+const VERIFIED_COFFEE_SHOP: VerifiedShopSummary = {
+  shopId: 'shop-sidama-verified',
+  name: 'Sidama Highlands Coffee House',
+  traderType: 'coffee',
+  neighborhood: 'Piazza',
+  pickupAvailable: true,
+  deliveryAvailable: true,
+  verificationStatus: 'approved',
+};
+
+const VERIFIED_GENERAL_SHOP: VerifiedShopSummary = {
+  shopId: 'shop-hawassa-tech',
+  name: 'Hawassa Smart Electronics',
+  traderType: 'general',
+  neighborhood: 'Menhariya',
+  pickupAvailable: true,
+  deliveryAvailable: true,
+  verificationStatus: 'approved',
+};
+
+const makeAuthorizedSellerCheck = (
+  uid: string,
+  shop: VerifiedShopSummary
+): SellerVerificationCheckResult => ({
+  authorized: true,
+  uid,
+  isSeller: true,
+  isAdmin: false,
+  verificationStatus: 'approved',
+  ownedShopsCount: 1,
+  verifiedShops: [shop],
+  activeShop: shop,
+});
+
+const SAMPLE_VALID_PHOTO_URL = 'https://images.affinconnect.et/products/sample-item.jpg';
+
+test('Listing Assistant Auth: verified seller allowed; unverified seller, customer, suspended user, and spoofed shopId denied (403)', () => {
+  const verifiedShopDoc: Shop = {
+    ...sampleShop,
+    shopId: 'shop-v-1',
+    ownerUid: 'uid-verified-seller',
+    status: 'approved',
+    verificationStatus: 'approved',
+  };
+  const verifiedRecord: MerchantVerification = {
+    verificationId: 'ver-1',
+    shopId: 'shop-v-1',
+    shopName: 'Sidama Coffee House',
+    ownerUid: 'uid-verified-seller',
+    businessLegalName: 'Sidama Coffee House PLC',
+    licenseNumber: 'TL-9001',
+    issuingAuthority: 'Sidama Trade Bureau',
+    licenseImageDataUrl: 'https://images.affinconnect.et/docs/license.jpg',
+    status: 'approved',
+    submittedAt: '2026-11-01T08:00:00Z',
+    updatedAt: '2026-11-02T08:00:00Z',
+  };
+
+  // 1) Verified seller succeeds
+  const okCheck = evaluateSellerVerification({
+    uid: 'uid-verified-seller',
+    userProfile: {
+      uid: 'uid-verified-seller',
+      displayName: 'Abebe Coffee',
+      email: 'abebe@sidama.et',
+      role: 'seller',
+      accountStatus: 'active',
+      preferredLanguage: 'en',
+      createdAt: '2026-11-01T08:00:00Z',
+      updatedAt: '2026-11-01T08:00:00Z',
+    },
+    shops: [verifiedShopDoc],
+    verificationsByShopId: { 'shop-v-1': verifiedRecord },
+  });
+  assert.equal(okCheck.authorized, true);
+  assert.equal(okCheck.activeShop?.shopId, 'shop-v-1');
+
+  // 2) Unverified seller (pending_review) blocked
+  const pendingShopDoc: Shop = {
+    ...sampleShop,
+    shopId: 'shop-p-1',
+    ownerUid: 'uid-unverified-seller',
+    status: 'pending',
+    verificationStatus: 'pending_review',
+  };
+  const unverifiedCheck = evaluateSellerVerification({
+    uid: 'uid-unverified-seller',
+    userProfile: {
+      uid: 'uid-unverified-seller',
+      displayName: 'Pending Seller',
+      email: 'pending@hawassa.et',
+      role: 'seller',
+      accountStatus: 'active',
+      preferredLanguage: 'en',
+      createdAt: '2026-11-01T08:00:00Z',
+      updatedAt: '2026-11-01T08:00:00Z',
+    },
+    shops: [pendingShopDoc],
+    verificationsByShopId: {
+      'shop-p-1': {
+        ...verifiedRecord,
+        shopId: 'shop-p-1',
+        ownerUid: 'uid-unverified-seller',
+        status: 'pending_review',
+      },
+    },
+  });
+  assert.equal(unverifiedCheck.authorized, false);
+  assert.equal(unverifiedCheck.isSeller, true);
+  assert.equal(unverifiedCheck.code, 'SELLER_NOT_VERIFIED');
+  assert.equal(unverifiedCheck.verificationStatus, 'pending_review');
+
+  // 3) Normal customer blocked
+  const customerCheck = evaluateSellerVerification({
+    uid: 'uid-customer-1',
+    userProfile: {
+      uid: 'uid-customer-1',
+      displayName: 'Selam Buyer',
+      email: 'selam@hawassa.et',
+      role: 'customer',
+      accountStatus: 'active',
+      preferredLanguage: 'en',
+      createdAt: '2026-11-01T08:00:00Z',
+      updatedAt: '2026-11-01T08:00:00Z',
+    },
+    shops: [verifiedShopDoc],
+    verificationsByShopId: { 'shop-v-1': verifiedRecord },
+  });
+  assert.equal(customerCheck.authorized, false);
+  assert.equal(customerCheck.isSeller, false);
+  assert.equal(customerCheck.code, 'CUSTOMER_NOT_SELLER');
+
+  // 4) Verified seller attempting to spoof another seller's shopId blocked
+  const spoofCheck = evaluateSellerVerification({
+    uid: 'uid-verified-seller',
+    userProfile: {
+      uid: 'uid-verified-seller',
+      displayName: 'Abebe Coffee',
+      email: 'abebe@sidama.et',
+      role: 'seller',
+      accountStatus: 'active',
+      preferredLanguage: 'en',
+      createdAt: '2026-11-01T08:00:00Z',
+      updatedAt: '2026-11-01T08:00:00Z',
+    },
+    shops: [verifiedShopDoc],
+    verificationsByShopId: { 'shop-v-1': verifiedRecord },
+    requestedShopId: 'shop-someone-elses',
+  });
+  assert.equal(spoofCheck.authorized, false);
+  assert.equal(spoofCheck.code, 'SHOP_NOT_VERIFIED_OR_NOT_OWNED');
+
+  // 5) Suspended seller blocked even if shop was previously approved
+  const suspendedCheck = evaluateSellerVerification({
+    uid: 'uid-verified-seller',
+    userProfile: {
+      uid: 'uid-verified-seller',
+      displayName: 'Suspended Seller',
+      email: 'abebe@sidama.et',
+      role: 'seller',
+      accountStatus: 'suspended',
+      preferredLanguage: 'en',
+      createdAt: '2026-11-01T08:00:00Z',
+      updatedAt: '2026-11-01T08:00:00Z',
+    },
+    shops: [verifiedShopDoc],
+    verificationsByShopId: { 'shop-v-1': verifiedRecord },
+  });
+  assert.equal(suspendedCheck.authorized, false);
+  assert.equal(suspendedCheck.code, 'ACCOUNT_SUSPENDED');
+});
+
+test('Listing Assistant Coffee Flow: verified seller creates Sidama coffee listing -> auto-categorized into Coffee Traders and excluded from non-coffee', async () => {
+  const store = new ListingDraftStore();
+  const draft = store.createDraft('uid-coffee-seller', VERIFIED_COFFEE_SHOP);
+
+  // Turn 1: "I want to sell Sidama coffee, 500 grams, for 350 ETB."
+  const turn1 = store.applyPatch(draft.draftId, 'uid-coffee-seller', {
+    intent: 'update_listing',
+    name: 'Sidama Coffee 500g',
+    priceEtb: 350,
+    coffeeOrigin: 'Sidama',
+    coffeePackageWeight: '500g',
+  });
+  assert.equal(turn1.ok, true);
+  if (!turn1.ok) return;
+  assert.equal(turn1.draft.category, 'coffee');
+  assert.equal(turn1.draft.status, 'collecting');
+  // Must NOT ask for already-provided name, price, origin, or weight
+  assert.ok(!turn1.draft.missingFields.includes('name'));
+  assert.ok(!turn1.draft.missingFields.includes('price'));
+  assert.ok(!turn1.draft.missingFields.includes('coffeeOrigin'));
+  assert.ok(!turn1.draft.missingFields.includes('coffeePackageWeight'));
+  assert.ok(turn1.draft.missingFields.includes('stock'));
+  assert.ok(turn1.draft.missingFields.includes('coffeeBeanForm'));
+  assert.ok(turn1.draft.missingFields.includes('coffeeRoastLevel'));
+
+  const reply1 = buildListingAssistantReply(turn1.draft);
+  assert.ok(reply1.includes('Coffee Traders'));
+  assert.ok(!reply1.toLowerCase().includes('selling price in etb'));
+
+  // Turn 2: supply stock, roast, form, processing, description
+  const turn2 = store.applyPatch(draft.draftId, 'uid-coffee-seller', {
+    intent: 'update_listing',
+    stockQuantity: 40,
+    coffeeBeanForm: 'whole_bean',
+    coffeeRoastLevel: 'medium',
+    coffeeProcessingMethod: 'washed',
+    description: 'Freshly roasted single-origin Sidama Arabica beans from Hawassa highlands.',
+  });
+  assert.equal(turn2.ok, true);
+  if (!turn2.ok) return;
+  assert.deepEqual(turn2.draft.missingFields, ['image']);
+  assert.equal(turn2.draft.status, 'collecting');
+
+  // Turn 3: upload photo -> moves to ready_for_confirmation (NOT published yet!)
+  const turn3 = store.attachImages(draft.draftId, 'uid-coffee-seller', [SAMPLE_VALID_PHOTO_URL]);
+  assert.equal(turn3.ok, true);
+  if (!turn3.ok) return;
+  assert.equal(turn3.draft.status, 'ready_for_confirmation');
+  assert.equal(turn3.draft.completionPercent, 100);
+
+  // Explicit confirmation required
+  const persisted: Product[] = [];
+  const noConfirm = await store.publishDraft({
+    draftId: draft.draftId,
+    ownerUid: 'uid-coffee-seller',
+    confirmPublish: false,
+    verifySeller: async () =>
+      makeAuthorizedSellerCheck('uid-coffee-seller', VERIFIED_COFFEE_SHOP),
+    persistProduct: async (p) => {
+      persisted.push(p);
+    },
+  });
+  assert.equal(noConfirm.ok, false);
+  if (!noConfirm.ok) {
+    assert.equal(noConfirm.code, 'EXPLICIT_CONFIRMATION_REQUIRED');
+  }
+  assert.equal(persisted.length, 0);
+
+  // Explicit publish confirmation succeeds and places product in Coffee Traders
+  const published = await store.publishDraft({
+    draftId: draft.draftId,
+    ownerUid: 'uid-coffee-seller',
+    confirmPublish: true,
+    idempotencyKey: 'coffee-pub-1',
+    verifySeller: async () =>
+      makeAuthorizedSellerCheck('uid-coffee-seller', VERIFIED_COFFEE_SHOP),
+    persistProduct: async (p) => {
+      persisted.push(p);
+    },
+  });
+  assert.equal(published.ok, true);
+  if (!published.ok) return;
+  assert.equal(persisted.length, 1);
+  assert.equal(published.product.category, 'coffee');
+  assert.equal(published.product.price, 350);
+  assert.equal(published.product.stock, 40);
+  assert.equal(published.product.coffeeDetails?.origin, 'Sidama');
+  assert.equal(published.product.coffeeDetails?.packageWeight, '500g');
+  assert.equal(published.product.coffeeDetails?.roastLevel, 'medium');
+  assert.equal(published.product.coffeeDetails?.beanForm, 'whole_bean');
+
+  // Appears automatically in Coffee Traders filter and NOT in unrelated categories
+  const coffeeShopMap: Record<string, Shop> = {
+    [VERIFIED_COFFEE_SHOP.shopId]: {
+      ...sampleShop,
+      shopId: VERIFIED_COFFEE_SHOP.shopId,
+      name: VERIFIED_COFFEE_SHOP.name,
+      traderType: 'coffee',
+      status: 'approved',
+      verificationStatus: 'approved',
+    },
+  };
+  const coffeeResults = filterCoffeeProducts([published.product], coffeeShopMap);
+  assert.equal(coffeeResults.length, 1);
+  assert.equal(coffeeResults[0].productId, published.product.productId);
+  assert.notEqual(published.product.category, 'electronics');
+});
+
+test('Listing Assistant Non-Coffee Flow: verified seller lists Samsung phone without coffee fields', async () => {
+  const store = new ListingDraftStore();
+  const draft = store.createDraft('uid-tech-seller', VERIFIED_GENERAL_SHOP);
+
+  const patched = store.applyPatch(draft.draftId, 'uid-tech-seller', {
+    intent: 'update_listing',
+    name: 'Samsung Galaxy A55 128GB',
+    rawCategory: 'electronics',
+    priceEtb: 18000,
+    stockQuantity: 6,
+    brand: 'Samsung',
+    condition: 'New',
+    color: 'Awesome Navy',
+    description: 'Sealed Samsung Galaxy A55 smartphone with 128GB storage and dual SIM support.',
+  });
+  assert.equal(patched.ok, true);
+  if (!patched.ok) return;
+  assert.equal(patched.draft.category, 'electronics');
+  assert.equal(patched.draft.coffeeDetails, undefined);
+  assert.deepEqual(patched.draft.missingFields, ['image']);
+
+  const withImg = store.attachImages(draft.draftId, 'uid-tech-seller', [SAMPLE_VALID_PHOTO_URL]);
+  assert.equal(withImg.ok, true);
+  if (!withImg.ok) return;
+  assert.equal(withImg.draft.status, 'ready_for_confirmation');
+
+  const persisted: Product[] = [];
+  const published = await store.publishDraft({
+    draftId: draft.draftId,
+    ownerUid: 'uid-tech-seller',
+    confirmPublish: true,
+    idempotencyKey: 'phone-pub-1',
+    verifySeller: async () =>
+      makeAuthorizedSellerCheck('uid-tech-seller', VERIFIED_GENERAL_SHOP),
+    persistProduct: async (p) => {
+      persisted.push(p);
+    },
+  });
+  assert.equal(published.ok, true);
+  if (!published.ok) return;
+  assert.equal(published.product.category, 'electronics');
+  assert.equal(published.product.coffeeDetails, undefined);
+  assert.equal(published.product.price, 18000);
+  assert.equal(persisted.length, 1);
+});
+
+test('Listing Assistant Cancellation & Ambiguous Category Confirmation work cleanly without unintended publishing', async () => {
+  const store = new ListingDraftStore();
+  const draft = store.createDraft('uid-seller-ambig', VERIFIED_GENERAL_SHOP);
+
+  // Ambiguous item: "Handcrafted Coffee Mug" -> must pause for confirmation
+  const ambig = store.applyPatch(draft.draftId, 'uid-seller-ambig', {
+    intent: 'update_listing',
+    name: 'Handcrafted Coffee Mug',
+    priceEtb: 320,
+    stockQuantity: 15,
+    description: 'Ceramic mug crafted by Hawassa artisans.',
+  });
+  assert.equal(ambig.ok, true);
+  if (!ambig.ok) return;
+  assert.ok(ambig.draft.missingFields.includes('categoryConfirmation'));
+
+  // Confirm as non-coffee -> resolved to home-living
+  const confirmed = store.confirmAmbiguousCategory(draft.draftId, 'uid-seller-ambig', 'home-living');
+  assert.equal(confirmed.ok, true);
+  if (!confirmed.ok) return;
+  assert.equal(confirmed.draft.category, 'home-living');
+  assert.ok(!confirmed.draft.missingFields.includes('categoryConfirmation'));
+
+  // Seller decides to cancel draft -> must NOT publish
+  const canceled = store.cancelDraft(draft.draftId, 'uid-seller-ambig');
+  assert.equal(canceled.ok, true);
+  if (!canceled.ok) return;
+  assert.equal(canceled.draft.status, 'canceled');
+  assert.equal(store.getActiveDraftForOwner('uid-seller-ambig'), null);
+
+  let persistCalls = 0;
+  const publishAfterCancel = await store.publishDraft({
+    draftId: draft.draftId,
+    ownerUid: 'uid-seller-ambig',
+    confirmPublish: true,
+    verifySeller: async () =>
+      makeAuthorizedSellerCheck('uid-seller-ambig', VERIFIED_GENERAL_SHOP),
+    persistProduct: async () => {
+      persistCalls += 1;
+    },
+  });
+  assert.equal(publishAfterCancel.ok, false);
+  if (!publishAfterCancel.ok) {
+    assert.equal(publishAfterCancel.status, 409);
+    assert.equal(publishAfterCancel.code, 'DRAFT_CANCELED');
+  }
+  assert.equal(persistCalls, 0);
+});
+
+test('Listing Assistant Idempotency, Live Verification Recheck, and Cross-Seller Draft Isolation', async () => {
+  const store = new ListingDraftStore();
+  const draftA = store.createDraft('uid-seller-a', VERIFIED_GENERAL_SHOP);
+
+  store.applyPatch(draftA.draftId, 'uid-seller-a', {
+    intent: 'update_listing',
+    name: "Women's Leather Shoes Size 38",
+    rawCategory: 'clothing-fashion',
+    priceEtb: 2400,
+    stockQuantity: 10,
+    size: '38',
+    description: 'Durable handmade Ethiopian leather shoes in size 38.',
+  });
+  store.attachImages(draftA.draftId, 'uid-seller-a', [SAMPLE_VALID_PHOTO_URL]);
+
+  // 1) Cross-seller isolation: Seller B cannot view, edit, attach photos, cancel, or publish Seller A's draft
+  const readByB = store.getDraftForOwner(draftA.draftId, 'uid-seller-b');
+  assert.equal(readByB.ok, false);
+  if (!readByB.ok) {
+    assert.equal(readByB.status, 403);
+    assert.equal(readByB.code, 'FORBIDDEN_DRAFT_ACCESS');
+  }
+
+  const editByB = store.applyPatch(draftA.draftId, 'uid-seller-b', {
+    intent: 'update_listing',
+    priceEtb: 10,
+  });
+  assert.equal(editByB.ok, false);
+  if (!editByB.ok) assert.equal(editByB.code, 'FORBIDDEN_DRAFT_ACCESS');
+
+  const cancelByB = store.cancelDraft(draftA.draftId, 'uid-seller-b');
+  assert.equal(cancelByB.ok, false);
+  if (!cancelByB.ok) assert.equal(cancelByB.code, 'FORBIDDEN_DRAFT_ACCESS');
+
+  const pubByB = await store.publishDraft({
+    draftId: draftA.draftId,
+    ownerUid: 'uid-seller-b',
+    confirmPublish: true,
+    verifySeller: async () =>
+      makeAuthorizedSellerCheck('uid-seller-b', VERIFIED_GENERAL_SHOP),
+    persistProduct: async () => {},
+  });
+  assert.equal(pubByB.ok, false);
+  if (!pubByB.ok) assert.equal(pubByB.code, 'FORBIDDEN_DRAFT_ACCESS');
+
+  // 2) Live re-verification before save: if Seller A loses verification mid-session, publish is blocked
+  let persistCount = 0;
+  const revokedAttempt = await store.publishDraft({
+    draftId: draftA.draftId,
+    ownerUid: 'uid-seller-a',
+    confirmPublish: true,
+    idempotencyKey: 'idem-shoes-1',
+    verifySeller: async () => ({
+      authorized: false,
+      uid: 'uid-seller-a',
+      isSeller: true,
+      isAdmin: false,
+      verificationStatus: 'rejected',
+      ownedShopsCount: 1,
+      code: 'SELLER_NOT_VERIFIED',
+      reason: 'Seller verification was revoked.',
+      verifiedShops: [],
+    }),
+    persistProduct: async () => {
+      persistCount += 1;
+    },
+  });
+  assert.equal(revokedAttempt.ok, false);
+  if (!revokedAttempt.ok) {
+    assert.equal(revokedAttempt.status, 403);
+    assert.equal(revokedAttempt.code, 'SELLER_NOT_VERIFIED');
+  }
+  assert.equal(persistCount, 0);
+
+  // 3) Concurrent & repeated publish requests never create duplicate listings
+  const publishCall = () =>
+    store.publishDraft({
+      draftId: draftA.draftId,
+      ownerUid: 'uid-seller-a',
+      confirmPublish: true,
+      idempotencyKey: 'idem-shoes-1',
+      verifySeller: async () =>
+        makeAuthorizedSellerCheck('uid-seller-a', VERIFIED_GENERAL_SHOP),
+      persistProduct: async () => {
+        await new Promise((r) => setTimeout(r, 15));
+        persistCount += 1;
+      },
+    });
+
+  const [res1, res2] = await Promise.all([publishCall(), publishCall()]);
+  const res3 = await publishCall();
+
+  assert.equal(res1.ok, true);
+  assert.equal(res2.ok, true);
+  assert.equal(res3.ok, true);
+  assert.equal(persistCount, 1);
+  if (res1.ok && res2.ok && res3.ok) {
+    assert.equal(res1.product.productId, res2.product.productId);
+    assert.equal(res1.product.productId, res3.product.productId);
+    assert.equal(res3.duplicatePrevented, true);
+  }
+});
+
+
+
+

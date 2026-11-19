@@ -61,7 +61,7 @@ service cloud.firestore {
     function isValidProductImageUrl(url) {
       return url is string && (
         (url.size() >= 1 && url.size() <= 2048 && (url.matches('^https://.*') || url.matches('^/.*'))) ||
-        (url.size() >= 32 && url.size() <= 475000 && url.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$'))
+        (url.size() >= 32 && url.size() <= 205000 && url.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$'))
       );
     }
 
@@ -96,10 +96,36 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    function isValidShopTraderType(data) {
+      return !('traderType' in data) || data.traderType in ['general', 'coffee'];
+    }
+
+    function isValidCoffeeDetails(data) {
+      return !('coffeeDetails' in data) || (
+        data.coffeeDetails is map &&
+        data.coffeeDetails.keys().hasOnly([
+          'origin',
+          'brand',
+          'roastLevel',
+          'processingMethod',
+          'beanForm',
+          'packageWeight',
+          'roastDate'
+        ]) &&
+        (!('origin' in data.coffeeDetails) || (data.coffeeDetails.origin is string && data.coffeeDetails.origin.size() <= 80)) &&
+        (!('brand' in data.coffeeDetails) || (data.coffeeDetails.brand is string && data.coffeeDetails.brand.size() <= 80)) &&
+        (!('roastLevel' in data.coffeeDetails) || data.coffeeDetails.roastLevel in ['light', 'medium', 'medium_dark', 'dark']) &&
+        (!('processingMethod' in data.coffeeDetails) || data.coffeeDetails.processingMethod in ['washed', 'natural', 'honey', 'anaerobic']) &&
+        (!('beanForm' in data.coffeeDetails) || data.coffeeDetails.beanForm in ['whole_bean', 'ground']) &&
+        (!('packageWeight' in data.coffeeDetails) || (data.coffeeDetails.packageWeight is string && data.coffeeDetails.packageWeight.size() <= 32)) &&
+        (!('roastDate' in data.coffeeDetails) || (data.coffeeDetails.roastDate is string && data.coffeeDetails.roastDate.size() <= 32))
+      );
+    }
+
     // 2. Shops collection
     match /shops/{shopId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && isValidId(shopId) && isActiveUser() && (
+      allow create: if isSignedIn() && isValidId(shopId) && isActiveUser() && isValidShopTraderType(request.resource.data) && (
         isAdmin() ||
         (
           request.resource.data.ownerUid == request.auth.uid &&
@@ -107,7 +133,7 @@ service cloud.firestore {
           (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus == 'unverified')
         )
       );
-      allow update: if isSignedIn() && (
+      allow update: if isSignedIn() && isValidShopTraderType(request.resource.data) && (
         isAdmin() ||
         (
           isActiveUser() &&
@@ -127,6 +153,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    function isValidProductCategory(data) {
+      return data.category is string
+        && data.category.size() >= 2
+        && data.category.size() <= 60
+        && data.category.matches('^[a-z0-9]+(-[a-z0-9]+)*$')
+        && (!('productType' in data) || (data.productType is string && data.productType.size() <= 60))
+        && (!('coffeeDetails' in data) || data.category == 'coffee');
+    }
+
     // 3. Products collection
     match /products/{productId} {
       allow get, list: if true;
@@ -134,6 +169,8 @@ service cloud.firestore {
         && isValidId(productId)
         && isActiveUser()
         && isValidProductImageUrl(request.resource.data.imageUrl)
+        && isValidProductCategory(request.resource.data)
+        && isValidCoffeeDetails(request.resource.data)
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 3
         && request.resource.data.name.size() <= 140
@@ -148,6 +185,8 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && isValidId(productId)
         && isValidProductImageUrl(request.resource.data.imageUrl)
+        && isValidProductCategory(request.resource.data)
+        && isValidCoffeeDetails(request.resource.data)
         && (
           isAdmin() ||
           (
@@ -213,6 +252,7 @@ service cloud.firestore {
           'neighborhood',
           'paymentMethod',
           'paymentStatus',
+          'verifiedPaid',
           'paymentReference',
           'deliveryPin',
           'deliveryEtaLabel',
@@ -252,6 +292,7 @@ service cloud.firestore {
         && (!('neighborhood' in data) || (data.neighborhood is string && data.neighborhood.size() <= 100))
         && data.paymentMethod in ['cash_on_delivery', 'pay_at_pickup', 'telebirr', 'cbe_birr', 'chapa', 'telebirr_sandbox', 'cbe_birr_sandbox']
         && data.paymentStatus in ['pending', 'paid', 'refunded']
+        && (!('verifiedPaid' in data) || data.verifiedPaid is bool)
         && (!('paymentReference' in data) || (data.paymentReference is string && data.paymentReference.size() >= 5 && data.paymentReference.size() <= 40))
         && (!('deliveryPin' in data) || (data.deliveryPin is string && data.deliveryPin.matches('^\\d{4}$')))
         && (!('deliveryEtaLabel' in data) || (data.deliveryEtaLabel is string && data.deliveryEtaLabel.size() <= 60))
@@ -287,9 +328,11 @@ service cloud.firestore {
         && request.resource.data.orderStatus == 'pending'
         && !('rejectionReason' in request.resource.data)
         && !('adminNote' in request.resource.data)
+        && request.resource.data.paymentStatus == 'pending'
+        && (!('verifiedPaid' in request.resource.data) || request.resource.data.verifiedPaid == false)
         && (
-          (request.resource.data.paymentMethod in ['cash_on_delivery', 'pay_at_pickup'] && request.resource.data.paymentStatus == 'pending') ||
-          (request.resource.data.paymentMethod in ['telebirr', 'cbe_birr', 'chapa', 'telebirr_sandbox', 'cbe_birr_sandbox'] && 'paymentReference' in request.resource.data && request.resource.data.paymentStatus in ['pending', 'paid'])
+          request.resource.data.paymentMethod in ['cash_on_delivery', 'pay_at_pickup'] ||
+          (request.resource.data.paymentMethod in ['telebirr', 'cbe_birr', 'chapa', 'telebirr_sandbox', 'cbe_birr_sandbox'] && 'paymentReference' in request.resource.data)
         );
       allow update: if isSignedIn()
         && isValidId(orderId)
@@ -313,7 +356,16 @@ service cloud.firestore {
             request.resource.data.shopId == resource.data.shopId &&
             request.resource.data.totalAmount == resource.data.totalAmount &&
             (!('deliveryPin' in resource.data) || request.resource.data.deliveryPin == resource.data.deliveryPin) &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['orderStatus', 'rejectionReason', 'updatedAt', 'paymentStatus'])
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verifiedPaid']) &&
+            (
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['orderStatus', 'rejectionReason', 'updatedAt']) ||
+              (
+                resource.data.paymentMethod in ['cash_on_delivery', 'pay_at_pickup'] &&
+                request.resource.data.diff(resource.data).affectedKeys().hasOnly(['orderStatus', 'rejectionReason', 'updatedAt', 'paymentStatus']) &&
+                request.resource.data.orderStatus == 'delivered' &&
+                request.resource.data.paymentStatus == 'paid'
+              )
+            )
           )
         );
       allow delete: if isAdmin();
@@ -599,7 +651,7 @@ service cloud.firestore {
         && data.details.size() <= 600
         && (!('photoDataUrl' in data) || (
           data.photoDataUrl is string &&
-          data.photoDataUrl.size() <= 475000 &&
+          data.photoDataUrl.size() <= 205000 &&
           data.photoDataUrl.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$')
         ))
         && data.status in ['requested', 'approved', 'rejected', 'completed']
@@ -926,7 +978,7 @@ service cloud.firestore {
         && (!('expiryDate' in data) || (data.expiryDate is string && data.expiryDate.size() <= 30))
         && data.licenseImageDataUrl is string
         && data.licenseImageDataUrl.size() >= 32
-        && data.licenseImageDataUrl.size() <= 475000
+        && data.licenseImageDataUrl.size() <= 205000
         && data.licenseImageDataUrl.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$')
         && (!('documentFileName' in data) || (data.documentFileName is string && data.documentFileName.size() <= 120))
         && data.status in ['pending_review', 'approved', 'rejected']

@@ -1,6 +1,10 @@
 import type {
   CartItem,
   Category,
+  CoffeeBeanForm,
+  CoffeeProcessMethod,
+  CoffeeProductDetails,
+  CoffeeRoastLevel,
   DocumentVerificationStatus,
   LoyaltyTransaction,
   MarketplaceGovernanceConfig,
@@ -38,6 +42,37 @@ import {
   estimateDataUrlByteSize,
   validateImagePayloadSize,
 } from './imageUpload';
+import {
+  CANONICAL_COFFEE_CATEGORY,
+  CANONICAL_PRODUCT_CATEGORIES,
+  COFFEE_PRODUCT_TYPE_SUGGESTIONS,
+  classifyProductCoffeeCategory,
+  inferCoffeeDetailsFromStructuredFields,
+  isCoffeeCategoryAlias,
+  normalizeProductCategory,
+  planCoffeeProductMigration,
+  type CoffeeCategorizationInput,
+  type CoffeeCategorizationOutcome,
+  type CoffeeCategorizationResult,
+  type CoffeeMigrationPlan,
+  type CoffeeMigrationProductChange,
+} from './coffeeCategorizer';
+
+export {
+  CANONICAL_COFFEE_CATEGORY,
+  CANONICAL_PRODUCT_CATEGORIES,
+  COFFEE_PRODUCT_TYPE_SUGGESTIONS,
+  classifyProductCoffeeCategory,
+  inferCoffeeDetailsFromStructuredFields,
+  isCoffeeCategoryAlias,
+  normalizeProductCategory,
+  planCoffeeProductMigration,
+  type CoffeeCategorizationInput,
+  type CoffeeCategorizationOutcome,
+  type CoffeeCategorizationResult,
+  type CoffeeMigrationPlan,
+  type CoffeeMigrationProductChange,
+};
 
 export {
   MAX_IMAGE_FILE_BYTES,
@@ -485,6 +520,7 @@ export interface ProductFilterOptions {
   pickupOnly?: boolean;
   verifiedOnly?: boolean;
   strictShopVerification?: boolean;
+  excludeCoffee?: boolean;
   sortBy?: 'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'rating' | 'nearest';
   shopDistanceById?: Record<string, number>;
   categoryNamesBySlug?: Record<string, string>;
@@ -546,6 +582,7 @@ export function filterAndSortProducts(
 
   const filtered = products.filter((p) => {
     if (p.status !== 'active') return false;
+    if (filters.excludeCoffee && isCoffeeProduct(p)) return false;
 
     const shop = shopsById[p.shopId];
     if (shop?.status === 'suspended') return false;
@@ -1164,7 +1201,7 @@ export function validateReturnRequestInput(input: {
   if (input.reason === 'damaged_item' && !input.photoDataUrl) {
     errors.photoDataUrl = 'returnErrorPhotoRequired';
   } else if (input.photoDataUrl && !validateImageDataUrlSize(input.photoDataUrl)) {
-    errors.photoDataUrl = 'Image exceeds 350 KB limit or format is invalid.';
+    errors.photoDataUrl = 'Image exceeds 150 KB limit or format is invalid.';
   }
 
   return errors;
@@ -2024,6 +2061,7 @@ export function filterShopsForDirectory(
     categorySlug?: string;
     neighborhood?: string;
     strictShopVerification?: boolean;
+    excludeCoffee?: boolean;
   } = {}
 ): Shop[] {
   const {
@@ -2031,6 +2069,7 @@ export function filterShopsForDirectory(
     categorySlug = 'all',
     neighborhood = 'All Hawassa',
     strictShopVerification = true,
+    excludeCoffee = false,
   } = options;
 
   const q = searchQuery.trim().toLowerCase();
@@ -2052,11 +2091,15 @@ export function filterShopsForDirectory(
       return false;
     }
 
-    if (neighborhood && neighborhood !== 'All Hawassa' && shop.neighborhood !== neighborhood) {
+    const shopProducts = activeProductsByShop.get(shop.shopId) ?? [];
+
+    if (excludeCoffee && isDedicatedCoffeeTrader(shop, shopProducts)) {
       return false;
     }
 
-    const shopProducts = activeProductsByShop.get(shop.shopId) ?? [];
+    if (neighborhood && neighborhood !== 'All Hawassa' && shop.neighborhood !== neighborhood) {
+      return false;
+    }
 
     if (categorySlug && categorySlug !== 'all' && categorySlug !== 'more') {
       const hasCategoryProduct = shopProducts.some((p) => p.category === categorySlug);
@@ -2718,6 +2761,472 @@ export function formatFriendlyErrorMessage(err: unknown, fallback: string): stri
   return raw;
 }
 
+export const COFFEE_CATEGORY_SLUG = 'coffee' as const;
 
+export const ETHIOPIAN_COFFEE_ORIGINS = [
+  'Sidama',
+  'Yirgacheffe',
+  'Guji',
+  'Harar',
+  'Jimma',
+  'Kaffa',
+  'Limu',
+  'Nekemte',
+  'Bench Maji',
+] as const;
 
+export const COFFEE_ROAST_LEVELS: readonly { value: CoffeeRoastLevel; label: string }[] = [
+  { value: 'light', label: 'Light Roast' },
+  { value: 'medium', label: 'Medium Roast' },
+  { value: 'medium_dark', label: 'Medium-Dark Roast' },
+  { value: 'dark', label: 'Dark Roast' },
+];
 
+export const COFFEE_PROCESSING_METHODS: readonly { value: CoffeeProcessMethod; label: string }[] = [
+  { value: 'washed', label: 'Washed' },
+  { value: 'natural', label: 'Natural' },
+  { value: 'honey', label: 'Honey' },
+  { value: 'anaerobic', label: 'Anaerobic' },
+];
+
+export const COFFEE_BEAN_FORMS: readonly { value: CoffeeBeanForm; label: string }[] = [
+  { value: 'whole_bean', label: 'Whole Beans' },
+  { value: 'ground', label: 'Ground Coffee' },
+];
+
+export const COFFEE_PACKAGE_WEIGHTS = ['250g', '500g', '1kg', '2kg', '5kg'] as const;
+
+const PACKAGE_WEIGHT_PATTERN = /\b(\d+(?:\.\d+)?\s*(?:g|kg))\b/gi;
+
+export function isCoffeeProduct(
+  product: Pick<Product, 'category' | 'name' | 'coffeeDetails' | 'productType'>
+): boolean {
+  const normalizedCategory = normalizeProductCategory(product.category);
+  if (normalizedCategory === COFFEE_CATEGORY_SLUG) return true;
+  if (product.coffeeDetails && Object.keys(product.coffeeDetails).length > 0) return true;
+  if (normalizedCategory === 'groceries' || normalizedCategory === 'food-spices') {
+    const result = classifyProductCoffeeCategory({
+      name: product.name ?? '',
+      category: product.category,
+      productType: product.productType,
+      coffeeDetails: product.coffeeDetails,
+    });
+    return result.outcome === 'coffee';
+  }
+  return false;
+}
+
+export function isCoffeeTrader(
+  shop: Pick<Shop, 'shopId' | 'traderType'>,
+  products: Pick<Product, 'shopId' | 'status' | 'category' | 'name' | 'coffeeDetails' | 'productType'>[]
+): boolean {
+  if (shop.traderType === 'coffee') return true;
+  return products.some(
+    (p) => p.shopId === shop.shopId && p.status === 'active' && isCoffeeProduct(p)
+  );
+}
+
+export function isDedicatedCoffeeTrader(
+  shop: Pick<Shop, 'shopId' | 'traderType'>,
+  shopProducts: Pick<Product, 'shopId' | 'status' | 'category' | 'name' | 'coffeeDetails' | 'productType'>[]
+): boolean {
+  if (shop.traderType === 'coffee') return true;
+  const activeForShop = shopProducts.filter(
+    (p) => p.shopId === shop.shopId && p.status === 'active'
+  );
+  return activeForShop.length > 0 && activeForShop.every((p) => isCoffeeProduct(p));
+}
+
+export function formatCoffeeRoastLevel(roast?: CoffeeRoastLevel): string {
+  if (!roast) return '';
+  return COFFEE_ROAST_LEVELS.find((item) => item.value === roast)?.label ?? roast;
+}
+
+export function formatCoffeeProcessMethod(method?: CoffeeProcessMethod): string {
+  if (!method) return '';
+  return COFFEE_PROCESSING_METHODS.find((item) => item.value === method)?.label ?? method;
+}
+
+export function formatCoffeeBeanForm(form?: CoffeeBeanForm): string {
+  if (!form) return '';
+  return COFFEE_BEAN_FORMS.find((item) => item.value === form)?.label ?? form;
+}
+
+export function getProductCoffeeOrigin(product: Product): string {
+  const explicit = product.coffeeDetails?.origin?.trim();
+  if (explicit) return explicit;
+  const text = `${product.name} ${product.description}`;
+  for (const origin of ETHIOPIAN_COFFEE_ORIGINS) {
+    if (new RegExp(`\\b${origin}\\b`, 'i').test(text)) {
+      return origin;
+    }
+  }
+  return '';
+}
+
+export function getProductCoffeeBrand(product: Product, shop?: Shop): string {
+  return product.coffeeDetails?.brand?.trim() || shop?.name || product.shopName;
+}
+
+export function getProductPackageWeights(product: Product): string[] {
+  const weights = new Set<string>();
+  const normalizeWeight = (raw: string) => raw.replace(/\s+/g, '').toLowerCase();
+
+  if (product.coffeeDetails?.packageWeight?.trim()) {
+    weights.add(normalizeWeight(product.coffeeDetails.packageWeight.trim()));
+  }
+  if (product.variants) {
+    for (const v of product.variants) {
+      const matches = v.label.match(PACKAGE_WEIGHT_PATTERN);
+      if (matches) {
+        for (const m of matches) weights.add(normalizeWeight(m));
+      }
+    }
+  }
+  const nameMatches = product.name.match(PACKAGE_WEIGHT_PATTERN);
+  if (nameMatches) {
+    for (const m of nameMatches) weights.add(normalizeWeight(m));
+  }
+  return Array.from(weights);
+}
+
+export interface CoffeeFilterOptions {
+  searchQuery?: string;
+  origin?: string;
+  brand?: string;
+  roastLevel?: CoffeeRoastLevel | 'all';
+  packageWeight?: string;
+  beanForm?: CoffeeBeanForm | 'all';
+  shopId?: string;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  sortBy?: 'featured' | 'price_asc' | 'price_desc' | 'rating' | 'newest';
+  strictShopVerification?: boolean;
+}
+
+export function filterCoffeeProducts(
+  products: Product[],
+  shopsById: Record<string, Shop>,
+  filters: CoffeeFilterOptions = {}
+): Product[] {
+  const q = (filters.searchQuery ?? '').trim().toLowerCase();
+  const enforceVerifiedShop = filters.strictShopVerification !== false;
+
+  const rawMin =
+    filters.minPrice != null && Number.isFinite(filters.minPrice) ? filters.minPrice : null;
+  const rawMax =
+    filters.maxPrice != null && Number.isFinite(filters.maxPrice) ? filters.maxPrice : null;
+  const effectiveMin =
+    rawMin != null && rawMax != null ? Math.min(rawMin, rawMax) : rawMin;
+  const effectiveMax =
+    rawMin != null && rawMax != null ? Math.max(rawMin, rawMax) : rawMax;
+
+  const filtered = products.filter((p) => {
+    if (p.status !== 'active') return false;
+    if (!isCoffeeProduct(p)) return false;
+
+    const shop = shopsById[p.shopId];
+    if (shop?.status === 'suspended') return false;
+    if (enforceVerifiedShop && shop && shop.status !== 'approved') return false;
+
+    if (filters.shopId && filters.shopId !== 'all' && p.shopId !== filters.shopId) {
+      return false;
+    }
+
+    if (filters.origin && filters.origin !== 'all') {
+      const origin = getProductCoffeeOrigin(p).toLowerCase();
+      if (!origin || !origin.includes(filters.origin.trim().toLowerCase())) {
+        return false;
+      }
+    }
+
+    if (filters.brand && filters.brand !== 'all') {
+      const brand = getProductCoffeeBrand(p, shop).toLowerCase();
+      if (brand !== filters.brand.trim().toLowerCase()) {
+        return false;
+      }
+    }
+
+    if (filters.roastLevel && filters.roastLevel !== 'all') {
+      if (p.coffeeDetails?.roastLevel !== filters.roastLevel) {
+        return false;
+      }
+    }
+
+    if (filters.beanForm && filters.beanForm !== 'all') {
+      if (p.coffeeDetails?.beanForm !== filters.beanForm) {
+        return false;
+      }
+    }
+
+    if (filters.packageWeight && filters.packageWeight !== 'all') {
+      const targetWeight = filters.packageWeight.replace(/\s+/g, '').toLowerCase();
+      const productWeights = getProductPackageWeights(p);
+      if (!productWeights.includes(targetWeight)) {
+        return false;
+      }
+    }
+
+    if (effectiveMin != null && p.price < effectiveMin) {
+      return false;
+    }
+    if (effectiveMax != null && p.price > effectiveMax) {
+      return false;
+    }
+
+    if (q) {
+      const details = p.coffeeDetails;
+      const haystack = [
+        p.name,
+        p.description,
+        p.shopName,
+        shop?.neighborhood ?? '',
+        details?.origin ?? '',
+        details?.brand ?? '',
+        details?.packageWeight ?? '',
+        formatCoffeeRoastLevel(details?.roastLevel),
+        formatCoffeeProcessMethod(details?.processingMethod),
+        formatCoffeeBeanForm(details?.beanForm),
+      ]
+        .join(' ')
+        .toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+
+    return true;
+  });
+
+  const sorted = [...filtered];
+  switch (filters.sortBy) {
+    case 'price_asc':
+      sorted.sort((a, b) => a.price - b.price);
+      break;
+    case 'price_desc':
+      sorted.sort((a, b) => b.price - a.price);
+      break;
+    case 'rating':
+      sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+      break;
+    case 'newest':
+      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      break;
+    case 'featured':
+    default:
+      sorted.sort((a, b) => {
+        const shopA = shopsById[a.shopId];
+        const shopB = shopsById[b.shopId];
+        const verA = shopA && isVerifiedMerchantShop(shopA) ? 1 : 0;
+        const verB = shopB && isVerifiedMerchantShop(shopB) ? 1 : 0;
+        if (verB !== verA) return verB - verA;
+        const availA = a.isAvailable && a.stock > 0 ? 1 : 0;
+        const availB = b.isAvailable && b.stock > 0 ? 1 : 0;
+        if (availB !== availA) return availB - availA;
+        return (b.rating ?? 0) - (a.rating ?? 0);
+      });
+      break;
+  }
+
+  return sorted;
+}
+
+export interface CoffeeTraderListing {
+  shop: Shop;
+  coffeeProducts: Product[];
+  availableCount: number;
+  minPrice: number | null;
+  maxPrice: number | null;
+  origins: string[];
+  isVerified: boolean;
+}
+
+export function getCoffeeTraderListings(
+  shops: Shop[],
+  products: Product[],
+  options: {
+    strictShopVerification?: boolean;
+    searchQuery?: string;
+  } = {}
+): CoffeeTraderListing[] {
+  const enforceVerifiedShop = options.strictShopVerification !== false;
+  const q = (options.searchQuery ?? '').trim().toLowerCase();
+
+  const coffeeProductsByShop = new Map<string, Product[]>();
+  for (const p of products) {
+    if (p.status !== 'active' || !isCoffeeProduct(p)) continue;
+    const list = coffeeProductsByShop.get(p.shopId);
+    if (list) list.push(p);
+    else coffeeProductsByShop.set(p.shopId, [p]);
+  }
+
+  const listings: CoffeeTraderListing[] = [];
+  for (const shop of shops) {
+    if (shop.status === 'suspended') continue;
+    if (enforceVerifiedShop && shop.status !== 'approved') continue;
+
+    const coffeeProducts = coffeeProductsByShop.get(shop.shopId) ?? [];
+    if (shop.traderType !== 'coffee' && coffeeProducts.length === 0) continue;
+
+    const origins = Array.from(
+      new Set(
+        coffeeProducts
+          .map((p) => getProductCoffeeOrigin(p))
+          .filter((o) => Boolean(o))
+      )
+    );
+
+    if (q) {
+      const haystack = [
+        shop.name,
+        shop.description,
+        shop.neighborhood,
+        shop.city,
+        ...origins,
+        ...coffeeProducts.map((p) => p.name),
+      ]
+        .join(' ')
+        .toLowerCase();
+      if (!haystack.includes(q)) continue;
+    }
+
+    const prices = coffeeProducts.map((p) => p.price).filter((n) => Number.isFinite(n) && n > 0);
+    listings.push({
+      shop,
+      coffeeProducts,
+      availableCount: coffeeProducts.filter((p) => p.isAvailable && p.stock > 0).length,
+      minPrice: prices.length > 0 ? Math.min(...prices) : null,
+      maxPrice: prices.length > 0 ? Math.max(...prices) : null,
+      origins,
+      isVerified: isVerifiedMerchantShop(shop),
+    });
+  }
+
+  return listings.sort((a, b) => {
+    if (Number(b.isVerified) !== Number(a.isVerified)) {
+      return Number(b.isVerified) - Number(a.isVerified);
+    }
+    if (b.coffeeProducts.length !== a.coffeeProducts.length) {
+      return b.coffeeProducts.length - a.coffeeProducts.length;
+    }
+    return (b.shop.rating ?? 0) - (a.shop.rating ?? 0);
+  });
+}
+
+export function extractCoffeeFilterOptions(
+  coffeeProducts: Product[],
+  shopsById: Record<string, Shop>
+): {
+  origins: string[];
+  brands: string[];
+  weights: string[];
+  roastLevels: CoffeeRoastLevel[];
+  beanForms: CoffeeBeanForm[];
+  sellers: { shopId: string; name: string }[];
+} {
+  const origins = new Set<string>();
+  const brands = new Set<string>();
+  const weights = new Set<string>();
+  const roastLevels = new Set<CoffeeRoastLevel>();
+  const beanForms = new Set<CoffeeBeanForm>();
+  const sellersMap = new Map<string, string>();
+
+  for (const p of coffeeProducts) {
+    const shop = shopsById[p.shopId];
+    const origin = getProductCoffeeOrigin(p);
+    if (origin) origins.add(origin);
+
+    const brand = getProductCoffeeBrand(p, shop);
+    if (brand) brands.add(brand);
+
+    for (const w of getProductPackageWeights(p)) {
+      weights.add(w);
+    }
+
+    if (p.coffeeDetails?.roastLevel) {
+      roastLevels.add(p.coffeeDetails.roastLevel);
+    }
+    if (p.coffeeDetails?.beanForm) {
+      beanForms.add(p.coffeeDetails.beanForm);
+    }
+
+    sellersMap.set(p.shopId, shop?.name || p.shopName);
+  }
+
+  return {
+    origins: Array.from(origins).sort((a, b) => a.localeCompare(b)),
+    brands: Array.from(brands).sort((a, b) => a.localeCompare(b)),
+    weights: Array.from(weights).sort((a, b) => a.localeCompare(b)),
+    roastLevels: COFFEE_ROAST_LEVELS.map((r) => r.value).filter((v) => roastLevels.has(v)),
+    beanForms: COFFEE_BEAN_FORMS.map((f) => f.value).filter((v) => beanForms.has(v)),
+    sellers: Array.from(sellersMap.entries())
+      .map(([shopId, name]) => ({ shopId, name }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  };
+}
+
+export function validateCoffeeDetailsInput(input: CoffeeProductDetails): {
+  errors: Record<string, string>;
+  sanitized?: CoffeeProductDetails;
+} {
+  const errors: Record<string, string> = {};
+  const sanitized: CoffeeProductDetails = {};
+
+  const origin = (input.origin ?? '').trim();
+  if (!origin) {
+    errors.coffeeOrigin = 'Please enter or select the coffee origin (e.g., Sidama, Yirgacheffe).';
+  } else if (origin.length > 80) {
+    errors.coffeeOrigin = 'Origin must be 80 characters or fewer.';
+  } else {
+    sanitized.origin = origin;
+  }
+
+  const brand = (input.brand ?? '').trim();
+  if (brand.length > 80) {
+    errors.coffeeBrand = 'Brand name must be 80 characters or fewer.';
+  } else if (brand) {
+    sanitized.brand = brand;
+  }
+
+  const validRoasts = new Set<string>(COFFEE_ROAST_LEVELS.map((r) => r.value));
+  if (!input.roastLevel || !validRoasts.has(input.roastLevel)) {
+    errors.coffeeRoastLevel = 'Please select a roast level.';
+  } else {
+    sanitized.roastLevel = input.roastLevel;
+  }
+
+  const validMethods = new Set<string>(COFFEE_PROCESSING_METHODS.map((m) => m.value));
+  if (!input.processingMethod || !validMethods.has(input.processingMethod)) {
+    errors.coffeeProcessMethod = 'Please select a processing method.';
+  } else {
+    sanitized.processingMethod = input.processingMethod;
+  }
+
+  const validForms = new Set<string>(COFFEE_BEAN_FORMS.map((f) => f.value));
+  if (!input.beanForm || !validForms.has(input.beanForm)) {
+    errors.coffeeBeanForm = 'Please choose Whole Beans or Ground Coffee.';
+  } else {
+    sanitized.beanForm = input.beanForm;
+  }
+
+  const weight = (input.packageWeight ?? '').trim();
+  if (!weight) {
+    errors.coffeeWeight = 'Please enter package weight (e.g., 250g, 500g, 1kg).';
+  } else if (weight.length > 32) {
+    errors.coffeeWeight = 'Package weight must be 32 characters or fewer.';
+  } else {
+    sanitized.packageWeight = weight;
+  }
+
+  const roastDate = (input.roastDate ?? '').trim();
+  if (roastDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(roastDate)) {
+      errors.coffeeRoastDate = 'Roast date must use YYYY-MM-DD format.';
+    } else {
+      sanitized.roastDate = roastDate;
+    }
+  }
+
+  return {
+    errors,
+    sanitized: Object.keys(errors).length === 0 ? sanitized : undefined,
+  };
+}

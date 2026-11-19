@@ -81,6 +81,9 @@ import {
   sendTradeChatMessageInFirestore,
   requestAdminSupervisionInFirestore,
   adminMediateChatInFirestore,
+  ProductCategorizationApiError,
+  runCoffeeProductMigrationViaApi,
+  saveProductViaBackendApi,
 } from '../services/marketplaceService';
 import { SEED_CATEGORIES, SEED_PRODUCTS, SEED_REVIEWS, SEED_SHOPS } from '../data/seedData';
 import {
@@ -141,6 +144,11 @@ import {
   mergeUniqueIds,
   toggleUniqueId,
   reconcileCartWithCatalog,
+  CANONICAL_COFFEE_CATEGORY,
+  classifyProductCoffeeCategory,
+  normalizeProductCategory,
+  planCoffeeProductMigration,
+  type CoffeeCategorizationResult,
 } from '../utils/marketplaceLogic';
 import { getLocalizedNeighborhood, translations } from '../constants/translations';
 import {
@@ -208,6 +216,7 @@ export type AppRoute =
   | { name: 'product'; productId: string }
   | { name: 'shop'; shopId: string }
   | { name: 'shops'; initialCategory?: string; showAll?: boolean }
+  | { name: 'coffee_traders'; initialShopId?: string }
   | { name: 'cart' }
   | { name: 'checkout' }
   | { name: 'order_confirmation'; orderId: string }
@@ -496,7 +505,22 @@ interface MarketplaceContextValue {
   saveAddress: (address: Omit<CustomerAddress, 'addressId' | 'customerUid' | 'createdAt'>) => Promise<void>;
   deleteAddress: (addressId: string) => Promise<void>;
   markNotificationRead: (notificationId: string) => Promise<void>;
-  saveSellerProduct: (product: Product) => Promise<void>;
+  saveSellerProduct: (
+    product: Product,
+    options?: {
+      categoryConfirmed?: boolean;
+      confirmedCategory?: string;
+    }
+  ) => Promise<{ product: Product; categorization: CoffeeCategorizationResult }>;
+  runCoffeeMigrationAsAdmin: (dryRun?: boolean) => Promise<{
+    dryRun: boolean;
+    scanned: number;
+    alreadyCategorized: number;
+    eligible: number;
+    updated: number;
+    skipped: number;
+    ambiguous: number;
+  }>;
   saveSellerShop: (shop: Shop) => Promise<void>;
   moderateShopStatus: (shopId: string, status: 'approved' | 'suspended' | 'pending') => Promise<void>;
   moderateShopGovernance: (params: {
@@ -633,6 +657,10 @@ interface MarketplaceContextValue {
   adminJoinChatMediation: (threadId: string, introNote?: string) => Promise<void>;
   adminSendMediatorMessage: (threadId: string, body: string) => Promise<void>;
   adminResolveChatSupervision: (threadId: string, resolutionNote?: string) => Promise<void>;
+  chatbotOpen: boolean;
+  openChatbot: () => void;
+  closeChatbot: () => void;
+  toggleChatbot: () => void;
 }
 
 const MarketplaceContext = createContext<MarketplaceContextValue | null>(null);
@@ -850,6 +878,11 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [cloudAdminSupervisedMessages, setCloudAdminSupervisedMessages] = useState<
     TradeChatMessage[]
   >([]);
+  const [chatbotOpen, setChatbotOpen] = useState<boolean>(false);
+
+  const openChatbot = () => setChatbotOpen(true);
+  const closeChatbot = () => setChatbotOpen(false);
+  const toggleChatbot = () => setChatbotOpen((prev) => !prev);
 
   const isCloudAdmin = Boolean(
     firebaseUser &&
@@ -1281,6 +1314,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return `/shop/${route.shopId}`;
       case 'shops':
         return '/(customer)/shops';
+      case 'coffee_traders':
+        return route.initialShopId
+          ? `/(customer)/coffee-traders?shop=${route.initialShopId}`
+          : '/(customer)/coffee-traders';
       case 'cart':
         return '/(customer)/cart';
       case 'checkout':
@@ -2392,38 +2429,73 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     let deliveryPin = generateDeliveryPin();
     let serverVerifiedPaid = false;
 
-    try {
-      const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
-      const initRes = await fetch('/api/payments/initiate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
-          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+    if (firebaseUser) {
+      const stripDataUrl = (url?: string) =>
+        url && url.startsWith('data:image/') ? '' : url;
+      const slimShop: Shop = {
+        ...shop,
+        logoUrl: stripDataUrl(shop.logoUrl) || '',
+        coverImageUrl: stripDataUrl(shop.coverImageUrl) || '',
+      };
+      const slimCatalogProducts = products
+        .filter((p) => p.shopId === shop.shopId)
+        .map((p) => ({
+          ...p,
+          imageUrl: stripDataUrl(p.imageUrl) || '',
+          ...(p.additionalImages ? { additionalImages: [] } : {}),
+        }));
+      const slimCartItems = shopItems.map((ci) => ({
+        ...ci,
+        product: {
+          ...ci.product,
+          imageUrl: stripDataUrl(ci.product.imageUrl) || '',
+          ...(ci.product.additionalImages ? { additionalImages: [] } : {}),
         },
-        body: JSON.stringify({
-          idempotencyKey,
-          shopId: shop.shopId,
-          shop,
-          catalogProducts: products,
-          cartItems: shopItems,
-          fulfillmentMethod,
-          deliveryAddress,
-          deliveryFeeEtb,
-          promoCode: activeCode,
-          pointsToRedeem: requestedRedeem,
-          availableLoyaltyPoints: loyaltyStats.balance,
-          paymentMethod,
-          paymentReference: refValidation.normalizedRef || undefined,
-          governanceConfig,
-          userProfile,
-          customerEmail: firebaseUser?.email || userProfile?.email || undefined,
-          customerName:
-            deliveryAddress?.recipientName || firebaseUser?.displayName || undefined,
-          customerPhone: deliveryAddress?.phoneNumber || undefined,
-        }),
-      });
-      if (initRes.ok) {
+      }));
+
+      let initRes: Response | null = null;
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        initRes = await fetch('/api/payments/initiate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+            ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+          },
+          body: JSON.stringify({
+            idempotencyKey,
+            shopId: shop.shopId,
+            shop: slimShop,
+            catalogProducts: slimCatalogProducts,
+            cartItems: slimCartItems,
+            fulfillmentMethod,
+            deliveryAddress,
+            deliveryFeeEtb,
+            promoCode: activeCode,
+            pointsToRedeem: requestedRedeem,
+            availableLoyaltyPoints: loyaltyStats.balance,
+            paymentMethod,
+            paymentReference: refValidation.normalizedRef || undefined,
+            governanceConfig,
+            userProfile,
+            customerEmail: firebaseUser?.email || userProfile?.email || undefined,
+            customerName:
+              deliveryAddress?.recipientName || firebaseUser?.displayName || undefined,
+            customerPhone: deliveryAddress?.phoneNumber || undefined,
+          }),
+        });
+      } catch {
+        // Offline / network fallback keeps serverVerifiedPaid false so electronic payments remain 'pending'
+      }
+
+      if (initRes) {
+        if (!initRes.ok) {
+          const errJson = (await initRes.json().catch(() => ({}))) as { error?: string };
+          throw new Error(
+            errJson.error || 'Payment initiation was rejected by the server. Please try again.'
+          );
+        }
         const initData = (await initRes.json()) as {
           orderId?: string;
           deliveryPin?: string;
@@ -2437,8 +2509,6 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           serverVerifiedPaid = true;
         }
       }
-    } catch {
-      // Offline / network fallback keeps serverVerifiedPaid false so electronic payments remain 'pending'
     }
 
     const customerUid = firebaseUser?.uid ?? 'guest-local';
@@ -2489,6 +2559,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           : shop.neighborhood,
       paymentMethod,
       paymentStatus: initialPaymentStatus,
+      verifiedPaid: serverVerifiedPaid,
       ...(refValidation.normalizedRef ? { paymentReference: refValidation.normalizedRef } : {}),
       deliveryPin,
       deliveryEtaLabel,
@@ -2640,12 +2711,21 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
     }
 
-    const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
+    if (!firebaseUser) {
+      return {
+        verifiedPaid: false,
+        paymentStatus: target.paymentStatus,
+        configured: false,
+        message: 'Please sign in with your Affin Connect account to verify payment.',
+      };
+    }
+
+    const idToken = await firebaseUser.getIdToken();
     const res = await fetch('/api/payments/verify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({
         paymentMethod: target.paymentMethod,
@@ -2659,26 +2739,35 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       paymentStatus?: PaymentStatus;
       configured?: boolean;
       message?: string;
+      error?: string;
       missingEnvVars?: string[];
     };
 
+    if (!res.ok) {
+      return {
+        verifiedPaid: false,
+        paymentStatus: target.paymentStatus,
+        configured: Boolean(data.configured),
+        message: data.error || data.message || 'Unable to verify payment right now.',
+        missingEnvVars: data.missingEnvVars,
+      };
+    }
+
     const verifiedPaid = data.verifiedPaid === true && data.paymentStatus === 'paid';
     if (verifiedPaid) {
-      if (firebaseUser) {
+      const canPersistAdminPayment =
+        userProfile?.role === 'admin' || isSuperAdminEmail(firebaseUser.email);
+      if (canPersistAdminPayment) {
         await updateOrderPaymentInFirestore(orderId, 'paid', target.paymentReference);
       }
       const nowIso = new Date().toISOString();
       const patchOrder = (list: Order[]) =>
         list.map((o) =>
-          o.orderId === orderId ? { ...o, paymentStatus: 'paid' as PaymentStatus, updatedAt: nowIso } : o
+          o.orderId === orderId
+            ? { ...o, paymentStatus: 'paid' as PaymentStatus, verifiedPaid: true, updatedAt: nowIso }
+            : o
         );
-      setOrders((prev) => {
-        const next = patchOrder(prev);
-        if (!firebaseUser) {
-          localStorage.setItem(STORAGE_KEYS.LOCAL_ORDERS, JSON.stringify(next));
-        }
-        return next;
-      });
+      setOrders(patchOrder);
       setSellerOrders(patchOrder);
     }
 
@@ -2707,8 +2796,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     }
 
+    const isOfflinePayOnReceipt =
+      target.paymentMethod === 'cash_on_delivery' ||
+      target.paymentMethod === 'pay_at_pickup';
     const nextPaymentStatus: PaymentStatus | undefined =
-      newStatus === 'delivered' && target.paymentStatus === 'pending'
+      newStatus === 'delivered' &&
+      target.paymentStatus === 'pending' &&
+      isOfflinePayOnReceipt
         ? 'paid'
         : undefined;
 
@@ -2881,7 +2975,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     );
   };
 
-  const saveSellerProduct = async (product: Product) => {
+  const saveSellerProduct = async (
+    product: Product,
+    options?: {
+      categoryConfirmed?: boolean;
+      confirmedCategory?: string;
+    }
+  ): Promise<{ product: Product; categorization: CoffeeCategorizationResult }> => {
     if (userProfile?.accountStatus === 'suspended') {
       throw new Error(t('governanceUserSuspended'));
     }
@@ -2907,25 +3007,119 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!validateProductImageUrl(product.imageUrl)) {
       throw new Error(t('imageSizeTooLargeError'));
     }
+
+    const existsLocally = products.some((p) => p.productId === product.productId);
+    let savedProduct: Product = product;
+    let categorization: CoffeeCategorizationResult;
+
     if (firebaseUser) {
       try {
-        await saveProductInFirestore(product);
+        const idToken = await firebaseUser.getIdToken();
+        const response = await saveProductViaBackendApi(product, idToken, {
+          mode: existsLocally ? 'update' : 'create',
+          categoryConfirmed: options?.categoryConfirmed,
+          confirmedCategory: options?.confirmedCategory,
+        });
+        savedProduct = response.product;
+        categorization = response.categorization;
       } catch (err) {
+        if (err instanceof ProductCategorizationApiError) {
+          throw err;
+        }
         throw new Error(
-          formatFriendlyErrorMessage(err, 'Unable to save product listing to Firestore.')
+          formatFriendlyErrorMessage(err, 'Unable to save product listing to the server.')
         );
       }
+    } else {
+      const localCheck = classifyProductCoffeeCategory({
+        name: product.name,
+        category: product.category,
+        productType: product.productType,
+        coffeeDetails: product.coffeeDetails,
+        categoryConfirmed: options?.categoryConfirmed,
+        confirmedCategory: options?.confirmedCategory,
+      });
+      if (localCheck.outcome === 'conflict') {
+        throw new ProductCategorizationApiError(
+          localCheck.reason,
+          'CATEGORY_CONFLICT',
+          400,
+          localCheck
+        );
+      }
+      if (localCheck.outcome === 'ambiguous' && localCheck.requiresConfirmation) {
+        throw new ProductCategorizationApiError(
+          localCheck.reason,
+          'CATEGORY_CONFIRMATION_REQUIRED',
+          409,
+          localCheck
+        );
+      }
+      const normalizedCategory = normalizeProductCategory(localCheck.resolvedCategory);
+      const nextProduct: Product = {
+        ...product,
+        category: normalizedCategory,
+        ...(normalizedCategory === CANONICAL_COFFEE_CATEGORY &&
+        (product.coffeeDetails || localCheck.inferredCoffeeDetails)
+          ? {
+              coffeeDetails: {
+                ...(localCheck.inferredCoffeeDetails ?? {}),
+                ...(product.coffeeDetails ?? {}),
+              },
+            }
+          : {}),
+      };
+      if (normalizedCategory !== CANONICAL_COFFEE_CATEGORY && 'coffeeDetails' in nextProduct) {
+        delete nextProduct.coffeeDetails;
+      }
+      savedProduct = nextProduct;
+      categorization = localCheck;
     }
+
     setProducts((prev) => {
-      const exists = prev.some((p) => p.productId === product.productId);
+      const exists = prev.some((p) => p.productId === savedProduct.productId);
       const next = exists
-        ? prev.map((p) => (p.productId === product.productId ? product : p))
-        : [product, ...prev];
+        ? prev.map((p) => (p.productId === savedProduct.productId ? savedProduct : p))
+        : [savedProduct, ...prev];
       if (!firebaseUser) {
         localStorage.setItem(STORAGE_KEYS.LOCAL_PRODUCTS, JSON.stringify(next));
       }
       return next;
     });
+
+    return { product: savedProduct, categorization };
+  };
+
+  const runCoffeeMigrationAsAdmin = async (dryRun: boolean = false) => {
+    if (firebaseUser) {
+      const idToken = await firebaseUser.getIdToken();
+      const summary = await runCoffeeProductMigrationViaApi(idToken, dryRun);
+      if (!dryRun && summary.updated > 0) {
+        await refreshCatalogFromFirestore();
+      }
+      return summary;
+    }
+
+    const plan = planCoffeeProductMigration(products);
+    if (!dryRun && plan.changes.length > 0) {
+      const updatedMap = new Map(
+        plan.changes.map((c) => [c.productId, c.updatedProduct])
+      );
+      setProducts((prev) => {
+        const next = prev.map((p) => updatedMap.get(p.productId) ?? p);
+        localStorage.setItem(STORAGE_KEYS.LOCAL_PRODUCTS, JSON.stringify(next));
+        return next;
+      });
+    }
+    return {
+      dryRun,
+      scanned: plan.scanned,
+      alreadyCategorized: plan.alreadyCategorized,
+      eligible: plan.eligible,
+      updated: dryRun ? 0 : plan.changes.length,
+      skipped: plan.skipped,
+      ambiguous: plan.ambiguous,
+    };
   };
 
   const saveSellerShop = async (shop: Shop) => {
@@ -5249,6 +5443,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         deleteAddress,
         markNotificationRead,
         saveSellerProduct,
+        runCoffeeMigrationAsAdmin,
         saveSellerShop,
         moderateShopStatus,
         moderateShopGovernance,
@@ -5298,6 +5493,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         adminJoinChatMediation,
         adminSendMediatorMessage,
         adminResolveChatSupervision,
+        chatbotOpen,
+        openChatbot,
+        closeChatbot,
+        toggleChatbot,
       }}
     >
       {children}

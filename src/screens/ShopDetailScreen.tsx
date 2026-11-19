@@ -40,21 +40,9 @@ export const ShopDetailScreen: React.FC<{ shopId: string }> = ({ shopId }) => {
   const [inShopQuery, setInShopQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  if (!shop) {
-    return (
-      <EmptyState
-        title="Shop not found"
-        description="This Hawassa shop is unavailable or still under review."
-        actionLabel="Back to Market"
-        onAction={() => navigate({ name: 'home' })}
-      />
-    );
-  }
-
-  const isFollowing = followedShops.includes(shop.shopId);
   const shopProducts = useMemo(
-    () => products.filter((p) => p.shopId === shop.shopId && p.status === 'active'),
-    [products, shop.shopId]
+    () => (shop ? products.filter((p) => p.shopId === shop.shopId && p.status === 'active') : []),
+    [products, shop]
   );
 
   const shopCategories = useMemo(() => {
@@ -72,9 +60,25 @@ export const ShopDetailScreen: React.FC<{ shopId: string }> = ({ shopId }) => {
   }, [shopProducts, selectedCategory, inShopQuery]);
 
   const shopReviews = useMemo(
-    () => reviews.filter((r) => r.shopId === shop.shopId && (r.shopComment || r.shopRating || r.comment)),
-    [reviews, shop.shopId]
+    () =>
+      shop
+        ? reviews.filter((r) => r.shopId === shop.shopId && (r.shopComment || r.shopRating || r.comment))
+        : [],
+    [reviews, shop]
   );
+
+  if (!shop) {
+    return (
+      <EmptyState
+        title="Shop not found"
+        description="This Hawassa shop is unavailable or still under review."
+        actionLabel="Back to Market"
+        onAction={() => navigate({ name: 'home' })}
+      />
+    );
+  }
+
+  const isFollowing = followedShops.includes(shop.shopId);
 
   const getCategoryLabel = (cat: (typeof categories)[number]) => {
     if (language === 'am') return cat.nameAm;

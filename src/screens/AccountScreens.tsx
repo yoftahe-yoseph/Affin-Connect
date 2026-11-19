@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
+  ArrowUpRight,
   Award,
   Bell,
   BellRing,
@@ -28,7 +29,13 @@ import {
   X,
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
-import { CategoryIcon, EmptyState, ProductCard, ResilientImage } from '../components/SharedUI';
+import {
+  CategoryIcon,
+  EmptyState,
+  getCategoryCardTheme,
+  ProductCard,
+  ResilientImage,
+} from '../components/SharedUI';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { AuthSignInPanel } from '../components/AuthSignInPanel';
 import { getLocalizedNeighborhood, LANGUAGE_OPTIONS } from '../constants/translations';
@@ -44,27 +51,28 @@ export const CategoriesScreen: React.FC = () => {
   const { goBack, navigate, categories, products, language, t } = useMarketplace();
 
   return (
-    <div className="pb-6">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-3 py-2 flex items-center justify-between">
+    <div className="min-h-full bg-[#031719] text-[#F5FAFA] pb-8">
+      <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 flex items-center justify-between">
         <button
           type="button"
           onClick={goBack}
           aria-label="Go back"
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#F5FAFA] hover:bg-[#092825] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100">{t('categories')}</h1>
+        <h1 className="text-sm font-display font-bold text-[#F5FAFA]">{t('categories')}</h1>
         <div className="w-11" />
       </header>
 
       <div className="p-4 grid grid-cols-2 gap-3">
         {categories
           .filter((c) => c.isActive)
-          .map((cat) => {
+          .map((cat, idx) => {
             const count = products.filter(
               (p) => p.category === cat.slug && p.status === 'active'
             ).length;
+            const theme = getCategoryCardTheme(cat.slug, idx);
             const label =
               language === 'am'
                 ? cat.nameAm
@@ -78,17 +86,41 @@ export const CategoriesScreen: React.FC = () => {
                 key={cat.slug}
                 type="button"
                 onClick={() => navigate({ name: 'search', initialCategory: cat.slug })}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm hover:shadow-md p-4 text-left flex flex-col gap-3 hover:border-[#047857]/40 dark:hover:border-[#10B981]/50 transition-all"
+                className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${theme.surface} border ${theme.border} shadow-lg shadow-black/25 p-4 text-left flex flex-col justify-between gap-4 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00D68F]`}
               >
-                <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] flex items-center justify-center">
-                  <CategoryIcon iconName={cat.iconName} className="w-5 h-5" />
+                <span
+                  aria-hidden="true"
+                  className={`absolute -top-6 -right-6 w-24 h-24 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity pointer-events-none ${theme.glow}`}
+                />
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
+                />
+
+                <div className="relative z-10 w-full flex items-start justify-between gap-2">
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ${theme.iconBox}`}
+                  >
+                    <CategoryIcon iconName={cat.iconName} className="w-5 h-5" />
+                  </div>
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className={`w-4 h-4 opacity-65 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 ${theme.arrow}`}
+                  />
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-stone-900 dark:text-stone-100">{label}</div>
-                  <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 tabular-nums">
-                    {count === 1
-                      ? t('listingCount', { count })
-                      : t('listingsCount', { count })}
+
+                <div className="relative z-10 space-y-1.5">
+                  <div className="text-xs font-bold text-[#F5FAFA] leading-snug">{label}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      aria-hidden="true"
+                      className={`h-0.5 w-7 group-hover:w-11 rounded-full bg-gradient-to-r ${theme.accentBar} transition-all duration-200`}
+                    />
+                    <span className="text-[11px] font-medium text-[#A9C0BD] tabular-nums">
+                      {count === 1
+                        ? t('listingCount', { count })
+                        : t('listingsCount', { count })}
+                    </span>
                   </div>
                 </div>
               </button>
@@ -728,6 +760,7 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
     pushPermission,
     openTradeChatInbox,
     tradeChats,
+    openChatbot,
     t,
   } = useMarketplace();
   const activeLanguageLabel =
@@ -1383,11 +1416,11 @@ export const ProfileScreen: React.FC<{ section?: 'main' | 'addresses' | 'setting
 
           <button
             type="button"
-            onClick={() => navigate({ name: 'chat' })}
+            onClick={openChatbot}
             className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] text-left transition-colors"
           >
             <span className="flex items-center gap-3 text-xs font-semibold text-stone-800 dark:text-stone-200">
-              <MessageSquare className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B]" />
+              <MessageSquare className="w-4 h-4 text-[#00D68F]" />
               {t('aiConciergeRow')}
             </span>
             <ChevronRight className="w-4 h-4 text-stone-400 dark:text-stone-500" />

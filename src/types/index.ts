@@ -29,6 +29,22 @@ export type DocumentVerificationStatus =
   | 'approved'
   | 'rejected';
 
+export type TraderType = 'general' | 'coffee';
+
+export type CoffeeRoastLevel = 'light' | 'medium' | 'medium_dark' | 'dark';
+export type CoffeeProcessMethod = 'washed' | 'natural' | 'honey' | 'anaerobic';
+export type CoffeeBeanForm = 'whole_bean' | 'ground';
+
+export interface CoffeeProductDetails {
+  origin?: string;
+  brand?: string;
+  roastLevel?: CoffeeRoastLevel;
+  processingMethod?: CoffeeProcessMethod;
+  beanForm?: CoffeeBeanForm;
+  packageWeight?: string;
+  roastDate?: string;
+}
+
 export interface Shop {
   shopId: string;
   ownerUid: string;
@@ -45,6 +61,7 @@ export interface Shop {
   pickupAvailable: boolean;
   status: 'pending' | 'approved' | 'suspended';
   verificationStatus?: DocumentVerificationStatus;
+  traderType?: TraderType;
   rating: number;
   reviewCount: number;
   featured?: boolean;
@@ -89,6 +106,7 @@ export interface Product {
   name: string;
   description: string;
   category: string;
+  productType?: string;
   price: number; // In Ethiopian Birr (ETB)
   previousPrice?: number;
   stock: number;
@@ -96,6 +114,7 @@ export interface Product {
   imageUrl: string;
   additionalImages?: string[];
   variants?: ProductVariant[];
+  coffeeDetails?: CoffeeProductDetails;
   pickupAvailable: boolean;
   deliveryAvailable: boolean;
   status: 'active' | 'archived' | 'pending_review';
@@ -181,6 +200,7 @@ export interface Order {
   neighborhood?: string;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  verifiedPaid?: boolean;
   paymentReference?: string;
   deliveryPin?: string;
   deliveryEtaLabel?: string;

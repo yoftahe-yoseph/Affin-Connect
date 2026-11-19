@@ -14,6 +14,7 @@ import { SearchScreen } from './screens/SearchScreen';
 import { ProductDetailScreen } from './screens/ProductDetailScreen';
 import { ShopDetailScreen } from './screens/ShopDetailScreen';
 import { ShopsScreen } from './screens/ShopsScreen';
+import { CoffeeTradersScreen } from './screens/CoffeeTradersScreen';
 import {
   CartScreen,
   CheckoutScreen,
@@ -126,6 +127,8 @@ const ScreenRouter: React.FC = () => {
       return <ShopDetailScreen shopId={route.shopId} />;
     case 'shops':
       return <ShopsScreen initialCategory={route.initialCategory} showAll={route.showAll} />;
+    case 'coffee_traders':
+      return <CoffeeTradersScreen initialShopId={route.initialShopId} />;
     case 'cart':
       return <CartScreen />;
     case 'checkout':
