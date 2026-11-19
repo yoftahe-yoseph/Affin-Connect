@@ -9,8 +9,7 @@ import dotenv from "dotenv";
 import express from "express";
 
 // src/lib/firebase-admin.ts
-import { getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import crypto from "node:crypto";
 
 // src/lib/firebaseConfigLoader.ts
 import { existsSync, readFileSync } from "node:fs";
@@ -47,26 +46,132 @@ function loadFirebaseAppletConfig() {
 }
 
 // src/lib/firebase-admin.ts
-var cachedAuth = null;
-function getAdminAuth() {
-  if (!cachedAuth) {
+var FIREBASE_X509_CERTS_URL = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+var cachedAdminAuth = null;
+var firebaseAdminLoadFailed = false;
+var cachedCerts = null;
+var cachedCertsExpiresAt = 0;
+function decodeBase64UrlJson(segment) {
+  const padded = segment.replace(/-/g, "+").replace(/_/g, "/");
+  const raw = Buffer.from(padded, "base64").toString("utf8");
+  return JSON.parse(raw);
+}
+function decodeBase64UrlBuffer(segment) {
+  const padded = segment.replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(padded, "base64");
+}
+async function fetchFirebasePublicCerts(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && cachedCerts && now < cachedCertsExpiresAt) {
+    return cachedCerts;
+  }
+  const res = await fetch(FIREBASE_X509_CERTS_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Firebase public keys (HTTP ${res.status}).`);
+  }
+  const certs = await res.json();
+  const cacheControl = res.headers.get("cache-control") || "";
+  const maxAgeMatch = cacheControl.match(/max-age=(\d+)/i);
+  const maxAgeSec = maxAgeMatch ? Number(maxAgeMatch[1]) : 3600;
+  cachedCerts = certs;
+  cachedCertsExpiresAt = now + Math.max(60, maxAgeSec) * 1e3;
+  return certs;
+}
+async function verifyFirebaseIdTokenWithCrypto(idToken) {
+  if (typeof idToken !== "string" || !idToken.trim()) {
+    throw new Error("Firebase ID token must be a non-empty string.");
+  }
+  const parts = idToken.split(".");
+  if (parts.length !== 3) {
+    throw new Error("Invalid Firebase ID token format.");
+  }
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const header = decodeBase64UrlJson(headerB64);
+  const payload = decodeBase64UrlJson(payloadB64);
+  if (header.alg !== "RS256" || typeof header.kid !== "string" || !header.kid) {
+    throw new Error("Firebase ID token has unsupported algorithm or missing key ID.");
+  }
+  const { projectId } = loadFirebaseAppletConfig();
+  if (!projectId) {
+    throw new Error("Firebase projectId is not configured on the server.");
+  }
+  const nowSec = Math.floor(Date.now() / 1e3);
+  const exp = typeof payload.exp === "number" ? payload.exp : 0;
+  const iat = typeof payload.iat === "number" ? payload.iat : 0;
+  const authTime = typeof payload.auth_time === "number" ? payload.auth_time : 0;
+  const aud = typeof payload.aud === "string" ? payload.aud : "";
+  const iss = typeof payload.iss === "string" ? payload.iss : "";
+  const sub = typeof payload.sub === "string" ? payload.sub : "";
+  if (exp <= nowSec) {
+    throw new Error("Firebase ID token has expired.");
+  }
+  if (iat > nowSec + 300) {
+    throw new Error("Firebase ID token issued-at time is in the future.");
+  }
+  if (authTime > nowSec + 300) {
+    throw new Error("Firebase ID token auth_time is in the future.");
+  }
+  if (aud !== projectId) {
+    throw new Error("Firebase ID token audience does not match this project.");
+  }
+  if (iss !== `https://securetoken.google.com/${projectId}`) {
+    throw new Error("Firebase ID token issuer is invalid.");
+  }
+  if (!sub || sub.length > 128) {
+    throw new Error("Firebase ID token subject (uid) is invalid.");
+  }
+  let certs = await fetchFirebasePublicCerts(false);
+  let certPem = certs[header.kid];
+  if (!certPem) {
+    certs = await fetchFirebasePublicCerts(true);
+    certPem = certs[header.kid];
+  }
+  if (!certPem) {
+    throw new Error("Firebase ID token key ID did not match any active Google signing certificate.");
+  }
+  const signingInput = Buffer.from(`${headerB64}.${payloadB64}`, "utf8");
+  const signature = decodeBase64UrlBuffer(signatureB64);
+  const valid = crypto.verify("RSA-SHA256", signingInput, certPem, signature);
+  if (!valid) {
+    throw new Error("Firebase ID token signature verification failed.");
+  }
+  return {
+    ...payload,
+    uid: sub
+  };
+}
+async function tryLoadFirebaseAdminAuth() {
+  if (cachedAdminAuth) return cachedAdminAuth;
+  if (firebaseAdminLoadFailed) return null;
+  try {
+    const [{ getApps, initializeApp }, { getAuth }] = await Promise.all([
+      import("firebase-admin/app"),
+      import("firebase-admin/auth")
+    ]);
     const firebaseConfig3 = loadFirebaseAppletConfig();
     if (!getApps().length) {
       initializeApp({
         projectId: firebaseConfig3.projectId || void 0
       });
     }
-    cachedAuth = getAuth();
+    cachedAdminAuth = getAuth();
+    return cachedAdminAuth;
+  } catch (err) {
+    firebaseAdminLoadFailed = true;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("firebase-admin unavailable in this runtime, using native RS256 verifier:", msg);
+    return null;
   }
-  return cachedAuth;
 }
-var adminAuth = new Proxy({}, {
-  get(_target, prop, receiver) {
-    const instance = getAdminAuth();
-    const value = Reflect.get(instance, prop, receiver);
-    return typeof value === "function" ? value.bind(instance) : value;
+var adminAuth = {
+  async verifyIdToken(idToken, checkRevoked) {
+    const sdkAuth = await tryLoadFirebaseAdminAuth();
+    if (sdkAuth) {
+      return sdkAuth.verifyIdToken(idToken, checkRevoked);
+    }
+    return verifyFirebaseIdTokenWithCrypto(idToken);
   }
-});
+};
 
 // src/middleware/auth.ts
 var requireAuth = async (req, res, next) => {
@@ -1134,7 +1239,7 @@ async function dispatchWelcomeBackEmail(rendered) {
 }
 
 // src/server/payments.ts
-import crypto from "node:crypto";
+import crypto2 from "node:crypto";
 
 // src/utils/imageUpload.ts
 var MAX_IMAGE_FILE_BYTES = 150 * 1024;
@@ -2335,7 +2440,7 @@ async function requireVerifiedAuthUid(req) {
   }
 }
 function generateCryptoDeliveryPin() {
-  return String(crypto.randomInt(1e3, 1e4));
+  return String(crypto2.randomInt(1e3, 1e4));
 }
 function resolveProviderId(method) {
   if (method === "telebirr" || method === "telebirr_sandbox") return "telebirr";
@@ -2434,8 +2539,8 @@ async function handleInitiatePayment(req, res) {
       errorKey: govCheck.errorKey
     });
   }
-  const orderId = `ord-${nowMs}-${crypto.randomBytes(2).toString("hex")}`;
-  const txRef = `AC-${nowMs}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+  const orderId = `ord-${nowMs}-${crypto2.randomBytes(2).toString("hex")}`;
+  const txRef = `AC-${nowMs}-${crypto2.randomBytes(3).toString("hex").toUpperCase()}`;
   const deliveryPin = generateCryptoDeliveryPin();
   const providers = getPaymentProvidersStatus();
   const providerId = resolveProviderId(paymentMethod);
@@ -2627,7 +2732,7 @@ function timingSafeHexCompare(provided, expected) {
   const a = Buffer.from(provided.trim().toLowerCase(), "utf8");
   const b = Buffer.from(expected.trim().toLowerCase(), "utf8");
   if (a.length === 0 || a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
+  return crypto2.timingSafeEqual(a, b);
 }
 function handleChapaWebhook(req, res) {
   const secret = process.env.CHAPA_WEBHOOK_SECRET?.trim() || process.env.CHAPA_SECRET_KEY?.trim();
@@ -2638,7 +2743,7 @@ function handleChapaWebhook(req, res) {
   }
   const signature = req.header("chapa-signature") || req.header("x-chapa-signature") || "";
   const payloadStr = JSON.stringify(req.body ?? {});
-  const expectedSig = crypto.createHmac("sha256", secret).update(payloadStr).digest("hex");
+  const expectedSig = crypto2.createHmac("sha256", secret).update(payloadStr).digest("hex");
   if (!timingSafeHexCompare(signature, expectedSig)) {
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
@@ -2659,7 +2764,7 @@ function handleProviderWebhook(provider) {
     }
     const signature = req.header("x-signature") || req.header("x-webhook-signature") || "";
     const payloadStr = JSON.stringify(req.body ?? {});
-    const expectedSig = crypto.createHmac("sha256", secret).update(payloadStr).digest("hex");
+    const expectedSig = crypto2.createHmac("sha256", secret).update(payloadStr).digest("hex");
     if (!timingSafeHexCompare(signature, expectedSig)) {
       return res.status(401).json({ error: "Invalid webhook signature." });
     }
