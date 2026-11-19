@@ -1,14 +1,12 @@
-import { readFileSync } from 'node:fs';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { loadFirebaseAppletConfig } from './firebaseConfigLoader.ts';
 
-const firebaseConfig = JSON.parse(
-  readFileSync(new URL('../../firebase-applet-config.json', import.meta.url), 'utf8')
-) as { projectId?: string };
+const firebaseConfig = loadFirebaseAppletConfig();
 
 if (!getApps().length) {
   initializeApp({
-    projectId: firebaseConfig.projectId,
+    projectId: firebaseConfig.projectId || undefined,
   });
 }
 

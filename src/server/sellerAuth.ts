@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { loadFirebaseAppletConfig } from '../lib/firebaseConfigLoader.ts';
 import type {
   DocumentVerificationStatus,
   MerchantVerification,
@@ -10,15 +10,7 @@ import {
   getEffectiveShopVerificationStatus,
 } from '../utils/marketplaceLogic.ts';
 
-interface FirebaseAppletConfig {
-  projectId: string;
-  firestoreDatabaseId?: string;
-}
-
-const firebaseConfig = JSON.parse(
-  readFileSync(new URL('../../firebase-applet-config.json', import.meta.url), 'utf8')
-) as FirebaseAppletConfig;
-
+const firebaseConfig = loadFirebaseAppletConfig();
 const FIRESTORE_PROJECT_ID = firebaseConfig.projectId;
 const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId || '(default)';
 

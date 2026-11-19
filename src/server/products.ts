@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import type { Request, Response } from 'express';
+import { loadFirebaseAppletConfig } from '../lib/firebaseConfigLoader.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
 import type { CoffeeProductDetails, Product, ProductVariant } from '../types/index.ts';
 import {
@@ -11,15 +11,7 @@ import {
 } from '../utils/coffeeCategorizer.ts';
 import { verifySellerFromFirestore } from './sellerAuth.ts';
 
-interface FirebaseAppletConfig {
-  projectId: string;
-  firestoreDatabaseId?: string;
-}
-
-const firebaseConfig = JSON.parse(
-  readFileSync(new URL('../../firebase-applet-config.json', import.meta.url), 'utf8')
-) as FirebaseAppletConfig;
-
+const firebaseConfig = loadFirebaseAppletConfig();
 const FIRESTORE_PROJECT_ID = firebaseConfig.projectId;
 const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId || '(default)';
 
