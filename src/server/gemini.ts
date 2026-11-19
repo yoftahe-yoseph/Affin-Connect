@@ -1,7 +1,12 @@
 import { GoogleGenAI, ThinkingLevel, Type, type Content } from '@google/genai';
 
 function getAiClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.API_KEY ||
+    ''
+  ).trim();
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured in server secrets.');
   }
@@ -114,6 +119,18 @@ export function isTransientGeminiOverloadError(error: unknown): boolean {
     upper.includes('ECONNRESET') ||
     upper.includes('ETIMEDOUT')
   );
+}
+
+function isModelUnavailableError(error: unknown): boolean {
+  const parsed = parseGeminiApiError(error);
+  if (parsed.status === 404) return true;
+  const raw = error instanceof Error ? error.message : String(error ?? '');
+  const upper = raw.toUpperCase();
+  return upper.includes('NOT_FOUND') || upper.includes('NOT FOUND') || upper.includes('UNSUPPORTED MODEL');
+}
+
+function shouldTryNextGeminiModel(error: unknown): boolean {
+  return isTransientGeminiOverloadError(error) || isModelUnavailableError(error);
 }
 
 export type ConciergeMode = 'balanced' | 'deep' | 'fast' | 'lite';
@@ -229,7 +246,9 @@ export async function chatWithConcierge(params: {
       history: formattedHistory,
       config: {
         systemInstruction: fullSystemInstruction,
-        ...(thinkingLevel ? { thinkingConfig: { thinkingLevel } } : {}),
+        ...(thinkingLevel && model === 'gemini-4-hydrogen'
+          ? { thinkingConfig: { thinkingLevel } }
+          : {}),
       },
     });
 
@@ -242,46 +261,38 @@ export async function chatWithConcierge(params: {
     };
   };
 
+  const candidateModels =
+    primaryModel === 'gemini-3.1-flash-lite'
+      ? ['gemini-3.1-flash-lite', 'gemini-4-hydrogen', 'gemini-2.5-flash']
+      : ['gemini-4-hydrogen', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'];
+
+  const primaryTimeoutMs = mode === 'deep' ? 18000 : 10000;
   let lastError: unknown;
 
-  if (primaryModel === 'gemini-3.1-flash-lite') {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        return await runModelChat('gemini-3.1-flash-lite');
-      } catch (error) {
-        lastError = error;
-        if (!isTransientGeminiOverloadError(error) || attempt === 1) {
-          throw error;
-        }
-        await sleep(300);
+  for (let idx = 0; idx < candidateModels.length; idx += 1) {
+    const modelName = candidateModels[idx];
+    const timeoutMs = idx === 0 ? primaryTimeoutMs : 12000;
+    const thinking = modelName === 'gemini-4-hydrogen' ? primaryThinkingLevel : undefined;
+
+    try {
+      return await Promise.race([
+        runModelChat(modelName, thinking),
+        new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error('503 UNAVAILABLE: Primary model timed out under high demand.')),
+            timeoutMs
+          );
+        }),
+      ]);
+    } catch (error) {
+      lastError = error;
+      if (!shouldTryNextGeminiModel(error) || idx === candidateModels.length - 1) {
+        throw error;
+      }
+      if (isTransientGeminiOverloadError(error)) {
+        await sleep(250);
       }
     }
-    throw lastError;
-  }
-
-  // Try requested Hydrogen mode with a responsive mobile timeout budget, failing over cleanly to Flash Lite on 503/stall
-  const primaryTimeoutMs = mode === 'deep' ? 18000 : 8000;
-  try {
-    return await Promise.race([
-      runModelChat(primaryModel, primaryThinkingLevel),
-      new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error('503 UNAVAILABLE: Primary model timed out under high demand.')),
-          primaryTimeoutMs
-        );
-      }),
-    ]);
-  } catch (error) {
-    lastError = error;
-    if (!isTransientGeminiOverloadError(error)) {
-      throw error;
-    }
-  }
-
-  try {
-    return await runModelChat('gemini-3.1-flash-lite');
-  } catch (fallbackError) {
-    lastError = fallbackError;
   }
 
   throw lastError;
@@ -597,21 +608,30 @@ CRITICAL RULES:
     };
   };
 
-  try {
-    return await Promise.race([
-      runExtraction('gemini-4-hydrogen', ThinkingLevel.LOW),
-      new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error('503 UNAVAILABLE: Listing extraction timed out.')),
-          9000
-        );
-      }),
-    ]);
-  } catch (error) {
-    if (!isTransientGeminiOverloadError(error)) {
-      throw error;
+  const extractionModels = ['gemini-4-hydrogen', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'];
+  let lastError: unknown;
+
+  for (let idx = 0; idx < extractionModels.length; idx += 1) {
+    const modelName = extractionModels[idx];
+    const thinking = modelName === 'gemini-4-hydrogen' ? ThinkingLevel.LOW : undefined;
+    try {
+      return await Promise.race([
+        runExtraction(modelName, thinking),
+        new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error('503 UNAVAILABLE: Listing extraction timed out.')),
+            10000
+          );
+        }),
+      ]);
+    } catch (error) {
+      lastError = error;
+      if (!shouldTryNextGeminiModel(error) || idx === extractionModels.length - 1) {
+        throw error;
+      }
     }
-    return await runExtraction('gemini-3.1-flash-lite');
   }
+
+  throw lastError;
 }
 

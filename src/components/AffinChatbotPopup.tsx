@@ -188,7 +188,16 @@ function readLocalMessages(): ChatMessage[] {
     if (!raw) return [WELCOME_MESSAGE];
     const parsed = JSON.parse(raw) as ChatMessage[];
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+      const sanitized = parsed.filter(
+        (m) =>
+          m &&
+          (m.role === 'user' || m.role === 'model') &&
+          typeof m.content === 'string' &&
+          m.content.trim().length > 0
+      );
+      if (sanitized.length > 0) {
+        return sanitized;
+      }
     }
   } catch {
     // ignore corrupted local storage
@@ -564,11 +573,17 @@ export const AffinChatbotSurface: React.FC<{
 
     // Standard Affin Connect Assistant chat flow (preserved 100%)
     const historyForApi = messages
-      .filter((m) => m.id !== 'welcome-msg')
+      .filter(
+        (m) =>
+          m.id !== 'welcome-msg' &&
+          (m.role === 'user' || m.role === 'model') &&
+          typeof m.content === 'string' &&
+          m.content.trim().length > 0
+      )
       .slice(-20)
       .map((m) => ({
         role: m.role,
-        content: m.content.slice(0, 4000),
+        content: m.content.trim().slice(0, 4000),
       }));
 
     if (!isRetry) {
@@ -587,8 +602,14 @@ export const AffinChatbotSurface: React.FC<{
         'Content-Type': 'application/json',
       };
       if (firebaseUser) {
-        const token = await firebaseUser.getIdToken();
-        headers.Authorization = `Bearer ${token}`;
+        try {
+          const token = await firebaseUser.getIdToken();
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
+        } catch {
+          // Optional auth header for Cloud SQL history; never block general chat
+        }
       }
 
       const activePersona = PERSONA_PRESETS.find((p) => p.id === personaId);

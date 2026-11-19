@@ -35,13 +35,13 @@ import {
   HAWASSA_CENTER,
   normalizeNeighborhoodKey,
   resolveClosestNeighborhood,
-} from './hawassaCoordinates';
+} from './hawassaCoordinates.ts';
 import {
   MAX_IMAGE_FILE_BYTES,
   MAX_IMAGE_UPLOAD_DATA_URL_LENGTH,
   estimateDataUrlByteSize,
   validateImagePayloadSize,
-} from './imageUpload';
+} from './imageUpload.ts';
 import {
   CANONICAL_COFFEE_CATEGORY,
   CANONICAL_PRODUCT_CATEGORIES,
@@ -56,7 +56,7 @@ import {
   type CoffeeCategorizationResult,
   type CoffeeMigrationPlan,
   type CoffeeMigrationProductChange,
-} from './coffeeCategorizer';
+} from './coffeeCategorizer.ts';
 
 export {
   CANONICAL_COFFEE_CATEGORY,
