@@ -133,14 +133,14 @@ function renderFormattedLine(line: string, keyPrefix: string) {
   return segments.map((seg, i) => {
     if (seg.startsWith('**') && seg.endsWith('**') && seg.length > 4) {
       return (
-        <strong key={`${keyPrefix}-b-${i}`} className="font-bold text-[#F5FAFA]">
+        <strong key={`${keyPrefix}-b-${i}`} className="font-bold text-[#0C2624] dark:text-[#F5FAFA]">
           {seg.slice(2, -2)}
         </strong>
       );
     }
     if (seg.startsWith('*') && seg.endsWith('*') && seg.length > 2) {
       return (
-        <em key={`${keyPrefix}-i-${i}`} className="italic text-[#DCEAE8]">
+        <em key={`${keyPrefix}-i-${i}`} className="italic text-[#1E3F3C] dark:text-[#DCEAE8]">
           {seg.slice(1, -1)}
         </em>
       );
@@ -157,12 +157,12 @@ function FormattedChatText({ content }: { content: string }) {
         const line = rawLine.trim();
         if (!line) return <div key={`sp-${idx}`} className="h-1" />;
         if (line === '---') {
-          return <hr key={`hr-${idx}`} className="border-[#14443F] my-1.5" />;
+          return <hr key={`hr-${idx}`} className="border-[#D5E6E2] dark:border-[#14443F] my-1.5" />;
         }
         if (/^#{1,3}\s+/.test(line)) {
           const cleanHeading = line.replace(/^#{1,3}\s+/, '');
           return (
-            <div key={`h-${idx}`} className="font-bold text-[#00D68F] pt-1">
+            <div key={`h-${idx}`} className="font-bold text-[#047857] dark:text-[#00D68F] pt-1">
               {renderFormattedLine(cleanHeading, `h-${idx}`)}
             </div>
           );
@@ -171,7 +171,7 @@ function FormattedChatText({ content }: { content: string }) {
           const cleanItem = line.replace(/^[*-]\s+/, '');
           return (
             <div key={`li-${idx}`} className="flex gap-1.5 pl-1">
-              <span className="text-[#00D68F] font-bold shrink-0">•</span>
+              <span className="text-[#047857] dark:text-[#00D68F] font-bold shrink-0">•</span>
               <span className="flex-1">{renderFormattedLine(cleanItem, `li-${idx}`)}</span>
             </div>
           );
@@ -898,9 +898,9 @@ export const AffinChatbotSurface: React.FC<{
   const isVerifiedSeller = Boolean(eligibility?.eligible);
 
   return (
-    <div className="flex flex-col h-full bg-[#031719] text-[#F5FAFA]">
+    <div className="flex flex-col h-full bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA]">
       {/* Header */}
-      <header className="bg-[#092825] border-b border-[#14443F] px-3.5 py-2.5 shrink-0">
+      <header className="bg-[#FCFDFC] dark:bg-[#092825] border-b border-[#D2E0DC] dark:border-[#14443F] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.10)] dark:shadow-none px-3.5 py-2.5 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             {variant === 'page' && (
@@ -908,7 +908,7 @@ export const AffinChatbotSurface: React.FC<{
                 type="button"
                 onClick={goBack}
                 aria-label="Go back"
-                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#A9C0BD] hover:text-[#F5FAFA] hover:bg-[#102F2B] transition-colors shrink-0"
+                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-[#A9C0BD] hover:text-[#0E2421] dark:hover:text-[#F5FAFA] hover:bg-[#EBF1EE] dark:hover:bg-[#102F2B] transition-colors shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -918,8 +918,8 @@ export const AffinChatbotSurface: React.FC<{
                 surfaceMode === 'listing'
                   ? isCoffeeDraft
                     ? 'bg-gradient-to-br from-[#C68B59] to-[#4B2E24] text-[#F8F4EE]'
-                    : 'bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719]'
-                  : 'bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719]'
+                    : 'bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719]'
+                  : 'bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719]'
               }`}
             >
               {surfaceMode === 'listing' ? (
@@ -933,10 +933,10 @@ export const AffinChatbotSurface: React.FC<{
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-display font-bold text-[#F5FAFA] truncate leading-tight">
+              <h2 className="text-sm font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA] truncate leading-tight">
                 {surfaceMode === 'listing' ? 'Product Listing Assistant' : 'Affin Connect Assistant'}
               </h2>
-              <p className="text-[11px] text-[#A9C0BD] truncate">
+              <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
                 {surfaceMode === 'listing'
                   ? `Verified Seller · ${listingDraft?.shopName ?? 'Creating Draft'}`
                   : 'Hawassa Shopping · Delivery · Pay'}
@@ -964,8 +964,8 @@ export const AffinChatbotSurface: React.FC<{
                 }
                 className={`px-2.5 min-h-[36px] rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors ${
                   surfaceMode === 'listing'
-                    ? 'bg-[#102F2B] border border-[#00D68F]/40 text-[#00D68F]'
-                    : 'bg-[#00D68F]/15 border border-[#00D68F]/40 text-[#00D68F] hover:bg-[#00D68F]/25'
+                    ? 'bg-[#EDF5F3] dark:bg-[#102F2B] border border-[#047857]/35 dark:border-[#00D68F]/40 text-[#047857] dark:text-[#00D68F]'
+                    : 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border border-[#047857]/35 dark:border-[#00D68F]/40 text-[#047857] dark:text-[#00D68F] hover:bg-[#D1FAE5] dark:hover:bg-[#00D68F]/25'
                 }`}
               >
                 <PackagePlus className="w-3.5 h-3.5" />
@@ -979,8 +979,8 @@ export const AffinChatbotSurface: React.FC<{
               aria-expanded={showOptions}
               className={`min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center transition-colors ${
                 showOptions
-                  ? 'bg-[#00D68F]/15 text-[#00D68F]'
-                  : 'text-[#A9C0BD] hover:text-[#F5FAFA] hover:bg-[#102F2B]'
+                  ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 text-[#047857] dark:text-[#00D68F]'
+                  : 'text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA] hover:bg-[#EDF5F3] dark:hover:bg-[#102F2B]'
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -989,7 +989,7 @@ export const AffinChatbotSurface: React.FC<{
               type="button"
               onClick={handleClearChat}
               aria-label="Clear conversation"
-              className="min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center text-[#A9C0BD] hover:text-[#FF6577] hover:bg-[#102F2B] transition-colors"
+              className="min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center text-[#4B6B67] dark:text-[#A9C0BD] hover:text-rose-600 dark:hover:text-[#FF6577] hover:bg-[#EDF5F3] dark:hover:bg-[#102F2B] transition-colors"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -998,7 +998,7 @@ export const AffinChatbotSurface: React.FC<{
                 type="button"
                 onClick={onClose}
                 aria-label="Close chatbot"
-                className="min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center text-[#A9C0BD] hover:text-[#F5FAFA] hover:bg-[#102F2B] transition-colors"
+                className="min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA] hover:bg-[#EDF5F3] dark:hover:bg-[#102F2B] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1008,15 +1008,15 @@ export const AffinChatbotSurface: React.FC<{
 
         {/* Collapsible Persona & Speed Controls */}
         {showOptions && (
-          <div className="grid grid-cols-2 gap-2 pt-2.5 mt-2 border-t border-[#14443F]/80">
+          <div className="grid grid-cols-2 gap-2 pt-2.5 mt-2 border-t border-[#D2E0DC] dark:border-[#14443F]/80">
             <select
               aria-label="Assistant Persona"
               value={personaId}
               onChange={(e) => setPersonaId(e.target.value)}
-              className="px-2.5 py-2 rounded-xl border border-[#14443F] bg-[#031719] text-[11px] font-semibold text-[#F5FAFA] focus:outline-none focus:border-[#00D68F]"
+              className="px-2.5 py-2 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-[11px] font-semibold text-[#0E2421] dark:text-[#F5FAFA] focus:outline-none focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
             >
               {PERSONA_PRESETS.map((p) => (
-                <option key={p.id} value={p.id} className="bg-[#092825] text-[#F5FAFA]">
+                <option key={p.id} value={p.id} className="bg-[#FCFDFC] dark:bg-[#092825] text-[#0E2421] dark:text-[#F5FAFA]">
                   {p.label}
                 </option>
               ))}
@@ -1026,18 +1026,18 @@ export const AffinChatbotSurface: React.FC<{
               aria-label="Assistant Response Mode"
               value={mode}
               onChange={(e) => setMode(e.target.value as ConciergeMode)}
-              className="px-2.5 py-2 rounded-xl border border-[#14443F] bg-[#031719] text-[11px] font-semibold text-[#F5FAFA] focus:outline-none focus:border-[#00D68F]"
+              className="px-2.5 py-2 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-[11px] font-semibold text-[#0E2421] dark:text-[#F5FAFA] focus:outline-none focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
             >
-              <option value="fast" className="bg-[#092825] text-[#F5FAFA]">
+              <option value="fast" className="bg-[#FCFDFC] dark:bg-[#092825] text-[#0E2421] dark:text-[#F5FAFA]">
                 Fast (Quick Reply)
               </option>
-              <option value="balanced" className="bg-[#092825] text-[#F5FAFA]">
+              <option value="balanced" className="bg-[#FCFDFC] dark:bg-[#092825] text-[#0E2421] dark:text-[#F5FAFA]">
                 Balanced
               </option>
-              <option value="deep" className="bg-[#092825] text-[#F5FAFA]">
+              <option value="deep" className="bg-[#FCFDFC] dark:bg-[#092825] text-[#0E2421] dark:text-[#F5FAFA]">
                 Deep Advice
               </option>
-              <option value="lite" className="bg-[#092825] text-[#F5FAFA]">
+              <option value="lite" className="bg-[#FCFDFC] dark:bg-[#092825] text-[#0E2421] dark:text-[#F5FAFA]">
                 Instant Lite
               </option>
             </select>
@@ -1046,25 +1046,25 @@ export const AffinChatbotSurface: React.FC<{
 
         {/* Active Listing Progress Strip */}
         {surfaceMode === 'listing' && listingDraft && (
-          <div className="mt-2.5 pt-2 border-t border-[#14443F]/80 space-y-1.5">
+          <div className="mt-2.5 pt-2 border-t border-[#D2E0DC] dark:border-[#14443F]/80 space-y-1.5">
             <div className="flex items-center justify-between gap-2 text-[11px]">
               <div className="flex items-center gap-1.5 min-w-0">
-                <BadgeCheck className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                <BadgeCheck className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00D68F] shrink-0" />
                 {verifiedShops.length > 1 ? (
                   <select
                     aria-label="Select verified shop"
                     value={listingDraft.shopId}
                     onChange={(e) => handleShopSwitch(e.target.value)}
-                    className="bg-[#031719] border border-[#14443F] rounded-lg px-2 py-0.5 text-[11px] font-semibold text-[#F5FAFA] focus:outline-none focus:border-[#00D68F]"
+                    className="bg-[#F3F6F4] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] rounded-lg px-2 py-0.5 text-[11px] font-semibold text-[#0E2421] dark:text-[#F5FAFA] focus:outline-none focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
                   >
                     {verifiedShops.map((shop) => (
-                      <option key={shop.shopId} value={shop.shopId} className="bg-[#092825]">
+                      <option key={shop.shopId} value={shop.shopId} className="bg-[#FCFDFC] dark:bg-[#092825]">
                         {shop.name}
                       </option>
                     ))}
                   </select>
                 ) : (
-                  <span className="font-semibold text-[#F5FAFA] truncate">
+                  <span className="font-semibold text-[#0C2624] dark:text-[#F5FAFA] truncate">
                     {listingDraft.shopName}
                   </span>
                 )}
@@ -1076,19 +1076,19 @@ export const AffinChatbotSurface: React.FC<{
                     className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 ${
                       isCoffeeDraft
                         ? 'bg-[#4B2E24] text-[#F8F4EE] border border-[#C68B59]/60'
-                        : 'bg-[#102F2B] text-[#00D68F] border border-[#00D68F]/30'
+                        : 'bg-[#ECFDF5] dark:bg-[#102F2B] text-[#047857] dark:text-[#00D68F] border border-[#047857]/30 dark:border-[#00D68F]/30'
                     }`}
                   >
                     {isCoffeeDraft && <Coffee className="w-3 h-3 text-[#C68B59]" />}
                     {formatCategoryLabel(listingDraft.category)}
                   </span>
                 )}
-                <span className="text-[10px] font-bold text-[#A9C0BD]">
+                <span className="text-[10px] font-bold text-[#4B6B67] dark:text-[#A9C0BD]">
                   {listingDraft.completionPercent}%
                 </span>
               </div>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-[#031719] overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-[#DCECE8] dark:bg-[#031719] overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   listingDraft.completionPercent >= 100
@@ -1107,7 +1107,7 @@ export const AffinChatbotSurface: React.FC<{
                 } ${
                   isCoffeeDraft
                     ? 'bg-gradient-to-r from-[#C68B59] to-[#E6B98A]'
-                    : 'bg-gradient-to-r from-[#00D68F] to-[#00C8D7]'
+                    : 'bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7]'
                 }`}
               />
             </div>
@@ -1116,22 +1116,22 @@ export const AffinChatbotSurface: React.FC<{
       </header>
 
       {/* Scrollable Multi-Turn Conversation Thread */}
-      <div className="flex-1 overflow-y-auto mobile-scroll p-3.5 space-y-3 bg-[#031719]">
+      <div className="flex-1 overflow-y-auto mobile-scroll p-3.5 space-y-3 bg-[#F3F6F4] dark:bg-[#031719]">
         {messages.map((m) => (
           <div
             key={m.id}
             className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {m.role === 'model' && (
-              <div className="w-7 h-7 rounded-xl bg-[#092825] border border-[#14443F] text-[#00D68F] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#0F4C44] dark:text-[#00D68F] flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-4 h-4" />
               </div>
             )}
             <div
               className={`max-w-[84%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] font-medium rounded-br-sm whitespace-pre-line shadow-sm'
-                  : 'bg-[#092825] border border-[#14443F] text-[#DCEAE8] rounded-bl-sm'
+                  ? 'bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719] font-medium rounded-br-sm whitespace-pre-line shadow-sm'
+                  : 'bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#1C3B38] dark:text-[#DCEAE8] rounded-bl-sm shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none'
               }`}
             >
               {m.role === 'model' ? <FormattedChatText content={m.content} /> : m.content}
@@ -1139,7 +1139,7 @@ export const AffinChatbotSurface: React.FC<{
                 <button
                   type="button"
                   onClick={() => handleMessageAction(m.action!)}
-                  className="mt-2.5 w-full min-h-[38px] px-3 py-2 rounded-xl bg-[#00D68F]/15 hover:bg-[#00D68F]/25 border border-[#00D68F]/45 text-[#00D68F] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  className="mt-2.5 w-full min-h-[38px] px-3 py-2 rounded-xl bg-[#E5F2EE] hover:bg-[#D5EBE4] dark:bg-[#00D68F]/15 dark:hover:bg-[#00D68F]/25 border border-[#0F4C44]/35 dark:border-[#00D68F]/45 text-[#0F4C44] dark:text-[#00D68F] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
                   <span>{m.action.label}</span>
@@ -1148,7 +1148,7 @@ export const AffinChatbotSurface: React.FC<{
               )}
             </div>
             {m.role === 'user' && (
-              <div className="w-7 h-7 rounded-xl bg-[#102F2B] border border-[#14443F] text-[#A9C0BD] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-xl bg-[#EBF1EE] dark:bg-[#102F2B] border border-[#D2E0DC] dark:border-[#14443F] text-[#46635E] dark:text-[#A9C0BD] flex items-center justify-center shrink-0 mt-0.5">
                 <User className="w-3.5 h-3.5" />
               </div>
             )}
@@ -1159,14 +1159,14 @@ export const AffinChatbotSurface: React.FC<{
         {surfaceMode === 'listing' &&
           listingDraft &&
           listingDraft.missingFields.includes('categoryConfirmation') && (
-            <div className="rounded-2xl bg-[#092825] border border-[#C68B59]/50 p-3 space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#F8F4EE]">
-                <Coffee className="w-4 h-4 text-[#C68B59]" />
+            <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#C68B59]/50 p-3 space-y-2.5 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#3A221A] dark:text-[#F8F4EE]">
+                <Coffee className="w-4 h-4 text-[#8C5530] dark:text-[#C68B59]" />
                 <span>Confirm Product Category</span>
               </div>
-              <p className="text-[11px] text-[#A9C0BD] leading-relaxed">
-                Should <strong className="text-[#F5FAFA]">{listingDraft.name}</strong> be listed in{' '}
-                <strong className="text-[#C68B59]">Coffee Traders</strong> or kept in the general
+              <p className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] leading-relaxed">
+                Should <strong className="text-[#0C2624] dark:text-[#F5FAFA]">{listingDraft.name}</strong> be listed in{' '}
+                <strong className="text-[#8C5530] dark:text-[#C68B59]">Coffee Traders</strong> or kept in the general
                 marketplace?
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1190,7 +1190,7 @@ export const AffinChatbotSurface: React.FC<{
                         : 'home-living'
                     )
                   }
-                  className="min-h-[40px] px-3 py-2 rounded-xl bg-[#102F2B] hover:bg-[#14443F] border border-[#14443F] text-[#F5FAFA] text-xs font-bold disabled:opacity-50 transition-colors"
+                  className="min-h-[40px] px-3 py-2 rounded-xl bg-[#EDF5F3] hover:bg-[#DCECE8] dark:bg-[#102F2B] dark:hover:bg-[#14443F] border border-[#D5E6E2] dark:border-[#14443F] text-[#0C2624] dark:text-[#F5FAFA] text-xs font-bold disabled:opacity-50 transition-colors"
                 >
                   Keep Non-Coffee
                 </button>
@@ -1203,24 +1203,24 @@ export const AffinChatbotSurface: React.FC<{
           listingDraft &&
           listingDraft.status === 'ready_for_confirmation' && (
             <div
-              className={`rounded-2xl overflow-hidden border shadow-lg ${
+              className={`rounded-2xl overflow-hidden border shadow-[0_4px_16px_-6px_rgba(15,76,68,0.14)] dark:shadow-lg ${
                 isCoffeeDraft
-                  ? 'bg-[#092825] border-[#C68B59]/60'
-                  : 'bg-[#092825] border-[#00D68F]/50'
+                  ? 'bg-[#FCFBF8] dark:bg-[#092825] border-[#C68B59]/60'
+                  : 'bg-[#FCFDFC] dark:bg-[#092825] border-[#0F4C44]/35 dark:border-[#00D68F]/50'
               }`}
             >
               <div
                 className={`px-3.5 py-2 flex items-center justify-between gap-2 ${
                   isCoffeeDraft
                     ? 'bg-gradient-to-r from-[#4B2E24] to-[#6A4333] text-[#F8F4EE]'
-                    : 'bg-[#102F2B] text-[#F5FAFA] border-b border-[#14443F]'
+                    : 'bg-[#EBF1EE] dark:bg-[#102F2B] text-[#0F4C44] dark:text-[#F5FAFA] border-b border-[#D2E0DC] dark:border-[#14443F]'
                 }`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold">
                   {isCoffeeDraft ? (
                     <Coffee className="w-4 h-4 text-[#C68B59]" />
                   ) : (
-                    <Sparkles className="w-4 h-4 text-[#00D68F]" />
+                    <Sparkles className="w-4 h-4 text-[#047857] dark:text-[#00D68F]" />
                   )}
                   <span>Product Listing Preview</span>
                 </div>
@@ -1228,7 +1228,7 @@ export const AffinChatbotSurface: React.FC<{
                   className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                     isCoffeeDraft
                       ? 'bg-[#031719]/45 text-[#F8F4EE]'
-                      : 'bg-[#00D68F]/15 text-[#00D68F]'
+                      : 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 text-[#047857] dark:text-[#00D68F]'
                   }`}
                 >
                   {formatCategoryLabel(listingDraft.category)}
@@ -1238,7 +1238,7 @@ export const AffinChatbotSurface: React.FC<{
               <div className="p-3.5 space-y-3">
                 <div className="flex gap-3">
                   {listingDraft.imageUrl && (
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#14443F] shrink-0 bg-[#031719]">
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#D5E6E2] dark:border-[#14443F] shrink-0 bg-[#EDF5F3] dark:bg-[#031719]">
                       <img
                         src={listingDraft.imageUrl}
                         alt={listingDraft.name || 'Product preview'}
@@ -1252,27 +1252,27 @@ export const AffinChatbotSurface: React.FC<{
                     </div>
                   )}
                   <div className="min-w-0 flex-1 space-y-1">
-                    <h3 className="text-sm font-display font-bold text-[#F5FAFA] leading-snug line-clamp-2">
+                    <h3 className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA] leading-snug line-clamp-2">
                       {listingDraft.name}
                     </h3>
-                    <div className="flex items-center gap-1 text-[11px] text-[#A9C0BD]">
-                      <Store className="w-3 h-3 text-[#00D68F] shrink-0" />
+                    <div className="flex items-center gap-1 text-[11px] text-[#4B6B67] dark:text-[#A9C0BD]">
+                      <Store className="w-3 h-3 text-[#047857] dark:text-[#00D68F] shrink-0" />
                       <span className="truncate">{listingDraft.shopName}</span>
-                      <BadgeCheck className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                      <BadgeCheck className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F] shrink-0" />
                     </div>
                     <div className="flex items-baseline gap-2 pt-0.5">
-                      <span className="text-base font-display font-bold text-[#00D68F]">
+                      <span className="text-base font-display font-bold text-[#047857] dark:text-[#00D68F]">
                         {formatETB(listingDraft.price ?? 0)}
                       </span>
-                      <span className="text-[11px] text-[#A9C0BD]">
-                        · Stock: <strong className="text-[#F5FAFA]">{listingDraft.stock}</strong>
+                      <span className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD]">
+                        · Stock: <strong className="text-[#0C2624] dark:text-[#F5FAFA]">{listingDraft.stock}</strong>
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {listingDraft.description && (
-                  <p className="text-xs text-[#DCEAE8] leading-relaxed bg-[#031719]/65 rounded-xl p-2.5 border border-[#14443F]/70">
+                  <p className="text-xs text-[#1E3F3C] dark:text-[#DCEAE8] leading-relaxed bg-[#F3F6F4] dark:bg-[#031719]/65 rounded-xl p-2.5 border border-[#D2E0DC] dark:border-[#14443F]/70">
                     {listingDraft.description}
                   </p>
                 )}
@@ -1281,33 +1281,33 @@ export const AffinChatbotSurface: React.FC<{
                 {isCoffeeDraft && listingDraft.coffeeDetails && (
                   <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                     {listingDraft.coffeeDetails.origin && (
-                      <div className="px-2.5 py-1.5 rounded-lg bg-[#4B2E24]/35 border border-[#C68B59]/35">
-                        <span className="text-[#C68B59] block text-[10px]">Origin</span>
-                        <span className="font-semibold text-[#F8F4EE]">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF4EC] dark:bg-[#4B2E24]/35 border border-[#E2CEBA] dark:border-[#C68B59]/35">
+                        <span className="text-[#8C5530] dark:text-[#C68B59] block text-[10px]">Origin</span>
+                        <span className="font-semibold text-[#3A221A] dark:text-[#F8F4EE]">
                           {listingDraft.coffeeDetails.origin}
                         </span>
                       </div>
                     )}
                     {listingDraft.coffeeDetails.packageWeight && (
-                      <div className="px-2.5 py-1.5 rounded-lg bg-[#4B2E24]/35 border border-[#C68B59]/35">
-                        <span className="text-[#C68B59] block text-[10px]">Weight</span>
-                        <span className="font-semibold text-[#F8F4EE]">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF4EC] dark:bg-[#4B2E24]/35 border border-[#E2CEBA] dark:border-[#C68B59]/35">
+                        <span className="text-[#8C5530] dark:text-[#C68B59] block text-[10px]">Weight</span>
+                        <span className="font-semibold text-[#3A221A] dark:text-[#F8F4EE]">
                           {listingDraft.coffeeDetails.packageWeight}
                         </span>
                       </div>
                     )}
                     {listingDraft.coffeeDetails.roastLevel && (
-                      <div className="px-2.5 py-1.5 rounded-lg bg-[#4B2E24]/35 border border-[#C68B59]/35">
-                        <span className="text-[#C68B59] block text-[10px]">Roast</span>
-                        <span className="font-semibold text-[#F8F4EE] capitalize">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF4EC] dark:bg-[#4B2E24]/35 border border-[#E2CEBA] dark:border-[#C68B59]/35">
+                        <span className="text-[#8C5530] dark:text-[#C68B59] block text-[10px]">Roast</span>
+                        <span className="font-semibold text-[#3A221A] dark:text-[#F8F4EE] capitalize">
                           {listingDraft.coffeeDetails.roastLevel.replace('_', ' ')}
                         </span>
                       </div>
                     )}
                     {listingDraft.coffeeDetails.beanForm && (
-                      <div className="px-2.5 py-1.5 rounded-lg bg-[#4B2E24]/35 border border-[#C68B59]/35">
-                        <span className="text-[#C68B59] block text-[10px]">Form</span>
-                        <span className="font-semibold text-[#F8F4EE]">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF4EC] dark:bg-[#4B2E24]/35 border border-[#E2CEBA] dark:border-[#C68B59]/35">
+                        <span className="text-[#8C5530] dark:text-[#C68B59] block text-[10px]">Form</span>
+                        <span className="font-semibold text-[#3A221A] dark:text-[#F8F4EE]">
                           {listingDraft.coffeeDetails.beanForm === 'ground'
                             ? 'Ground Coffee'
                             : 'Whole Beans'}
@@ -1315,17 +1315,17 @@ export const AffinChatbotSurface: React.FC<{
                       </div>
                     )}
                     {listingDraft.coffeeDetails.processingMethod && (
-                      <div className="px-2.5 py-1.5 rounded-lg bg-[#4B2E24]/35 border border-[#C68B59]/35">
-                        <span className="text-[#C68B59] block text-[10px]">Process</span>
-                        <span className="font-semibold text-[#F8F4EE] capitalize">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF4EC] dark:bg-[#4B2E24]/35 border border-[#E2CEBA] dark:border-[#C68B59]/35">
+                        <span className="text-[#8C5530] dark:text-[#C68B59] block text-[10px]">Process</span>
+                        <span className="font-semibold text-[#3A221A] dark:text-[#F8F4EE] capitalize">
                           {listingDraft.coffeeDetails.processingMethod}
                         </span>
                       </div>
                     )}
                     {listingDraft.coffeeDetails.roastDate && (
-                      <div className="px-2.5 py-1.5 rounded-lg bg-[#4B2E24]/35 border border-[#C68B59]/35">
-                        <span className="text-[#C68B59] block text-[10px]">Roast Date</span>
-                        <span className="font-semibold text-[#F8F4EE]">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF4EC] dark:bg-[#4B2E24]/35 border border-[#E2CEBA] dark:border-[#C68B59]/35">
+                        <span className="text-[#8C5530] dark:text-[#C68B59] block text-[10px]">Roast Date</span>
+                        <span className="font-semibold text-[#3A221A] dark:text-[#F8F4EE]">
                           {listingDraft.coffeeDetails.roastDate}
                         </span>
                       </div>
@@ -1337,37 +1337,37 @@ export const AffinChatbotSurface: React.FC<{
                 {!isCoffeeDraft && listingDraft.specs && (
                   <div className="flex flex-wrap gap-1.5 text-[11px]">
                     {listingDraft.specs.brand && (
-                      <span className="px-2 py-1 rounded-lg bg-[#102F2B] border border-[#14443F] text-[#DCEAE8]">
-                        Brand: <strong className="text-[#F5FAFA]">{listingDraft.specs.brand}</strong>
+                      <span className="px-2 py-1 rounded-lg bg-[#EDF5F3] dark:bg-[#102F2B] border border-[#D5E6E2] dark:border-[#14443F] text-[#4B6B67] dark:text-[#DCEAE8]">
+                        Brand: <strong className="text-[#0C2624] dark:text-[#F5FAFA]">{listingDraft.specs.brand}</strong>
                       </span>
                     )}
                     {listingDraft.specs.condition && (
-                      <span className="px-2 py-1 rounded-lg bg-[#102F2B] border border-[#14443F] text-[#DCEAE8]">
+                      <span className="px-2 py-1 rounded-lg bg-[#EDF5F3] dark:bg-[#102F2B] border border-[#D5E6E2] dark:border-[#14443F] text-[#4B6B67] dark:text-[#DCEAE8]">
                         Condition:{' '}
-                        <strong className="text-[#F5FAFA]">{listingDraft.specs.condition}</strong>
+                        <strong className="text-[#0C2624] dark:text-[#F5FAFA]">{listingDraft.specs.condition}</strong>
                       </span>
                     )}
                     {listingDraft.specs.size && (
-                      <span className="px-2 py-1 rounded-lg bg-[#102F2B] border border-[#14443F] text-[#DCEAE8]">
-                        Size: <strong className="text-[#F5FAFA]">{listingDraft.specs.size}</strong>
+                      <span className="px-2 py-1 rounded-lg bg-[#EDF5F3] dark:bg-[#102F2B] border border-[#D5E6E2] dark:border-[#14443F] text-[#4B6B67] dark:text-[#DCEAE8]">
+                        Size: <strong className="text-[#0C2624] dark:text-[#F5FAFA]">{listingDraft.specs.size}</strong>
                       </span>
                     )}
                     {listingDraft.specs.color && (
-                      <span className="px-2 py-1 rounded-lg bg-[#102F2B] border border-[#14443F] text-[#DCEAE8]">
-                        Color: <strong className="text-[#F5FAFA]">{listingDraft.specs.color}</strong>
+                      <span className="px-2 py-1 rounded-lg bg-[#EDF5F3] dark:bg-[#102F2B] border border-[#D5E6E2] dark:border-[#14443F] text-[#4B6B67] dark:text-[#DCEAE8]">
+                        Color: <strong className="text-[#0C2624] dark:text-[#F5FAFA]">{listingDraft.specs.color}</strong>
                       </span>
                     )}
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-[11px] text-[#A9C0BD]">
+                <div className="flex items-center gap-2 text-[11px] text-[#4B6B67] dark:text-[#A9C0BD]">
                   {listingDraft.deliveryAvailable && (
-                    <span className="px-2 py-0.5 rounded-md bg-[#102F2B] text-[#00C8D7]">
+                    <span className="px-2 py-0.5 rounded-md bg-teal-50 dark:bg-[#102F2B] text-[#0F766E] dark:text-[#00C8D7]">
                       Delivery Available
                     </span>
                   )}
                   {listingDraft.pickupAvailable && (
-                    <span className="px-2 py-0.5 rounded-md bg-[#102F2B] text-[#00D68F]">
+                    <span className="px-2 py-0.5 rounded-md bg-[#ECFDF5] dark:bg-[#102F2B] text-[#047857] dark:text-[#00D68F]">
                       In-Shop Pickup
                     </span>
                   )}
@@ -1379,7 +1379,7 @@ export const AffinChatbotSurface: React.FC<{
                     type="button"
                     disabled={publishing || canceling}
                     onClick={handlePublishDraft}
-                    className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-extrabold flex items-center justify-center gap-2 disabled:opacity-55 transition-all active:scale-[0.99] shadow-md shadow-[#00D68F]/20"
+                    className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-white dark:text-[#031719] text-xs font-extrabold flex items-center justify-center gap-2 disabled:opacity-55 transition-all active:scale-[0.99] shadow-md shadow-[#047857]/15 dark:shadow-[#00D68F]/20"
                   >
                     {publishing ? (
                       <>
@@ -1398,21 +1398,21 @@ export const AffinChatbotSurface: React.FC<{
                       type="button"
                       disabled={publishing || canceling}
                       onClick={handleEditDetailsClick}
-                      className="min-h-[38px] px-3 py-2 rounded-xl bg-[#102F2B] hover:bg-[#14443F] border border-[#14443F] text-[#F5FAFA] text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                      className="min-h-[38px] px-3 py-2 rounded-xl bg-[#EDF5F3] hover:bg-[#DCECE8] dark:bg-[#102F2B] dark:hover:bg-[#14443F] border border-[#D5E6E2] dark:border-[#14443F] text-[#0C2624] dark:text-[#F5FAFA] text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-[#00C8D7]" />
+                      <Edit3 className="w-3.5 h-3.5 text-[#0F766E] dark:text-[#00C8D7]" />
                       <span>Edit Details</span>
                     </button>
                     <button
                       type="button"
                       disabled={publishing || canceling}
                       onClick={handleCancelDraft}
-                      className="min-h-[38px] px-3 py-2 rounded-xl bg-[#2A1216]/70 hover:bg-[#2A1216] border border-[#FF6577]/35 text-[#FFD1D6] text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                      className="min-h-[38px] px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-[#2A1216]/70 dark:hover:bg-[#2A1216] border border-rose-300 dark:border-[#FF6577]/35 text-rose-700 dark:text-[#FFD1D6] text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
                     >
                       {canceling ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <X className="w-3.5 h-3.5 text-[#FF6577]" />
+                        <X className="w-3.5 h-3.5 text-rose-600 dark:text-[#FF6577]" />
                       )}
                       <span>Cancel</span>
                     </button>
@@ -1424,8 +1424,8 @@ export const AffinChatbotSurface: React.FC<{
 
         {/* Published Product Confirmation Card */}
         {publishedProduct && (
-          <div className="rounded-2xl bg-[#092825] border border-[#22C98B]/50 p-3.5 space-y-2.5 shadow-md">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#22C98B]">
+          <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#0F4C44]/40 dark:border-[#22C98B]/50 p-3.5 space-y-2.5 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.12)] dark:shadow-md">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#0F4C44] dark:text-[#22C98B]">
               <CheckCircle2 className="w-4 h-4" />
               <span>Product Published Live</span>
             </div>
@@ -1433,13 +1433,13 @@ export const AffinChatbotSurface: React.FC<{
               <img
                 src={publishedProduct.imageUrl}
                 alt={publishedProduct.name}
-                className="w-12 h-12 rounded-xl object-cover border border-[#14443F] shrink-0"
+                className="w-12 h-12 rounded-xl object-cover border border-[#D2E0DC] dark:border-[#14443F] shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-[#F5FAFA] truncate">
+                <div className="text-xs font-bold text-[#0E2421] dark:text-[#F5FAFA] truncate">
                   {publishedProduct.name}
                 </div>
-                <div className="text-[11px] text-[#A9C0BD]">
+                <div className="text-[11px] text-[#46635E] dark:text-[#A9C0BD]">
                   {formatETB(publishedProduct.price)} ·{' '}
                   {formatCategoryLabel(publishedProduct.category)}
                 </div>
@@ -1452,7 +1452,7 @@ export const AffinChatbotSurface: React.FC<{
                   onClose?.();
                   navigate({ name: 'product', productId: publishedProduct.productId });
                 }}
-                className="min-h-[38px] px-3 py-2 rounded-xl bg-[#00D68F]/15 hover:bg-[#00D68F]/25 border border-[#00D68F]/45 text-[#00D68F] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                className="min-h-[38px] px-3 py-2 rounded-xl bg-[#E5F2EE] hover:bg-[#D5EBE4] dark:bg-[#00D68F]/15 dark:hover:bg-[#00D68F]/25 border border-[#0F4C44]/35 dark:border-[#00D68F]/45 text-[#0F4C44] dark:text-[#00D68F] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>View Listing</span>
@@ -1460,9 +1460,9 @@ export const AffinChatbotSurface: React.FC<{
               <button
                 type="button"
                 onClick={() => startOrResumeListingSession({ startNew: true })}
-                className="min-h-[38px] px-3 py-2 rounded-xl bg-[#102F2B] hover:bg-[#14443F] border border-[#14443F] text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                className="min-h-[38px] px-3 py-2 rounded-xl bg-[#F3F6F4] hover:bg-[#EBF1EE] dark:bg-[#102F2B] dark:hover:bg-[#14443F] border border-[#D2E0DC] dark:border-[#14443F] text-[#0E2421] dark:text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
-                <PackagePlus className="w-3.5 h-3.5 text-[#00C8D7]" />
+                <PackagePlus className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00C8D7]" />
                 <span>Post Another</span>
               </button>
             </div>
@@ -1470,8 +1470,8 @@ export const AffinChatbotSurface: React.FC<{
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-[#A9C0BD]">
-            <div className="w-7 h-7 rounded-xl bg-[#092825] border border-[#14443F] text-[#00D68F] flex items-center justify-center">
+          <div className="flex items-center gap-2 text-xs text-[#46635E] dark:text-[#A9C0BD]">
+            <div className="w-7 h-7 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#0F4C44] dark:text-[#00D68F] flex items-center justify-center">
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
             <span>
@@ -1483,10 +1483,10 @@ export const AffinChatbotSurface: React.FC<{
         {error && (
           <div
             role="alert"
-            className="p-3 rounded-2xl bg-[#2A1216] border border-[#FF6577]/40 text-xs text-[#FFD1D6] flex items-start justify-between gap-2.5"
+            className="p-3 rounded-2xl bg-rose-50 dark:bg-[#2A1216] border border-rose-300 dark:border-[#FF6577]/40 text-xs text-rose-800 dark:text-[#FFD1D6] flex items-start justify-between gap-2.5"
           >
             <div className="flex items-start gap-2 min-w-0">
-              <AlertCircle className="w-4 h-4 text-[#FF6577] shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-[#FF6577] shrink-0 mt-0.5" />
               <span className="leading-relaxed">{error}</span>
             </div>
             {lastFailedAction && (
@@ -1499,7 +1499,7 @@ export const AffinChatbotSurface: React.FC<{
                     sendMessage(lastFailedAction.text, true);
                   }
                 }}
-                className="px-2.5 py-1.5 rounded-lg bg-[#FF6577]/20 hover:bg-[#FF6577]/30 border border-[#FF6577]/40 text-[#FFE4E8] font-semibold flex items-center gap-1 shrink-0 transition-colors"
+                className="px-2.5 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 dark:bg-[#FF6577]/20 dark:hover:bg-[#FF6577]/30 border border-rose-300 dark:border-[#FF6577]/40 text-rose-900 dark:text-[#FFE4E8] font-semibold flex items-center gap-1 shrink-0 transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
                 <span>Retry</span>
@@ -1515,22 +1515,22 @@ export const AffinChatbotSurface: React.FC<{
               <button
                 type="button"
                 onClick={() => startOrResumeListingSession()}
-                className="w-full text-left px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#092825] to-[#102F2B] border border-[#00D68F]/45 hover:border-[#00D68F] transition-colors flex items-center justify-between gap-2.5"
+                className="w-full text-left px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#ECFDF5] to-[#F0FDFA] dark:from-[#092825] dark:to-[#102F2B] border border-[#047857]/35 dark:border-[#00D68F]/45 hover:border-[#047857] dark:hover:border-[#00D68F] transition-colors flex items-center justify-between gap-2.5"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-[#00D68F]/15 text-[#00D68F] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#FCFDFC] dark:bg-[#00D68F]/15 text-[#0F4C44] dark:text-[#00D68F] flex items-center justify-center shrink-0 border border-[#D2E0DC] dark:border-transparent">
                     <PackagePlus className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-[#F5FAFA]">
+                    <div className="text-xs font-bold text-[#0E2421] dark:text-[#F5FAFA]">
                       {listingDraft ? 'Resume Product Listing Draft' : 'Post a Product with AI'}
                     </div>
-                    <div className="text-[11px] text-[#A9C0BD] truncate">
+                    <div className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
                       Verified Seller · Coffee Traders & Marketplace
                     </div>
                   </div>
                 </div>
-                <BadgeCheck className="w-4 h-4 text-[#00D68F] shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F] shrink-0" />
               </button>
             )}
 
@@ -1541,33 +1541,33 @@ export const AffinChatbotSurface: React.FC<{
                   onClose?.();
                   navigate({ name: 'seller', tab: 'verification' });
                 }}
-                className="w-full text-left px-3.5 py-2.5 rounded-2xl bg-[#092825] border border-[#FFB547]/40 hover:border-[#FFB547]/70 transition-colors flex items-center justify-between gap-2.5"
+                className="w-full text-left px-3.5 py-2.5 rounded-2xl bg-amber-50 dark:bg-[#092825] border border-amber-300 dark:border-[#FFB547]/40 hover:border-amber-500 dark:hover:border-[#FFB547]/70 transition-colors flex items-center justify-between gap-2.5"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-[#FFB547]/15 text-[#FFB547] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-[#FFB547]/15 text-amber-700 dark:text-[#FFB547] flex items-center justify-center shrink-0">
                     <ShieldAlert className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-[#F5FAFA]">
+                    <div className="text-xs font-bold text-[#0E2421] dark:text-[#F5FAFA]">
                       Verify Seller Account to Post via Chat
                     </div>
-                    <div className="text-[11px] text-[#A9C0BD] truncate">
+                    <div className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
                       Status: {eligibility.verificationStatus.replace(/_/g, ' ')}
                     </div>
                   </div>
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-[#FFB547] shrink-0" />
+                <ExternalLink className="w-3.5 h-3.5 text-amber-700 dark:text-[#FFB547] shrink-0" />
               </button>
             )}
 
-            <div className="text-[11px] font-semibold text-[#A9C0BD]">Quick prompts</div>
+            <div className="text-[11px] font-semibold text-[#46635E] dark:text-[#A9C0BD]">Quick prompts</div>
             <div className="flex flex-col gap-1.5">
               {STARTER_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   onClick={() => sendMessage(prompt)}
-                  className="text-left min-h-[40px] px-3 py-2 rounded-xl bg-[#092825] border border-[#14443F] text-xs text-[#F5FAFA] hover:bg-[#102F2B] hover:border-[#00D68F]/50 transition-colors"
+                  className="text-left min-h-[40px] px-3 py-2 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-xs text-[#0E2421] dark:text-[#F5FAFA] hover:bg-[#EBF1EE] dark:hover:bg-[#102F2B] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 transition-colors"
                 >
                   {prompt}
                 </button>
@@ -1582,14 +1582,14 @@ export const AffinChatbotSurface: React.FC<{
           listingDraft.completionPercent === 0 &&
           !loading && (
             <div className="pt-1 space-y-1.5">
-              <div className="text-[11px] font-semibold text-[#A9C0BD]">Try describing a product</div>
+              <div className="text-[11px] font-semibold text-[#46635E] dark:text-[#A9C0BD]">Try describing a product</div>
               <div className="flex flex-col gap-1.5">
                 {LISTING_EXAMPLE_PROMPTS.map((example) => (
                   <button
                     key={example}
                     type="button"
                     onClick={() => sendMessage(example)}
-                    className="text-left min-h-[38px] px-3 py-2 rounded-xl bg-[#092825] border border-[#14443F] text-xs text-[#F5FAFA] hover:bg-[#102F2B] hover:border-[#00D68F]/50 transition-colors"
+                    className="text-left min-h-[38px] px-3 py-2 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-xs text-[#0E2421] dark:text-[#F5FAFA] hover:bg-[#EBF1EE] dark:hover:bg-[#102F2B] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 transition-colors"
                   >
                     “{example}”
                   </button>
@@ -1603,7 +1603,7 @@ export const AffinChatbotSurface: React.FC<{
 
       {/* Inline Photo Tray when in Listing Mode */}
       {surfaceMode === 'listing' && listingDraft && (
-        <div className="px-3 py-2 bg-[#092825] border-t border-[#14443F]/80 shrink-0">
+        <div className="px-3 py-2 bg-[#FCFDFC] dark:bg-[#092825] border-t border-[#D2E0DC] dark:border-[#14443F]/80 shrink-0">
           <input
             ref={fileInputRef}
             type="file"
@@ -1617,7 +1617,7 @@ export const AffinChatbotSurface: React.FC<{
               {draftImages.map((src, idx) => (
                 <div
                   key={`draft-img-${idx}`}
-                  className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#14443F] shrink-0"
+                  className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#D2E0DC] dark:border-[#14443F] shrink-0"
                 >
                   <img src={src} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />
                   <button
@@ -1635,7 +1635,7 @@ export const AffinChatbotSurface: React.FC<{
                   type="button"
                   disabled={uploadingImages}
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-11 px-3 rounded-xl bg-[#102F2B] hover:bg-[#14443F] border border-dashed border-[#00D68F]/45 text-[11px] font-semibold text-[#00D68F] flex items-center gap-1.5 shrink-0 disabled:opacity-50 transition-colors"
+                  className="h-11 px-3 rounded-xl bg-[#E5F2EE] hover:bg-[#D5EBE4] dark:bg-[#102F2B] dark:hover:bg-[#14443F] border border-dashed border-[#0F4C44]/45 dark:border-[#00D68F]/45 text-[11px] font-semibold text-[#0F4C44] dark:text-[#00D68F] flex items-center gap-1.5 shrink-0 disabled:opacity-50 transition-colors"
                 >
                   {uploadingImages ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1656,7 +1656,7 @@ export const AffinChatbotSurface: React.FC<{
                 type="button"
                 disabled={canceling}
                 onClick={handleCancelDraft}
-                className="text-[11px] font-semibold text-[#A9C0BD] hover:text-[#FF6577] shrink-0 px-1.5 py-1 transition-colors"
+                className="text-[11px] font-semibold text-[#46635E] dark:text-[#A9C0BD] hover:text-rose-600 dark:hover:text-[#FF6577] shrink-0 px-1.5 py-1 transition-colors"
               >
                 Cancel
               </button>
@@ -1671,7 +1671,7 @@ export const AffinChatbotSurface: React.FC<{
           e.preventDefault();
           sendMessage();
         }}
-        className="p-2.5 bg-[#092825] border-t border-[#14443F] flex items-center gap-2 shrink-0"
+        className="p-2.5 bg-[#FCFDFC] dark:bg-[#092825] border-t border-[#D2E0DC] dark:border-[#14443F] flex items-center gap-2 shrink-0"
       >
         {surfaceMode === 'listing' && listingDraft && (
           <button
@@ -1680,7 +1680,7 @@ export const AffinChatbotSurface: React.FC<{
             onClick={() => fileInputRef.current?.click()}
             aria-label="Upload product photo"
             title="Upload product photo"
-            className="min-w-[42px] min-h-[42px] rounded-2xl bg-[#102F2B] hover:bg-[#14443F] border border-[#14443F] text-[#00D68F] flex items-center justify-center disabled:opacity-45 shrink-0 transition-colors"
+            className="min-w-[42px] min-h-[42px] rounded-2xl bg-[#E5F2EE] hover:bg-[#D5EBE4] dark:bg-[#102F2B] dark:hover:bg-[#14443F] border border-[#D2E0DC] dark:border-[#14443F] text-[#0F4C44] dark:text-[#00D68F] flex items-center justify-center disabled:opacity-45 shrink-0 transition-colors"
           >
             {uploadingImages ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1702,13 +1702,13 @@ export const AffinChatbotSurface: React.FC<{
               : 'Ask about Hawassa shops, prices, delivery...'
           }
           aria-label="Message Affin Connect Assistant"
-          className="flex-1 min-h-[44px] px-3.5 rounded-2xl bg-[#031719] border border-[#14443F] text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/70 focus:outline-none focus:border-[#00D68F]"
+          className="flex-1 min-h-[44px] px-3.5 rounded-2xl bg-[#F3F6F4] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] text-xs text-[#0E2421] dark:text-[#F5FAFA] placeholder:text-[#5E7B76] dark:placeholder:text-[#A9C0BD]/70 focus:outline-none focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
         />
         <button
           type="submit"
           disabled={loading || publishing || !input.trim()}
           aria-label="Send message"
-          className="min-w-[44px] min-h-[44px] rounded-2xl bg-gradient-to-br from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] flex items-center justify-center disabled:opacity-45 shrink-0 transition-all active:scale-95 shadow-sm shadow-[#00D68F]/20"
+          className="min-w-[44px] min-h-[44px] rounded-2xl bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] flex items-center justify-center disabled:opacity-45 shrink-0 transition-all active:scale-95 shadow-sm shadow-[#0F4C44]/20 dark:shadow-[#00D68F]/20"
         >
           <Send className="w-4 h-4 stroke-[2.2]" />
         </button>
@@ -1744,7 +1744,7 @@ export const AffinChatbotFloatingButton: React.FC = () => {
       onClick={openChatbot}
       aria-label="Open Affin Connect Assistant"
       title="Affin Connect Assistant"
-      className={`absolute right-3.5 ${bottomOffsetClass} z-30 w-12 h-12 rounded-full bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719] border border-[#00D68F]/45 shadow-[0_8px_24px_rgba(0,214,143,0.35)] flex items-center justify-center hover:brightness-105 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00D68F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#031719]`}
+      className={`absolute right-3.5 ${bottomOffsetClass} z-30 w-12 h-12 rounded-full bg-gradient-to-br from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] text-white dark:text-[#031719] border border-[#047857]/40 dark:border-[#00D68F]/45 shadow-[0_8px_24px_rgba(4,120,87,0.3)] dark:shadow-[0_8px_24px_rgba(0,214,143,0.35)] flex items-center justify-center hover:brightness-105 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] dark:focus-visible:ring-[#00D68F] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#031719]`}
     >
       <MessageCircle className="w-5 h-5 stroke-[2.3]" />
     </button>
@@ -1772,7 +1772,7 @@ export const AffinChatbotPopup: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-label="Affin Connect Assistant"
-      className="absolute inset-0 z-40 flex flex-col justify-end p-2.5 sm:p-3 bg-black/55 backdrop-blur-[2px]"
+      className="absolute inset-0 z-40 flex flex-col justify-end p-2.5 sm:p-3 bg-black/45 dark:bg-black/55 backdrop-blur-[2px]"
     >
       <button
         type="button"
@@ -1781,7 +1781,7 @@ export const AffinChatbotPopup: React.FC = () => {
         className="flex-1 w-full cursor-default"
         tabIndex={-1}
       />
-      <div className="w-full h-[80%] max-h-[620px] min-h-[380px] rounded-3xl overflow-hidden border border-[#00C8D7]/30 shadow-2xl shadow-black/70 bg-[#031719] flex flex-col animate-[fadeIn_160ms_ease-out]">
+      <div className="w-full h-[80%] max-h-[620px] min-h-[380px] rounded-3xl overflow-hidden border border-[#D2E0DC] dark:border-[#00C8D7]/30 shadow-2xl shadow-[#0F4C44]/20 dark:shadow-black/70 bg-[#F3F6F4] dark:bg-[#031719] flex flex-col animate-[fadeIn_160ms_ease-out]">
         <AffinChatbotSurface variant="popup" onClose={closeChatbot} />
       </div>
     </div>

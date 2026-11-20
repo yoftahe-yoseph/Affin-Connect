@@ -340,20 +340,20 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
 
   return (
     <div className="pb-8">
-      <header className="sticky top-0 z-20 bg-white/95 dark:bg-[#1C2420]/95 backdrop-blur-md border-b border-[#E7E5E4] dark:border-[#2A3630] px-3 py-2 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#1C2420]/95 backdrop-blur-md border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-3 py-2 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={goBack}
           aria-label="Go back"
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17]"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="text-center min-w-0">
-          <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100 truncate">
+          <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-stone-100 truncate">
             Hawassa Live Map & Explorer
           </h1>
-          <p className="text-[10px] text-stone-500 dark:text-stone-400 truncate">
+          <p className="text-[10px] text-[#46635E] dark:text-stone-400 truncate">
             Verified Shops · Google Maps Grounding
           </p>
         </div>
@@ -361,7 +361,7 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
           type="button"
           onClick={handleUseMyLocation}
           aria-label="Center on my GPS location"
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#047857] dark:text-[#10B981] hover:bg-[#ECFDF5] dark:hover:bg-[#10B981]/15"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-[#10B981] hover:bg-[#E5F2EE] dark:hover:bg-[#10B981]/15"
         >
           <Navigation className="w-4 h-4" />
         </button>
@@ -369,14 +369,14 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
 
         <div className="p-4 space-y-5">
         {/* Live GPS Detection Bar */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5 flex items-center justify-between gap-3">
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">
+            <div className="text-xs font-bold text-[#0E2421] dark:text-stone-100 truncate">
               {userLocation?.source === 'gps'
                 ? t('liveGpsLabel', { neighborhood: userLocation.neighborhood })
                 : t('nearestShopsForYou')}
             </div>
-            <div className="text-[11px] text-stone-500 dark:text-stone-400 tabular-nums mt-0.5 truncate">
+            <div className="text-[11px] text-[#46635E] dark:text-stone-400 tabular-nums mt-0.5 truncate">
               {effectiveUserCoords.lat.toFixed(4)}, {effectiveUserCoords.lng.toFixed(4)}
             </div>
           </div>
@@ -384,7 +384,7 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
             type="button"
             onClick={handleUseMyLocation}
             disabled={detectingLocation}
-            className="min-h-[44px] px-3.5 rounded-xl bg-gradient-to-r from-[#047857] to-[#059669] hover:from-[#065F46] hover:to-[#047857] text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-xs transition-all disabled:opacity-70"
+            className="min-h-[44px] px-3.5 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 text-[#FCFDFC] text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-[0_2px_8px_-2px_rgba(15,76,68,0.28)] dark:shadow-none transition-all disabled:opacity-70"
           >
             {detectingLocation ? (
               <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -398,16 +398,16 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
         {/* Interactive Google Map Container */}
         <section className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
+            <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-[#0F4C44] dark:text-[#10B981]" />
               <span>Hawassa Merchant Map</span>
             </h2>
-            <span className="text-[11px] text-stone-500 dark:text-stone-400 tabular-nums">
+            <span className="text-[11px] text-[#46635E] dark:text-stone-400 tabular-nums">
               {filteredShops.length} shops pinned
             </span>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#1C2420] shadow-sm">
+          <div className="rounded-2xl overflow-hidden border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#1C2420] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none">
             {keyLoading ? (
               <div className="h-[300px] flex items-center justify-center gap-2 text-xs text-stone-500 dark:text-stone-400">
                 <Loader2 className="w-4 h-4 animate-spin text-[#047857] dark:text-[#10B981]" />
@@ -514,10 +514,10 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
                     onClick={() => setSelectedShop(shop)}
                     className={`shrink-0 px-3 py-2 rounded-xl border text-left transition-colors ${
                       active
-                        ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
+                        ? 'bg-[#0F4C44] dark:bg-[#10B981] text-[#FCFDFC] dark:text-[#0B1410] border-[#0F4C44] dark:border-[#10B981]'
                         : prox?.isNearestForUser
-                        ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-stone-900 dark:text-stone-100 border-[#047857] dark:border-[#10B981]'
-                        : 'bg-white dark:bg-[#1C2420] text-stone-800 dark:text-stone-200 border-[#E7E5E4] dark:border-[#2A3630] hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]'
+                        ? 'bg-[#E5F2EE] dark:bg-[#10B981]/15 text-[#0E2421] dark:text-stone-100 border-[#0F4C44] dark:border-[#10B981]'
+                        : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-[#0E2421] dark:text-stone-200 border-[#D2E0DC] dark:border-[#2A3630] hover:bg-[#EBF1EE] dark:hover:bg-[#141A17]'
                     }`}
                   >
                     <div className="text-xs font-bold flex items-center gap-1.5">
@@ -527,10 +527,10 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
                     <div
                       className={`text-[10px] mt-0.5 tabular-nums ${
                         active
-                          ? 'text-white/90 dark:text-[#0B1410]/85'
+                          ? 'text-[#FCFDFC]/90 dark:text-[#0B1410]/85'
                           : prox?.isNearestForUser
-                          ? 'text-[#047857] dark:text-[#10B981] font-semibold'
-                          : 'text-stone-500 dark:text-stone-400'
+                          ? 'text-[#0F4C44] dark:text-[#10B981] font-semibold'
+                          : 'text-[#46635E] dark:text-stone-400'
                       }`}
                     >
                       {shop.neighborhood}
@@ -545,15 +545,15 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
         </section>
 
         {/* Google Maps Grounding with Gemini */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B] shrink-0" />
               <div>
-                <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">
                   Live Google Maps Place Finder
                 </h2>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                <p className="text-[11px] text-[#46635E] dark:text-stone-400">
                   Discover real Hawassa landmarks, cafes & delivery drop-offs
                 </p>
               </div>
@@ -568,20 +568,20 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
             className="flex gap-2"
           >
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-stone-400 dark:text-stone-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#5E7B76] dark:text-stone-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={groundingQuery}
                 onChange={(e) => setGroundingQuery(e.target.value)}
                 placeholder="Ask about places in Hawassa..."
                 aria-label="Search real places in Hawassa with Google Maps Grounding"
-                className="w-full min-h-[42px] pl-9 pr-3 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-500 dark:placeholder:text-stone-400 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full min-h-[42px] pl-9 pr-3 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-[#0E2421] dark:text-stone-100 placeholder:text-[#5E7B76] dark:placeholder:text-stone-400 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
             <button
               type="submit"
               disabled={groundingLoading || !groundingQuery.trim()}
-              className="min-h-[42px] px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0 transition-colors"
+              className="min-h-[42px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 dark:bg-none dark:bg-[#10B981] dark:hover:bg-[#059669] text-[#FCFDFC] dark:text-[#0B1410] text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0 transition-all"
             >
               {groundingLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -597,7 +597,7 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
                 key={q}
                 type="button"
                 onClick={() => runMapsGrounding(q)}
-                className="px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] text-[11px] font-medium text-stone-700 dark:text-stone-300 hover:bg-[#ECFDF5] dark:hover:bg-[#10B981]/15 hover:border-[#047857]/40 dark:hover:border-[#10B981]/40 transition-colors"
+                className="px-2.5 py-1.5 rounded-lg bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] text-[11px] font-medium text-[#0E2421] dark:text-stone-300 hover:bg-[#E5F2EE] dark:hover:bg-[#10B981]/15 hover:border-[#0F4C44]/40 dark:hover:border-[#10B981]/40 transition-colors"
               >
                 {q}
               </button>
@@ -611,28 +611,28 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
           )}
 
           {groundingText && (
-            <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] space-y-3">
-              <div className="text-xs text-stone-800 dark:text-stone-200 whitespace-pre-line leading-relaxed">
+            <div className="p-3.5 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] space-y-3">
+              <div className="text-xs text-[#0E2421] dark:text-stone-200 whitespace-pre-line leading-relaxed">
                 {groundingText}
               </div>
 
               {groundedPlaces.length > 0 && (
-                <div className="pt-2 border-t border-[#E7E5E4] dark:border-[#2A3630] space-y-2">
-                  <div className="text-[11px] font-bold text-stone-700 dark:text-stone-300">
+                <div className="pt-2 border-t border-[#D2E0DC] dark:border-[#2A3630] space-y-2">
+                  <div className="text-[11px] font-bold text-[#0F4C44] dark:text-stone-300">
                     Google Maps Grounded Links ({groundedPlaces.length})
                   </div>
                   <div className="space-y-2">
                     {groundedPlaces.map((place, idx) => (
                       <div
                         key={`${place.uri}-${idx}`}
-                        className="p-2.5 rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] space-y-1.5"
+                        className="p-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] space-y-1.5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <a
                             href={place.uri}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-[#047857] dark:text-[#10B981] hover:underline flex items-center gap-1 min-w-0"
+                            className="text-xs font-bold text-[#0F4C44] dark:text-[#10B981] hover:underline flex items-center gap-1 min-w-0"
                           >
                             <span className="truncate">{place.title}</span>
                             <ExternalLink className="w-3 h-3 shrink-0" />
@@ -642,7 +642,7 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
                               type="button"
                               onClick={() => handleSaveGroundedPlace(place)}
                               disabled={savingPlaceUri === place.uri}
-                              className="px-2 py-1 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-[10px] font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] flex items-center gap-1 shrink-0"
+                              className="px-2 py-1 rounded-lg border border-[#D2E0DC] dark:border-[#2A3630] text-[10px] font-semibold text-[#0E2421] dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17] flex items-center gap-1 shrink-0"
                             >
                               <Bookmark className="w-3 h-3 text-[#D97706] dark:text-[#F59E0B]" />
                               <span>{savingPlaceUri === place.uri ? 'Saving...' : 'Save'}</span>
@@ -650,7 +650,7 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
                           )}
                         </div>
                         {place.reviewSnippets && place.reviewSnippets.length > 0 && (
-                          <p className="text-[11px] text-stone-600 dark:text-stone-400 italic leading-snug">
+                          <p className="text-[11px] text-[#46635E] dark:text-stone-400 italic leading-snug">
                             “{place.reviewSnippets[0]}”
                           </p>
                         )}
@@ -665,15 +665,15 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
 
         {/* Saved Grounded Places (Synced for Signed-in Users) */}
         {firebaseUser && savedPlaces.length > 0 && (
-          <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5">
-            <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+          <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-2.5">
+            <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">
               Your Saved Hawassa Places ({savedPlaces.length})
             </h2>
             <div className="space-y-2">
               {savedPlaces.map((sp) => (
                 <div
                   key={sp.id}
-                  className="p-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] flex items-center justify-between gap-2"
+                  className="p-2.5 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] flex items-center justify-between gap-2"
                 >
                   <div className="min-w-0">
                     {sp.mapsUri ? (
@@ -681,15 +681,15 @@ export const ExploreMapScreen: React.FC<{ initialShopId?: string }> = ({ initial
                         href={sp.mapsUri}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs font-bold text-[#047857] dark:text-[#10B981] hover:underline flex items-center gap-1 truncate"
+                        className="text-xs font-bold text-[#0F4C44] dark:text-[#10B981] hover:underline flex items-center gap-1 truncate"
                       >
                         <span className="truncate">{sp.title}</span>
                         <ExternalLink className="w-3 h-3 shrink-0" />
                       </a>
                     ) : (
-                      <div className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">{sp.title}</div>
+                      <div className="text-xs font-bold text-[#0E2421] dark:text-stone-100 truncate">{sp.title}</div>
                     )}
-                    <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{sp.query}</div>
+                    <div className="text-[10px] text-[#46635E] dark:text-stone-400 truncate">{sp.query}</div>
                   </div>
                   <button
                     type="button"

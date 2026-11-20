@@ -150,21 +150,21 @@ export const BuyerSellerChatModal: React.FC = () => {
       aria-modal="true"
       aria-label={t('tradeChatInboxTitle')}
     >
-      <div className="w-full sm:max-w-lg h-[90dvh] sm:h-[82dvh] max-h-[760px] bg-[#FAF8F5] dark:bg-[#141A17] text-[#1C1917] dark:text-[#F3F5F4] rounded-t-3xl sm:rounded-3xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-lg h-[90dvh] sm:h-[82dvh] max-h-[760px] bg-[#F3F6F4] dark:bg-[#141A17] text-[#0E2421] dark:text-[#F3F5F4] rounded-t-3xl sm:rounded-3xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-4 py-3 flex items-center justify-between gap-2 shrink-0">
+        <div className="bg-[#FCFDFC] dark:bg-[#1C2420] border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-4 py-3 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {activeTradeChatThread ? (
               <button
                 type="button"
                 onClick={() => setActiveTradeChatThreadId(null)}
-                className="min-w-[44px] min-h-[44px] -ml-1 rounded-xl flex items-center justify-center hover:bg-[#F5F5F4] dark:hover:bg-[#232D28] text-[#1C1917] dark:text-[#F3F5F4] transition-colors"
+                className="min-w-[44px] min-h-[44px] -ml-1 rounded-xl flex items-center justify-center hover:bg-[#EBF1EE] dark:hover:bg-[#232D28] text-[#0F4C44] dark:text-[#F3F5F4] transition-colors"
                 aria-label={t('tradeChatInboxTitle')}
               >
                 <ArrowLeft size={20} />
               </button>
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] dark:bg-[#064E3B]/40 text-[#047857] dark:text-[#10B981] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#E5F2EE] dark:bg-[#064E3B]/40 text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0">
                 <MessageSquare size={20} />
               </div>
             )}
@@ -173,7 +173,7 @@ export const BuyerSellerChatModal: React.FC = () => {
               {activeTradeChatThread ? (
                 <>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-sm font-extrabold truncate">
+                    <h2 className="text-sm font-extrabold text-[#0F4C44] dark:text-[#F3F5F4] truncate">
                       {activeTradeChatThread.orderCode
                         ? t('tradeChatOrderBadge', { code: activeTradeChatThread.orderCode })
                         : activeTradeChatThread.shopName}
@@ -184,14 +184,14 @@ export const BuyerSellerChatModal: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#57534E] dark:text-[#A8B5AE] truncate">
+                  <p className="text-xs text-[#46635E] dark:text-[#A8B5AE] truncate">
                     {activeTradeChatThread.shopName} · {activeTradeChatThread.buyerName}
                   </p>
                 </>
               ) : (
                 <>
-                  <h2 className="text-base font-extrabold truncate">{t('tradeChatInboxTitle')}</h2>
-                  <p className="text-xs text-[#57534E] dark:text-[#A8B5AE] truncate">
+                  <h2 className="text-base font-extrabold text-[#0F4C44] dark:text-[#F3F5F4] truncate">{t('tradeChatInboxTitle')}</h2>
+                  <p className="text-xs text-[#46635E] dark:text-[#A8B5AE] truncate">
                     {t('tradeChatInboxSubtitle')}
                   </p>
                 </>
@@ -202,7 +202,7 @@ export const BuyerSellerChatModal: React.FC = () => {
           <button
             type="button"
             onClick={closeTradeChatModal}
-            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-[#F5F5F4] dark:hover:bg-[#232D28] text-[#57534E] dark:text-[#A8B5AE] transition-colors shrink-0"
+            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-[#EBF1EE] dark:hover:bg-[#232D28] text-[#46635E] dark:text-[#A8B5AE] transition-colors shrink-0"
             aria-label="Close"
           >
             <X size={20} />
@@ -212,7 +212,7 @@ export const BuyerSellerChatModal: React.FC = () => {
         {/* Inbox List Mode */}
         {!activeTradeChatThread ? (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="px-4 py-2.5 bg-white/80 dark:bg-[#1C2420]/70 border-b border-[#E7E5E4] dark:border-[#2A3630] flex items-center gap-2 overflow-x-auto">
+            <div className="px-4 py-2.5 bg-[#FCFDFC]/90 dark:bg-[#1C2420]/70 border-b border-[#D2E0DC] dark:border-[#2A3630] flex items-center gap-2 overflow-x-auto">
               {(
                 [
                   { id: 'all', label: t('adminUsersFilterAll') },
@@ -226,8 +226,8 @@ export const BuyerSellerChatModal: React.FC = () => {
                   onClick={() => setInboxFilter(tab.id)}
                   className={`min-h-[40px] px-3.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
                     inboxFilter === tab.id
-                      ? 'bg-[#047857] text-white'
-                      : 'bg-[#F5F5F4] dark:bg-[#232D28] text-[#57534E] dark:text-[#A8B5AE] hover:bg-[#E7E5E4] dark:hover:bg-[#2A3630]'
+                      ? 'bg-[#0F4C44] text-[#FCFDFC]'
+                      : 'bg-[#F3F6F4] dark:bg-[#232D28] text-[#46635E] dark:text-[#A8B5AE] border border-[#D2E0DC] dark:border-transparent hover:bg-[#EBF1EE] dark:hover:bg-[#2A3630]'
                   }`}
                 >
                   {tab.label}
@@ -237,12 +237,12 @@ export const BuyerSellerChatModal: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
               {filteredThreads.length === 0 ? (
-                <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] p-6 text-center space-y-2 mt-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#ECFDF5] dark:bg-[#064E3B]/40 text-[#047857] dark:text-[#10B981] flex items-center justify-center mx-auto">
+                <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center space-y-2 mt-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#E5F2EE] dark:bg-[#064E3B]/40 text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center mx-auto">
                     <MessageSquare size={22} />
                   </div>
-                  <p className="text-sm font-bold">{t('tradeChatNoThreads')}</p>
-                  <p className="text-xs text-[#57534E] dark:text-[#A8B5AE]">
+                  <p className="text-sm font-bold text-[#0F4C44] dark:text-[#F3F5F4]">{t('tradeChatNoThreads')}</p>
+                  <p className="text-xs text-[#46635E] dark:text-[#A8B5AE]">
                     {t('tradeChatStartFromOrderHint')}
                   </p>
                 </div>
@@ -252,27 +252,27 @@ export const BuyerSellerChatModal: React.FC = () => {
                     key={thread.threadId}
                     type="button"
                     onClick={() => setActiveTradeChatThreadId(thread.threadId)}
-                    className="w-full text-left bg-white dark:bg-[#1C2420] hover:border-[#047857] dark:hover:border-[#10B981] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] p-3.5 transition-colors flex items-start gap-3 min-h-[72px]"
+                    className="w-full text-left bg-[#FCFDFC] dark:bg-[#1C2420] hover:border-[#0F4C44] dark:hover:border-[#10B981] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5 transition-colors flex items-start gap-3 min-h-[72px]"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#ECFDF5] dark:bg-[#064E3B]/40 text-[#047857] dark:text-[#10B981] flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-10 h-10 rounded-xl bg-[#E5F2EE] dark:bg-[#064E3B]/40 text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0 mt-0.5">
                       {thread.threadType === 'order' ? <Package size={18} /> : <Store size={18} />}
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-extrabold truncate">
+                        <span className="text-sm font-extrabold text-[#0E2421] dark:text-[#F3F5F4] truncate">
                           {thread.orderCode
                             ? `${t('tradeChatOrderBadge', { code: thread.orderCode })} · ${thread.shopName}`
                             : thread.shopName}
                         </span>
-                        <span className="text-[11px] text-[#78716C] dark:text-[#9CA3AF] tabular-nums shrink-0">
+                        <span className="text-[11px] text-[#5E7B76] dark:text-[#9CA3AF] tabular-nums shrink-0">
                           {formatShortTime(thread.lastMessageAt || thread.updatedAt)}
                         </span>
                       </div>
-                      <p className="text-xs text-[#57534E] dark:text-[#A8B5AE] truncate">
+                      <p className="text-xs text-[#46635E] dark:text-[#A8B5AE] truncate">
                         {thread.lastMessage || t('tradeChatEmptyMessages')}
                       </p>
                       <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
-                        <span className="text-[11px] font-semibold text-[#78716C] dark:text-[#A8B5AE]">
+                        <span className="text-[11px] font-semibold text-[#5E7B76] dark:text-[#A8B5AE]">
                           {thread.buyerName} ↔ {thread.shopName}
                         </span>
                         <SupervisionStatusTag status={thread.supervisionStatus} />
@@ -327,7 +327,7 @@ export const BuyerSellerChatModal: React.FC = () => {
 
               {activeTradeChatThread.supervisionReason &&
                 activeTradeChatThread.supervisionStatus !== 'none' && (
-                  <p className="text-xs text-[#78350F] dark:text-[#FDE68A] bg-white/70 dark:bg-[#141A17]/60 rounded-xl px-3 py-1.5 border border-[#F59E0B]/30">
+                  <p className="text-xs text-[#78350F] dark:text-[#FDE68A] bg-[#FCFDFC]/85 dark:bg-[#141A17]/60 rounded-xl px-3 py-1.5 border border-[#F59E0B]/30">
                     “{activeTradeChatThread.supervisionReason}”
                   </p>
                 )}
@@ -335,9 +335,9 @@ export const BuyerSellerChatModal: React.FC = () => {
               {showSupervisionForm && (
                 <form
                   onSubmit={handleEscalateSupervision}
-                  className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#F59E0B]/40 p-3 space-y-2.5"
+                  className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#F59E0B]/40 p-3 space-y-2.5"
                 >
-                  <p className="text-xs font-extrabold text-[#1C1917] dark:text-[#F3F5F4]">
+                  <p className="text-xs font-extrabold text-[#0E2421] dark:text-[#F3F5F4]">
                     {t('supervisionModalTitle')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -350,7 +350,7 @@ export const BuyerSellerChatModal: React.FC = () => {
                         key={preset}
                         type="button"
                         onClick={() => setSupervisionReason(preset)}
-                        className="min-h-[36px] px-2.5 rounded-lg bg-[#FAF8F5] dark:bg-[#232D28] border border-[#E7E5E4] dark:border-[#2A3630] text-[11px] font-semibold hover:border-[#D97706] text-left"
+                        className="min-h-[36px] px-2.5 rounded-lg bg-[#F3F6F4] dark:bg-[#232D28] border border-[#D2E0DC] dark:border-[#2A3630] text-[11px] font-semibold hover:border-[#D97706] text-left"
                       >
                         {preset}
                       </button>
@@ -362,13 +362,13 @@ export const BuyerSellerChatModal: React.FC = () => {
                     onChange={(e) => setSupervisionReason(e.target.value)}
                     placeholder={t('supervisionReasonPlaceholder')}
                     maxLength={300}
-                    className="w-full rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#D97706]"
+                    className="w-full rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#D97706]"
                   />
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setShowSupervisionForm(false)}
-                      className="min-h-[40px] px-3 rounded-xl text-xs font-bold text-[#57534E] dark:text-[#A8B5AE] hover:bg-[#F5F5F4] dark:hover:bg-[#232D28]"
+                      className="min-h-[40px] px-3 rounded-xl text-xs font-bold text-[#46635E] dark:text-[#A8B5AE] hover:bg-[#EBF1EE] dark:hover:bg-[#232D28]"
                     >
                       {t('cancel')}
                     </button>
@@ -388,8 +388,8 @@ export const BuyerSellerChatModal: React.FC = () => {
             {/* Messages Feed */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {tradeChatMessages.length === 0 ? (
-                <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] p-5 text-center space-y-1.5 mt-4">
-                  <p className="text-xs font-semibold text-[#57534E] dark:text-[#A8B5AE]">
+                <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] p-5 text-center space-y-1.5 mt-4">
+                  <p className="text-xs font-semibold text-[#46635E] dark:text-[#A8B5AE]">
                     {t('tradeChatEmptyMessages')}
                   </p>
                 </div>
@@ -452,14 +452,14 @@ export const BuyerSellerChatModal: React.FC = () => {
                       <div
                         className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                           isOwn
-                            ? 'bg-[#047857] text-white rounded-br-md'
-                            : 'bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-[#1C1917] dark:text-[#F3F5F4] rounded-bl-md'
+                            ? 'bg-gradient-to-r from-[#0F4C44] to-[#047857] text-[#FCFDFC] rounded-br-md shadow-[0_2px_8px_-2px_rgba(15,76,68,0.25)] dark:shadow-none'
+                            : 'bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-[#0E2421] dark:text-[#F3F5F4] rounded-bl-md shadow-[0_2px_8px_-3px_rgba(15,76,68,0.08)] dark:shadow-none'
                         }`}
                       >
                         <p>{msg.body}</p>
                         <p
                           className={`text-[10px] mt-1 tabular-nums text-right ${
-                            isOwn ? 'text-emerald-100/90' : 'text-[#78716C] dark:text-[#A8B5AE]'
+                            isOwn ? 'text-emerald-100/90' : 'text-[#5E7B76] dark:text-[#A8B5AE]'
                           }`}
                         >
                           {formatShortTime(msg.createdAt)}
@@ -481,7 +481,7 @@ export const BuyerSellerChatModal: React.FC = () => {
             {/* Message Input */}
             <form
               onSubmit={handleSend}
-              className="p-3 bg-white dark:bg-[#1C2420] border-t border-[#E7E5E4] dark:border-[#2A3630] flex items-center gap-2 shrink-0"
+              className="p-3 bg-[#FCFDFC] dark:bg-[#1C2420] border-t border-[#D2E0DC] dark:border-[#2A3630] flex items-center gap-2 shrink-0"
             >
               <input
                 type="text"
@@ -489,12 +489,12 @@ export const BuyerSellerChatModal: React.FC = () => {
                 onChange={(e) => setDraftBody(e.target.value)}
                 placeholder={t('tradeChatInputPlaceholder')}
                 maxLength={1000}
-                className="flex-1 min-h-[44px] rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                className="flex-1 min-h-[44px] rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] px-3.5 text-sm text-[#0E2421] dark:text-[#F3F5F4] placeholder:text-[#5E7B76] focus:outline-none focus:ring-2 focus:ring-[#0F4C44]"
               />
               <button
                 type="submit"
                 disabled={sending || !draftBody.trim()}
-                className="min-h-[44px] px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] disabled:opacity-50 text-white text-sm font-bold inline-flex items-center gap-1.5 transition-colors shrink-0"
+                className="min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 disabled:opacity-50 text-[#FCFDFC] text-sm font-bold inline-flex items-center gap-1.5 transition-all shrink-0 shadow-[0_2px_8px_-2px_rgba(15,76,68,0.28)] dark:shadow-none"
               >
                 <Send size={16} />
                 <span className="hidden sm:inline">{t('tradeChatSendBtn')}</span>

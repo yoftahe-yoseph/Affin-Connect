@@ -38,6 +38,7 @@ import { useMarketplace } from '../context/MarketplaceContext';
 import { BRAND_ASSETS } from '../data/seedData';
 import { EmptyState, ResilientImage } from '../components/SharedUI';
 import { OrderReceiptModal } from '../components/OrderReceiptModal';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
   calculateCartSummary,
@@ -195,12 +196,12 @@ export const CartScreen: React.FC = () => {
   const freeDeliveryThreshold = Math.max(0, governanceConfig.freeDeliveryThresholdEtb ?? 0);
 
   return (
-    <div className="min-h-full bg-[#031719] text-[#F5FAFA] pb-8 flex flex-col">
+    <div className="min-h-full bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA] pb-8 flex flex-col">
       {/* Compact Sticky Safe-Area Header */}
-      <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#031719]/92 backdrop-blur-md border-b border-[#D2E0DC] dark:border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none">
         <div className="flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#14443F] shrink-0 shadow-sm">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#EBF1EE] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] shrink-0 shadow-xs">
               <img
                 src={BRAND_ASSETS.logo}
                 alt="Affin Connect"
@@ -209,25 +210,27 @@ export const CartScreen: React.FC = () => {
               />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-display font-bold tracking-tight text-[#F5FAFA] truncate">
+              <div className="text-sm font-display font-bold tracking-tight text-[#0F4C44] dark:text-[#F5FAFA] truncate">
                 Affin Connect
               </div>
-              <p className="text-[11px] text-[#A9C0BD] truncate">
+              <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
                 {t('authHeaderSubtitle')}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggleButton />
+
             <button
               type="button"
               onClick={() => navigate({ name: 'notifications' })}
               aria-label={t('notifications')}
-              className="relative min-w-[44px] min-h-[44px] rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#F5FAFA] transition-colors"
+              className="relative min-w-[44px] min-h-[44px] rounded-xl bg-[#F3F6F4] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 flex items-center justify-center text-[#0E2421] dark:text-[#F5FAFA] transition-colors"
             >
-              <Bell className="w-5 h-5 text-[#00D68F]" />
+              <Bell className="w-5 h-5 text-[#0F4C44] dark:text-[#00D68F]" />
               {unreadNotificationCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
                   {unreadNotificationCount}
                 </span>
               )}
@@ -237,9 +240,9 @@ export const CartScreen: React.FC = () => {
               type="button"
               onClick={() => navigate({ name: 'profile' })}
               aria-label={t('openProfileAria')}
-              className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
+              className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#0F4C44]/20 dark:shadow-[#00D68F]/20 active:scale-95 transition-transform"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#FCFDFC] dark:bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                 {firebaseUser?.photoURL ? (
                   <img
                     src={firebaseUser.photoURL}
@@ -250,7 +253,7 @@ export const CartScreen: React.FC = () => {
                 ) : avatarInitials ? (
                   <span>{avatarInitials}</span>
                 ) : (
-                  <User className="w-4 h-4 text-[#00D68F]" />
+                  <User className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
                 )}
               </div>
             </button>
@@ -261,17 +264,17 @@ export const CartScreen: React.FC = () => {
       {/* Cart Heading Bar */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-[#092825] border border-[#14443F] flex items-center justify-center text-[#00D68F] shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] flex items-center justify-center text-[#0F4C44] dark:text-[#00D68F] shrink-0 shadow-xs dark:shadow-none">
             <ShoppingCart className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-display font-bold text-[#F5FAFA] leading-tight flex items-center gap-2">
+            <h1 className="text-lg font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA] leading-tight flex items-center gap-2">
               <span>{t('myCartTitle')}</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#092825] border border-[#14443F] text-[#00D68F] text-xs font-bold tabular-nums">
+              <span className="px-2 py-0.5 rounded-full bg-[#E5F2EE] dark:bg-[#092825] border border-[#0F4C44]/25 dark:border-[#14443F] text-[#0F4C44] dark:text-[#00D68F] text-xs font-bold tabular-nums">
                 {summary.itemCount}
               </span>
             </h1>
-            <p className="text-[11px] text-[#A9C0BD] tabular-nums">
+            <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] tabular-nums">
               {summary.itemCount} {summary.itemCount === 1 ? t('itemSingle') : t('itemPlural')}
             </p>
           </div>
@@ -281,7 +284,7 @@ export const CartScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setClearConfirmOpen(true)}
-            className="min-h-[44px] px-3 rounded-xl bg-[#092825] border border-rose-500/35 hover:border-rose-400 hover:bg-rose-500/10 text-rose-400 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
+            className="min-h-[44px] px-3 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-rose-300 dark:border-rose-500/35 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5 shrink-0" />
             <span>{t('clearCartBtn')}</span>
@@ -294,31 +297,31 @@ export const CartScreen: React.FC = () => {
         <div
           role="status"
           aria-live="polite"
-          className="mx-4 mt-2 px-3.5 py-2.5 rounded-xl bg-[#092825] border border-[#00D68F]/40 text-xs text-[#F5FAFA] flex items-center gap-2"
+          className="mx-4 mt-2 px-3.5 py-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#0F4C44]/35 dark:border-[#00D68F]/40 text-xs text-[#0E2421] dark:text-[#F5FAFA] flex items-center gap-2 shadow-sm"
         >
-          <CheckCircle2 className="w-4 h-4 text-[#00D68F] shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F] shrink-0" />
           <span>{cartFeedback}</span>
         </div>
       )}
 
       {cart.length === 0 ? (
         <div className="px-4 py-6 flex-1 flex flex-col justify-center">
-          <div className="rounded-3xl bg-[#092825] border border-[#14443F] p-6 text-center shadow-lg shadow-black/25 space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F]">
+          <div className="rounded-3xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-6 text-center shadow-[0_6px_22px_-8px_rgba(15,76,68,0.12)] dark:shadow-lg dark:shadow-black/25 space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#E5F2EE] dark:bg-[#031719] border border-[#0F4C44]/18 dark:border-[#14443F] flex items-center justify-center text-[#0F4C44] dark:text-[#00D68F]">
               <ShoppingCart className="w-8 h-8" />
             </div>
             <div className="space-y-1.5 max-w-xs mx-auto">
-              <h2 className="text-base font-display font-bold text-[#F5FAFA]">
+              <h2 className="text-base font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                 {t('cartEmptySpecialTitle')}
               </h2>
-              <p className="text-xs text-[#A9C0BD] leading-relaxed">
+              <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] leading-relaxed">
                 {t('cartEmptySpecialDesc')}
               </p>
             </div>
             <button
               type="button"
               onClick={() => navigate({ name: 'home' })}
-              className="w-full min-h-[48px] px-5 rounded-2xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-sm font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 active:scale-[0.99] transition-all"
+              className="w-full min-h-[48px] px-5 rounded-2xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-sm font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-[#0F4C44]/20 dark:shadow-[#00D68F]/20 active:scale-[0.99] transition-all"
             >
               <span>{t('startShopping')}</span>
               <ArrowRight className="w-4 h-4 shrink-0" />
@@ -328,8 +331,8 @@ export const CartScreen: React.FC = () => {
       ) : (
         <div className="px-4 pt-2 space-y-4">
           {(governanceConfig.orderingPaused || userProfile?.accountStatus === 'suspended') && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-200">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-800 dark:text-rose-200">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <span className="font-medium leading-relaxed">
                 {userProfile?.accountStatus === 'suspended'
                   ? t('governanceUserSuspended')
@@ -339,11 +342,11 @@ export const CartScreen: React.FC = () => {
           )}
 
           {summary.hasMultipleShops && (
-            <div className="p-3.5 rounded-2xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 flex items-start gap-2.5 text-xs text-[#FDE68A]">
-              <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-[#F59E0B]/15 border border-amber-300 dark:border-[#F59E0B]/40 flex items-start gap-2.5 text-xs text-amber-900 dark:text-[#FDE68A]">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-[#F59E0B] shrink-0 mt-0.5" />
               <div>
                 <div className="font-bold">{t('multipleShopsTitle')}</div>
-                <p className="text-[11px] text-[#FDE68A]/85 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-amber-800/90 dark:text-[#FDE68A]/85 mt-0.5 leading-relaxed">
                   {t('multipleShopsDesc')}
                 </p>
               </div>
@@ -351,17 +354,17 @@ export const CartScreen: React.FC = () => {
           )}
 
           {cartReconciliation.hasBlockingIssues && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-200">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-800 dark:text-rose-200">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <span className="font-medium leading-relaxed">{t('removeUnavailableHint')}</span>
             </div>
           )}
 
           {/* Promo / Voucher Code Card */}
-          <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-4 space-y-2.5">
+          <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-4 space-y-2.5 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.08)] dark:shadow-none">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-[#F5FAFA]">
-                <Tag className="w-3.5 h-3.5 text-[#00D68F]" />
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
+                <Tag className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00D68F]" />
                 <span>{t('promoCodeTitle')}</span>
               </span>
               {summary.promoCode && (
@@ -371,7 +374,7 @@ export const CartScreen: React.FC = () => {
                     setPromoCode('');
                     setPromoDraft('');
                   }}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-400 hover:underline min-h-[32px]"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline min-h-[32px]"
                 >
                   <X className="w-3 h-3" />
                   <span>{t('removeCode')}</span>
@@ -386,32 +389,34 @@ export const CartScreen: React.FC = () => {
                 onChange={(e) => setPromoDraft(e.target.value.toUpperCase())}
                 placeholder={t('promoPlaceholder')}
                 aria-label={t('promoCodeTitle')}
-                className="flex-1 min-h-[44px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-mono uppercase text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#A9C0BD]/60 focus:outline-none focus:ring-2 focus:ring-[#00D68F]/25 focus:border-[#00D68F]"
+                className="flex-1 min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs font-mono uppercase text-[#0E2421] dark:text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#46635E]/65 dark:placeholder:text-[#A9C0BD]/60 focus:outline-none focus:ring-2 focus:ring-[#0F4C44]/25 dark:focus:ring-[#00D68F]/25 focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
               />
               <button
                 type="submit"
-                className="px-4 min-h-[44px] rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold shrink-0 transition-all"
+                className="px-4 min-h-[44px] rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-xs font-bold shrink-0 transition-all"
               >
                 {t('applyCode')}
               </button>
             </form>
 
             {promoCode && summary.promoErrorKey && (
-              <p className="text-[11px] font-medium text-rose-400">
+              <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
                 {t(summary.promoErrorKey, {
                   amount: formatETB(summary.promoMinSubtotal ?? 0),
                 })}
               </p>
             )}
             {summary.promoCode && !summary.promoErrorKey && (
-              <p className="text-[11px] font-semibold text-[#00D68F] bg-[#00D68F]/10 border border-[#00D68F]/30 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+              <p className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] bg-[#ECFDF5] dark:bg-[#00D68F]/10 border border-[#047857]/30 dark:border-[#00D68F]/30 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span>{t('promoApplied', { code: summary.promoCode })}</span>
               </p>
             )}
 
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px]">
-              <span className="text-[#A9C0BD] font-medium">{t('availableCodes')}</span>
+              <span className="text-[#4B6B67] dark:text-[#A9C0BD] font-medium">
+                {t('availableCodes')}
+              </span>
               {PROMO_CODES.map((rule) => (
                 <button
                   key={rule.code}
@@ -423,8 +428,8 @@ export const CartScreen: React.FC = () => {
                   title={t(rule.summaryKey)}
                   className={`px-2 py-1 rounded-lg border font-mono text-[10px] font-semibold transition-colors ${
                     summary.promoCode === rule.code
-                      ? 'bg-[#00D68F]/15 text-[#00D68F] border-[#00D68F]/50'
-                      : 'bg-[#031719] text-[#A9C0BD] border-[#14443F] hover:border-[#00D68F]/45 hover:text-[#F5FAFA]'
+                      ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 text-[#047857] dark:text-[#00D68F] border-[#047857]/50 dark:border-[#00D68F]/50'
+                      : 'bg-[#F3F6F4] dark:bg-[#031719] text-[#46635E] dark:text-[#A9C0BD] border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/45 dark:hover:border-[#00D68F]/45 hover:text-[#0E2421] dark:hover:text-[#F5FAFA]'
                   }`}
                 >
                   {rule.code}
@@ -468,18 +473,18 @@ export const CartScreen: React.FC = () => {
             return (
               <div key={shopId} className="space-y-3">
                 {/* Shop Product Cards Container */}
-                <section className="bg-[#092825] rounded-2xl border border-[#14443F] shadow-md shadow-black/20 overflow-hidden">
-                  <div className="px-4 py-3 bg-[#061D1B] border-b border-[#14443F] flex items-center justify-between gap-2">
+                <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-md dark:shadow-black/20 overflow-hidden">
+                  <div className="px-4 py-3 bg-[#E7F1ED] dark:bg-[#061D1B] border-b border-[#D2E0DC] dark:border-[#14443F] flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => navigate({ name: 'shop', shopId })}
-                      className="flex items-center gap-2 text-xs font-bold text-[#00D68F] hover:underline min-w-0"
+                      className="flex items-center gap-2 text-xs font-bold text-[#0F4C44] dark:text-[#00D68F] hover:underline min-w-0"
                     >
                       <Store className="w-4 h-4 shrink-0" />
                       <span className="truncate">{shop?.name ?? 'Hawassa Shop'}</span>
                     </button>
                     {shop?.neighborhood && (
-                      <span className="text-[11px] text-[#A9C0BD] shrink-0">
+                      <span className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] shrink-0">
                         {getLocalizedNeighborhood(shop.neighborhood, language)}
                       </span>
                     )}
@@ -487,10 +492,10 @@ export const CartScreen: React.FC = () => {
 
                   {/* Real Free Delivery Progress Bar (when configured) */}
                   {freeDeliveryThreshold > 0 && (
-                    <div className="px-4 py-2.5 bg-[#031719]/65 border-b border-[#14443F] space-y-1.5">
+                    <div className="px-4 py-2.5 bg-[#F3F6F4] dark:bg-[#031719]/65 border-b border-[#D2E0DC] dark:border-[#14443F] space-y-1.5">
                       <div className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="flex items-center gap-1.5 font-medium text-[#F5FAFA]">
-                          <Truck className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                        <span className="flex items-center gap-1.5 font-medium text-[#0C2624] dark:text-[#F5FAFA]">
+                          <Truck className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F] shrink-0" />
                           <span>
                             {shopSummary.freeDeliveryUnlocked
                               ? t('freeDeliveryUnlocked')
@@ -499,19 +504,19 @@ export const CartScreen: React.FC = () => {
                                 })}
                           </span>
                         </span>
-                        <span className="tabular-nums font-bold text-[#00D68F] shrink-0">
+                        <span className="tabular-nums font-bold text-[#047857] dark:text-[#00D68F] shrink-0">
                           {progressPct}%
                         </span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-[#031719] overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-[#DCEAE6] dark:bg-[#031719] overflow-hidden">
                         <div
-                          className={`h-full bg-gradient-to-r from-[#00D68F] to-[#00C8D7] rounded-full transition-all duration-300 ${progressWidthClass}`}
+                          className={`h-full bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] rounded-full transition-all duration-300 ${progressWidthClass}`}
                         />
                       </div>
                     </div>
                   )}
 
-                  <div className="divide-y divide-[#14443F]">
+                  <div className="divide-y divide-[#D5E6E2] dark:divide-[#14443F]">
                     {shopEntries.map((entry) => {
                       const {
                         item,
@@ -531,7 +536,9 @@ export const CartScreen: React.FC = () => {
                       return (
                         <article
                           key={itemKey}
-                          className={`p-3.5 space-y-2.5 ${isUnavailable ? 'bg-rose-950/25' : ''}`}
+                          className={`p-3.5 space-y-2.5 ${
+                            isUnavailable ? 'bg-rose-50/60 dark:bg-rose-950/25' : ''
+                          }`}
                         >
                           <div className="flex gap-3">
                             <button
@@ -540,7 +547,7 @@ export const CartScreen: React.FC = () => {
                                 navigate({ name: 'product', productId: product.productId })
                               }
                               aria-label={product.name}
-                              className="w-20 h-20 rounded-xl overflow-hidden bg-[#061D1B] shrink-0 border border-[#14443F] hover:border-[#00D68F]/50 transition-colors"
+                              className="w-20 h-20 rounded-xl overflow-hidden bg-[#EDF5F3] dark:bg-[#061D1B] shrink-0 border border-[#D5E6E2] dark:border-[#14443F] hover:border-[#047857]/50 dark:hover:border-[#00D68F]/50 transition-colors"
                             >
                               <ResilientImage
                                 src={product.imageUrl}
@@ -558,18 +565,18 @@ export const CartScreen: React.FC = () => {
                                     onClick={() =>
                                       navigate({ name: 'product', productId: product.productId })
                                     }
-                                    className="text-left text-xs sm:text-sm font-semibold text-[#F5FAFA] hover:text-[#00D68F] transition-colors break-words leading-snug"
+                                    className="text-left text-xs sm:text-sm font-semibold text-[#0C2624] dark:text-[#F5FAFA] hover:text-[#047857] dark:hover:text-[#00D68F] transition-colors break-words leading-snug"
                                   >
                                     {product.name}
                                   </button>
                                   {variantLabel && (
-                                    <div className="text-[11px] text-[#00C8D7] font-medium mt-0.5 break-words">
+                                    <div className="text-[11px] text-[#0F766E] dark:text-[#00C8D7] font-medium mt-0.5 break-words">
                                       {variantLabel}
                                     </div>
                                   )}
-                                  <div className="text-[11px] text-[#A9C0BD] mt-1 tabular-nums">
+                                  <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] mt-1 tabular-nums">
                                     {t('unitPriceLabel')}:{' '}
-                                    <span className="font-semibold text-[#F5FAFA]">
+                                    <span className="font-semibold text-[#0C2624] dark:text-[#F5FAFA]">
                                       {formatETB(liveUnitPrice)}
                                     </span>
                                   </div>
@@ -579,18 +586,18 @@ export const CartScreen: React.FC = () => {
                                   type="button"
                                   onClick={() => removeFromCart(product.productId, variantId)}
                                   aria-label={`${t('removeItemBtn')} ${product.name}`}
-                                  className="min-w-[40px] min-h-[40px] -mt-1 -mr-1 rounded-xl flex items-center justify-center text-[#A9C0BD] hover:text-rose-400 hover:bg-rose-500/10 shrink-0 transition-colors"
+                                  className="min-w-[40px] min-h-[40px] -mt-1 -mr-1 rounded-xl flex items-center justify-center text-[#4B6B67] dark:text-[#A9C0BD] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0 transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
 
                               <div className="flex items-center justify-between gap-2 pt-1">
-                                <div className="text-sm font-display font-bold text-[#00D68F] tabular-nums">
+                                <div className="text-sm font-display font-bold text-[#047857] dark:text-[#00D68F] tabular-nums">
                                   {formatETB(lineSubtotal)}
                                 </div>
 
-                                <div className="flex items-center gap-1 border border-[#14443F] bg-[#031719] rounded-xl p-0.5">
+                                <div className="flex items-center gap-1 border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] rounded-xl p-0.5">
                                   <button
                                     type="button"
                                     aria-label={`Decrease quantity of ${product.name}`}
@@ -598,11 +605,11 @@ export const CartScreen: React.FC = () => {
                                     onClick={() =>
                                       updateCartQuantity(product.productId, quantity - 1, variantId)
                                     }
-                                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#092825] text-[#F5FAFA] disabled:opacity-35 disabled:pointer-events-none transition-colors"
+                                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-[#092825] text-[#0C2624] dark:text-[#F5FAFA] disabled:opacity-35 disabled:pointer-events-none transition-colors"
                                   >
                                     <Minus className="w-3.5 h-3.5" />
                                   </button>
-                                  <span className="w-7 text-center text-xs font-bold text-[#F5FAFA] tabular-nums">
+                                  <span className="w-7 text-center text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums">
                                     {quantity}
                                   </span>
                                   <button
@@ -612,7 +619,7 @@ export const CartScreen: React.FC = () => {
                                     onClick={() =>
                                       updateCartQuantity(product.productId, quantity + 1, variantId)
                                     }
-                                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#092825] text-[#F5FAFA] disabled:opacity-35 disabled:pointer-events-none transition-colors"
+                                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-[#092825] text-[#0C2624] dark:text-[#F5FAFA] disabled:opacity-35 disabled:pointer-events-none transition-colors"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
                                   </button>
@@ -623,15 +630,15 @@ export const CartScreen: React.FC = () => {
 
                           {/* Status Alerts for Availability, Stock Limit, or Price Updates */}
                           {isUnavailable && (
-                            <div className="px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-between gap-2 text-[11px] text-rose-200">
+                            <div className="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/40 flex items-center justify-between gap-2 text-[11px] text-rose-800 dark:text-rose-200">
                               <span className="font-semibold flex items-center gap-1.5">
-                                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                                 <span>{t('itemUnavailableLabel')}</span>
                               </span>
                               <button
                                 type="button"
                                 onClick={() => removeFromCart(product.productId, variantId)}
-                                className="px-2.5 py-1 rounded-lg bg-rose-500/25 hover:bg-rose-500/40 text-rose-100 font-bold shrink-0"
+                                className="px-2.5 py-1 rounded-lg bg-rose-600 dark:bg-rose-500/25 hover:bg-rose-700 dark:hover:bg-rose-500/40 text-white dark:text-rose-100 font-bold shrink-0"
                               >
                                 {t('removeItemBtn')}
                               </button>
@@ -639,9 +646,9 @@ export const CartScreen: React.FC = () => {
                           )}
 
                           {!isUnavailable && exceedsStock && (
-                            <div className="px-3 py-2 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 flex items-center justify-between gap-2 text-[11px] text-[#FDE68A]">
+                            <div className="px-3 py-2 rounded-xl bg-amber-50 dark:bg-[#F59E0B]/15 border border-amber-300 dark:border-[#F59E0B]/40 flex items-center justify-between gap-2 text-[11px] text-amber-900 dark:text-[#FDE68A]">
                               <span className="font-medium flex items-center gap-1.5">
-                                <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0" />
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-[#F59E0B] shrink-0" />
                                 <span>
                                   {t('stockLimitReached', { stock: availableStock })}
                                 </span>
@@ -651,7 +658,7 @@ export const CartScreen: React.FC = () => {
                                 onClick={() =>
                                   updateCartQuantity(product.productId, availableStock, variantId)
                                 }
-                                className="px-2.5 py-1 rounded-lg bg-[#F59E0B] text-[#031719] font-bold shrink-0 tabular-nums"
+                                className="px-2.5 py-1 rounded-lg bg-amber-500 dark:bg-[#F59E0B] text-white dark:text-[#031719] font-bold shrink-0 tabular-nums"
                               >
                                 {availableStock}
                               </button>
@@ -659,7 +666,7 @@ export const CartScreen: React.FC = () => {
                           )}
 
                           {priceChanged && (
-                            <div className="px-3 py-2 rounded-xl bg-[#00C8D7]/15 border border-[#00C8D7]/40 flex items-center justify-between gap-2 text-[11px] text-[#F5FAFA]">
+                            <div className="px-3 py-2 rounded-xl bg-teal-50 dark:bg-[#00C8D7]/15 border border-teal-300 dark:border-[#00C8D7]/40 flex items-center justify-between gap-2 text-[11px] text-[#0C2624] dark:text-[#F5FAFA]">
                               <span>
                                 {t('priceUpdatedLabel', {
                                   oldPrice: formatETB(snapshotUnitPrice),
@@ -669,7 +676,7 @@ export const CartScreen: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => syncCartWithLiveCatalog(shopId)}
-                                className="px-2.5 py-1 rounded-lg bg-[#00C8D7] text-[#031719] font-bold shrink-0"
+                                className="px-2.5 py-1 rounded-lg bg-[#0F766E] dark:bg-[#00C8D7] text-white dark:text-[#031719] font-bold shrink-0"
                               >
                                 {t('syncLivePriceBtn')}
                               </button>
@@ -685,7 +692,7 @@ export const CartScreen: React.FC = () => {
                                 }
                                 removeFromCart(product.productId, variantId);
                               }}
-                              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#A9C0BD] hover:text-[#00D68F] transition-colors min-h-[32px]"
+                              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#047857] dark:hover:text-[#00D68F] transition-colors min-h-[32px]"
                             >
                               <Bookmark className="w-3.5 h-3.5" />
                               <span>{t('saveForLater')}</span>
@@ -698,28 +705,28 @@ export const CartScreen: React.FC = () => {
                 </section>
 
                 {/* Separate Order Summary Card */}
-                <section className="bg-[#092825] rounded-2xl border border-[#14443F] shadow-md shadow-black/20 p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#14443F]">
-                    <h2 className="text-sm font-display font-bold text-[#F5FAFA]">
+                <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-md dark:shadow-black/20 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#D2E0DC] dark:border-[#14443F]">
+                    <h2 className="text-sm font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                       {t('orderSummary')}
                     </h2>
                     {groupedByShop.length > 1 && (
-                      <span className="text-[11px] font-semibold text-[#00D68F] truncate">
+                      <span className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] truncate">
                         {shop?.name ?? 'Hawassa Shop'}
                       </span>
                     )}
                   </div>
 
                   <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-[#A9C0BD]">
+                    <div className="flex items-center justify-between text-[#4B6B67] dark:text-[#A9C0BD]">
                       <span>{t('shopSubtotal')}</span>
-                      <span className="font-semibold text-[#F5FAFA] tabular-nums">
+                      <span className="font-semibold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums">
                         {formatETB(shopSummary.subtotal)}
                       </span>
                     </div>
 
                     {shopSummary.promoDiscountAmount > 0 && shopSummary.promoCode && (
-                      <div className="flex items-center justify-between text-[#00D68F] font-semibold">
+                      <div className="flex items-center justify-between text-[#047857] dark:text-[#00D68F] font-semibold">
                         <span>{t('promoDiscountLabel', { code: shopSummary.promoCode })}</span>
                         <span className="tabular-nums">
                           -{formatETB(shopSummary.promoDiscountAmount)}
@@ -728,7 +735,7 @@ export const CartScreen: React.FC = () => {
                     )}
 
                     {shopSummary.loyaltyDiscountAmount > 0 && (
-                      <div className="flex items-center justify-between text-[#00D68F] font-medium">
+                      <div className="flex items-center justify-between text-[#047857] dark:text-[#00D68F] font-medium">
                         <span>
                           {t('loyaltyDiscountLine', { points: shopSummary.loyaltyPointsApplied })}
                         </span>
@@ -738,27 +745,29 @@ export const CartScreen: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[#A9C0BD]">
+                    <div className="flex items-center justify-between text-[#4B6B67] dark:text-[#A9C0BD]">
                       <span>{t('deliveryFee')}</span>
-                      <span className="tabular-nums font-medium text-[#F5FAFA]">
+                      <span className="tabular-nums font-medium text-[#0C2624] dark:text-[#F5FAFA]">
                         {shopSummary.deliveryFee === 0 ? (
-                          <span className="text-[#00D68F] font-bold">{t('free')}</span>
+                          <span className="text-[#047857] dark:text-[#00D68F] font-bold">
+                            {t('free')}
+                          </span>
                         ) : (
                           formatETB(shopSummary.deliveryFee)
                         )}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm font-bold text-[#F5FAFA] pt-2.5 border-t border-[#14443F]">
+                    <div className="flex items-center justify-between text-sm font-bold text-[#0C2624] dark:text-[#F5FAFA] pt-2.5 border-t border-[#D5E6E2] dark:border-[#14443F]">
                       <span>{t('totalPayableLabel')}</span>
-                      <span className="text-base font-display font-extrabold text-[#00D68F] tabular-nums">
+                      <span className="text-base font-display font-extrabold text-[#047857] dark:text-[#00D68F] tabular-nums">
                         {formatETB(shopSummary.totalAmount)}
                       </span>
                     </div>
                   </div>
 
                   {shopSummary.pointsToEarn > 0 && (
-                    <div className="flex items-center justify-between gap-2 text-[11px] text-[#00D68F] font-semibold bg-[#00D68F]/10 border border-[#00D68F]/25 rounded-xl px-3 py-2">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-[#047857] dark:text-[#00D68F] font-semibold bg-[#ECFDF5] dark:bg-[#00D68F]/10 border border-[#047857]/25 dark:border-[#00D68F]/25 rounded-xl px-3 py-2">
                       <span className="flex items-center gap-1.5">
                         <Award className="w-3.5 h-3.5 shrink-0" />
                         <span>{t('loyaltyEarnEstimate', { points: shopSummary.pointsToEarn })}</span>
@@ -767,7 +776,7 @@ export const CartScreen: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => navigate({ name: 'loyalty' })}
-                          className="underline font-semibold shrink-0 hover:text-[#00C8D7]"
+                          className="underline font-semibold shrink-0 hover:text-[#0F766E] dark:hover:text-[#00C8D7]"
                         >
                           {t('loyaltyPointsShort', { points: loyaltyBalance })}
                         </button>
@@ -776,13 +785,13 @@ export const CartScreen: React.FC = () => {
                   )}
 
                   {shopHasBlockingIssues && (
-                    <p className="text-[11px] text-rose-400 font-medium">
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
                       {shopSummary.stockIssues[0] ?? t('removeUnavailableHint')}
                     </p>
                   )}
 
                   {!shopGov.allowed && (
-                    <p className="text-[11px] text-rose-400 font-medium">
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
                       {shopGov.customMessage ||
                         t(shopGov.errorKey ?? 'governanceOrderingPaused', {
                           limit: formatETB(governanceConfig.maxOrderAmountEtb),
@@ -796,7 +805,7 @@ export const CartScreen: React.FC = () => {
                       isProceedingShopId === shopId || shopHasBlockingIssues || !shopGov.allowed
                     }
                     onClick={() => handleProceedToCheckout(shopId)}
-                    className="w-full min-h-[48px] px-4 rounded-2xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 active:scale-[0.99] transition-all disabled:opacity-45 disabled:pointer-events-none"
+                    className="w-full min-h-[48px] px-4 rounded-2xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#0F4C44]/20 dark:shadow-[#00D68F]/20 active:scale-[0.99] transition-all disabled:opacity-45 disabled:pointer-events-none"
                   >
                     <span>
                       {groupedByShop.length > 1
@@ -810,16 +819,16 @@ export const CartScreen: React.FC = () => {
           })}
 
           {/* Delivery Promotion Banner */}
-          <section className="rounded-2xl bg-gradient-to-br from-[#092825] to-[#061D1B] border border-[#14443F] p-4 flex items-center justify-between gap-3 shadow-md shadow-black/20">
+          <section className="rounded-2xl bg-gradient-to-br from-[#E6F1ED] via-[#FCFDFC] to-[#F3F6F4] dark:from-[#092825] dark:to-[#061D1B] border border-[#0F4C44]/22 dark:border-[#14443F] p-4 flex items-center justify-between gap-3 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-md dark:shadow-black/20">
             <div className="flex items-start gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F] shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#FCFDFC] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] flex items-center justify-center text-[#0F4C44] dark:text-[#00D68F] shrink-0">
                 <Truck className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-xs font-display font-bold text-[#F5FAFA]">
+                <h3 className="text-xs font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                   {t('cartPromoBannerTitle')}
                 </h3>
-                <p className="text-[11px] text-[#A9C0BD] mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] mt-0.5 leading-relaxed">
                   {freeDeliveryThreshold > 0
                     ? t('freeDeliveryAbove', { amount: formatETB(freeDeliveryThreshold) })
                     : t('shopsDeliveryDesc')}
@@ -830,7 +839,7 @@ export const CartScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate({ name: 'home' })}
-              className="min-h-[40px] px-3.5 rounded-xl bg-[#031719] border border-[#00D68F]/40 hover:bg-[#00D68F] hover:text-[#031719] text-[#00D68F] text-xs font-bold shrink-0 transition-colors"
+              className="min-h-[40px] px-3.5 rounded-xl bg-[#0F4C44] dark:bg-[#031719] border border-[#0F4C44] dark:border-[#00D68F]/40 hover:bg-[#047857] dark:hover:bg-[#00D68F] dark:hover:text-[#031719] text-[#FCFDFC] dark:text-[#00D68F] text-xs font-bold shrink-0 transition-colors"
             >
               {t('shopMore')}
             </button>
@@ -844,21 +853,21 @@ export const CartScreen: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="clear-cart-modal-title"
-          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/50 dark:bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
         >
-          <div className="w-full max-w-sm rounded-3xl bg-[#092825] border border-[#14443F] p-5 shadow-2xl space-y-4">
+          <div className="w-full max-w-sm rounded-3xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-5 shadow-2xl space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/35 flex items-center justify-center text-rose-400 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/35 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div className="min-w-0">
                 <h2
                   id="clear-cart-modal-title"
-                  className="text-sm font-display font-bold text-[#F5FAFA]"
+                  className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA]"
                 >
                   {t('clearCartConfirmTitle')}
                 </h2>
-                <p className="text-xs text-[#A9C0BD] mt-1 leading-relaxed">
+                <p className="text-xs text-[#4B6B67] dark:text-[#A9C0BD] mt-1 leading-relaxed">
                   {t('clearCartConfirmDesc', { count: summary.itemCount })}
                 </p>
               </div>
@@ -868,14 +877,14 @@ export const CartScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setClearConfirmOpen(false)}
-                className="min-h-[44px] px-4 rounded-xl bg-[#031719] border border-[#14443F] hover:border-[#00D68F]/50 text-xs font-semibold text-[#F5FAFA] transition-colors"
+                className="min-h-[44px] px-4 rounded-xl bg-[#EDF5F3] dark:bg-[#031719] border border-[#D5E6E2] dark:border-[#14443F] hover:border-[#047857]/50 dark:hover:border-[#00D68F]/50 text-xs font-semibold text-[#0C2624] dark:text-[#F5FAFA] transition-colors"
               >
                 {t('keepItemsBtn')}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmClearCart}
-                className="min-h-[44px] px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-xs font-bold text-white transition-colors"
+                className="min-h-[44px] px-4 rounded-xl bg-rose-600 dark:bg-rose-500 hover:bg-rose-700 dark:hover:bg-rose-600 text-xs font-bold text-white transition-colors"
               >
                 {t('confirmClearCartBtn')}
               </button>
@@ -1229,15 +1238,15 @@ export const CheckoutScreen: React.FC = () => {
   const totalDiscountShown = summary.promoDiscountAmount + summary.loyaltyDiscountAmount;
 
   return (
-    <div className="flex flex-col min-h-full bg-[#031719] text-[#F5FAFA]">
+    <div className="flex flex-col min-h-full bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA]">
       {/* Unified Affin Connect Brand Header + Slim 3-Step Horizontal Progress */}
-      <header className="sticky top-0 z-20 bg-[#031719]/95 backdrop-blur-md border-b border-[#14443F]/80">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#031719]/95 backdrop-blur-md border-b border-[#D2E0DC] dark:border-[#14443F]/80 shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none">
         <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => (activeStep > 1 ? setActiveStep((activeStep - 1) as CheckoutStep) : goBack())}
             aria-label="Go back"
-            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#F5FAFA] hover:bg-[#092825] transition-colors shrink-0"
+            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-[#F5FAFA] hover:bg-[#EBF1EE] dark:hover:bg-[#092825] transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -1247,20 +1256,20 @@ export const CheckoutScreen: React.FC = () => {
               src={BRAND_ASSETS.logo}
               alt="Affin Connect"
               referrerPolicy="no-referrer"
-              className="w-8 h-8 rounded-xl object-cover border border-[#00C8D7]/35 shrink-0"
+              className="w-8 h-8 rounded-xl object-cover border border-[#0F4C44]/30 dark:border-[#00C8D7]/35 shrink-0"
             />
             <div className="min-w-0">
               <div className="text-sm font-display font-extrabold tracking-tight leading-none truncate">
-                <span className="text-[#F5FAFA]">Affin </span>
-                <span className="text-[#00D68F]">Connect</span>
+                <span className="text-[#0F4C44] dark:text-[#F5FAFA]">Affin </span>
+                <span className="text-[#047857] dark:text-[#00D68F]">Connect</span>
               </div>
-              <div className="text-[10px] text-[#A9C0BD] truncate mt-0.5">
+              <div className="text-[10px] text-[#46635E] dark:text-[#A9C0BD] truncate mt-0.5">
                 {t('checkoutTagline')}
               </div>
             </div>
           </div>
 
-          <div className="w-11 shrink-0" />
+          <ThemeToggleButton />
         </div>
 
         {/* Slim Segmented 3-Step Indicator */}
@@ -1302,17 +1311,19 @@ export const CheckoutScreen: React.FC = () => {
                     <span
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold tabular-nums transition-all ${
                         isActive
-                          ? 'bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719] shadow-md shadow-[#00D68F]/25'
+                          ? 'bg-gradient-to-br from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] text-white dark:text-[#031719] shadow-md shadow-[#047857]/20 dark:shadow-[#00D68F]/25'
                           : item.done
-                            ? 'bg-[#00D68F] text-[#031719]'
-                            : 'bg-[#092825] border border-[#14443F] text-[#A9C0BD]'
+                            ? 'bg-[#047857] dark:bg-[#00D68F] text-white dark:text-[#031719]'
+                            : 'bg-[#EDF5F3] dark:bg-[#092825] border border-[#D5E6E2] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD]'
                       }`}
                     >
                       {item.done && !isActive ? <Check className="w-3.5 h-3.5 stroke-[2.7]" /> : item.step}
                     </span>
                     <span
                       className={`text-[10px] font-bold tracking-tight ${
-                        isActive || item.done ? 'text-[#00D68F]' : 'text-[#A9C0BD]'
+                        isActive || item.done
+                          ? 'text-[#047857] dark:text-[#00D68F]'
+                          : 'text-[#4B6B67] dark:text-[#A9C0BD]'
                       }`}
                     >
                       {item.label}
@@ -1321,7 +1332,9 @@ export const CheckoutScreen: React.FC = () => {
                   {idx < 2 && (
                     <div
                       className={`flex-1 h-0.5 -mt-4 mx-1.5 rounded-full transition-colors ${
-                        activeStep > item.step ? 'bg-[#00D68F]' : 'bg-[#14443F]'
+                        activeStep > item.step
+                          ? 'bg-[#047857] dark:bg-[#00D68F]'
+                          : 'bg-[#D5E6E2] dark:bg-[#14443F]'
                       }`}
                     />
                   )}
@@ -1335,15 +1348,15 @@ export const CheckoutScreen: React.FC = () => {
       <div className="p-4 space-y-3.5 flex-1">
         {/* Governance / Availability / Error Alerts */}
         {shopCheckoutReconciliation.hasBlockingIssues && (
-          <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 text-xs font-medium flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
             <span>{t('removeUnavailableHint')}</span>
           </div>
         )}
 
         {!checkoutGov.allowed && (
-          <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 text-xs font-medium flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
             <span>
               {checkoutGov.customMessage ||
                 t(checkoutGov.errorKey ?? 'governanceOrderingPaused', {
@@ -1354,8 +1367,8 @@ export const CheckoutScreen: React.FC = () => {
         )}
 
         {submitError && (
-          <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-300 text-xs font-medium flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
             <span>{submitError}</span>
           </div>
         )}
@@ -1367,12 +1380,12 @@ export const CheckoutScreen: React.FC = () => {
           <section data-testid="checkout-step-1" className="space-y-3.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#00D68F] shrink-0" />
-                <h2 className="text-sm font-display font-bold text-[#F5FAFA]">
+                <MapPin className="w-4 h-4 text-[#047857] dark:text-[#00D68F] shrink-0" />
+                <h2 className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                   {t('checkoutStep1Title')}
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#A9C0BD] truncate">
+              <span className="text-[11px] font-semibold text-[#4B6B67] dark:text-[#A9C0BD] truncate">
                 {shop.name}
               </span>
             </div>
@@ -1388,18 +1401,20 @@ export const CheckoutScreen: React.FC = () => {
                 }}
                 className={`p-3 rounded-2xl border text-left transition-all min-h-[44px] ${
                   fulfillmentMethod === 'delivery'
-                    ? 'border-[#00D68F] bg-[#102F2B] shadow-md shadow-[#00D68F]/10'
-                    : 'border-[#14443F] bg-[#092825] opacity-85 disabled:opacity-40'
+                    ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B] shadow-md shadow-[#047857]/10 dark:shadow-[#00D68F]/10'
+                    : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825] opacity-85 disabled:opacity-40'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <Truck className="w-4 h-4 text-[#00D68F]" />
+                  <Truck className="w-4 h-4 text-[#047857] dark:text-[#00D68F]" />
                   {fulfillmentMethod === 'delivery' && (
-                    <CheckCircle2 className="w-4 h-4 text-[#00D68F]" />
+                    <CheckCircle2 className="w-4 h-4 text-[#047857] dark:text-[#00D68F]" />
                   )}
                 </div>
-                <div className="text-xs font-bold text-[#F5FAFA]">{t('deliveryShort')}</div>
-                <div className="text-[11px] text-[#A9C0BD] tabular-nums mt-0.5">
+                <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
+                  {t('deliveryShort')}
+                </div>
+                <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] tabular-nums mt-0.5">
                   {summary.freeDeliveryUnlocked ? t('free') : formatETB(deliveryFeeEtb)} ·{' '}
                   {etaEstimate.label}
                 </div>
@@ -1414,33 +1429,35 @@ export const CheckoutScreen: React.FC = () => {
                 }}
                 className={`p-3 rounded-2xl border text-left transition-all min-h-[44px] ${
                   fulfillmentMethod === 'pickup'
-                    ? 'border-[#00D68F] bg-[#102F2B] shadow-md shadow-[#00D68F]/10'
-                    : 'border-[#14443F] bg-[#092825] opacity-85 disabled:opacity-40'
+                    ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B] shadow-md shadow-[#047857]/10 dark:shadow-[#00D68F]/10'
+                    : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825] opacity-85 disabled:opacity-40'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <Store className="w-4 h-4 text-[#00C8D7]" />
+                  <Store className="w-4 h-4 text-[#0F766E] dark:text-[#00C8D7]" />
                   {fulfillmentMethod === 'pickup' && (
-                    <CheckCircle2 className="w-4 h-4 text-[#00D68F]" />
+                    <CheckCircle2 className="w-4 h-4 text-[#047857] dark:text-[#00D68F]" />
                   )}
                 </div>
-                <div className="text-xs font-bold text-[#F5FAFA]">{t('pickupShort')}</div>
-                <div className="text-[11px] text-[#00D68F] font-semibold mt-0.5">
+                <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
+                  {t('pickupShort')}
+                </div>
+                <div className="text-[11px] text-[#047857] dark:text-[#00D68F] font-semibold mt-0.5">
                   {t('free')} · {getLocalizedNeighborhood(shop.neighborhood, language)}
                 </div>
               </button>
             </div>
 
             {fulfillmentMethod === 'delivery' ? (
-              <div className="rounded-2xl bg-[#092825] border border-[#14443F] p-3.5 space-y-3">
+              <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-3 shadow-xs dark:shadow-none">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#F5FAFA]">
+                  <span className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                     {t('deliveryAddressSection')}
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowNewAddressForm((s) => !s)}
-                    className="min-h-[34px] px-2.5 rounded-lg text-xs font-bold text-[#00D68F] hover:bg-[#102F2B] transition-colors"
+                    className="min-h-[34px] px-2.5 rounded-lg text-xs font-bold text-[#047857] dark:text-[#00D68F] hover:bg-[#ECFDF5] dark:hover:bg-[#102F2B] transition-colors"
                   >
                     {showNewAddressForm ? t('cancel') : `+ ${t('addNewAddress')}`}
                   </button>
@@ -1460,28 +1477,28 @@ export const CheckoutScreen: React.FC = () => {
                           }}
                           className={`w-full p-3 rounded-xl border text-left transition-all ${
                             isSelected
-                              ? 'border-[#00D68F] bg-[#102F2B]'
-                              : 'border-[#14443F] bg-[#031719]/60 hover:border-[#00D68F]/45'
+                              ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B]'
+                              : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719]/60 hover:border-[#047857]/45 dark:hover:border-[#00D68F]/45'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2 text-xs font-bold text-[#F5FAFA]">
+                          <div className="flex items-center justify-between gap-2 text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                             <span className="flex items-center gap-1.5 min-w-0">
-                              <MapPin className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                              <MapPin className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F] shrink-0" />
                               <span className="truncate">
                                 {addr.label} · {getLocalizedNeighborhood(addr.neighborhood, language)}
                               </span>
                             </span>
-                            <span className="text-[11px] font-medium text-[#A9C0BD] tabular-nums shrink-0">
+                            <span className="text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] tabular-nums shrink-0">
                               {addr.phoneNumber}
                             </span>
                           </div>
-                          <div className="text-xs text-[#A9C0BD] mt-1 pl-5">
+                          <div className="text-xs text-[#4B6B67] dark:text-[#A9C0BD] mt-1 pl-5">
                             {addr.streetOrLandmark}
                           </div>
-                          <div className="text-[11px] text-[#A9C0BD] mt-0.5 pl-5 flex items-center justify-between">
+                          <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] mt-0.5 pl-5 flex items-center justify-between">
                             <span>{addr.recipientName}</span>
                             {isSelected && (
-                              <span className="text-[#00D68F] font-semibold">
+                              <span className="text-[#047857] dark:text-[#00D68F] font-semibold">
                                 {t('checkoutAddressVerifiedBadge')}
                               </span>
                             )}
@@ -1498,7 +1515,7 @@ export const CheckoutScreen: React.FC = () => {
                       <div>
                         <label
                           htmlFor="addr-label"
-                          className="block text-[11px] font-medium text-[#A9C0BD] mb-1"
+                          className="block text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                         >
                           Label
                         </label>
@@ -1508,16 +1525,18 @@ export const CheckoutScreen: React.FC = () => {
                           value={addrLabel}
                           onChange={(e) => setAddrLabel(e.target.value)}
                           placeholder="Home / Office"
-                          className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#00D68F]"
+                          className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs text-[#0C2624] dark:text-[#F5FAFA] placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                         />
                         {addrErrors.label && (
-                          <p className="text-[11px] text-rose-400 mt-0.5">{addrErrors.label}</p>
+                          <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
+                            {addrErrors.label}
+                          </p>
                         )}
                       </div>
                       <div>
                         <label
                           htmlFor="addr-neighborhood"
-                          className="block text-[11px] font-medium text-[#A9C0BD] mb-1"
+                          className="block text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                         >
                           {t('neighborhood')}
                         </label>
@@ -1525,7 +1544,7 @@ export const CheckoutScreen: React.FC = () => {
                           id="addr-neighborhood"
                           value={neighborhood}
                           onChange={(e) => setNeighborhood(e.target.value)}
-                          className="w-full min-h-[42px] px-2.5 rounded-xl border border-[#14443F] text-xs bg-[#031719] text-[#F5FAFA] focus:outline-none focus:border-[#00D68F]"
+                          className="w-full min-h-[42px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] text-xs bg-[#F3F6F4] dark:bg-[#031719] text-[#0C2624] dark:text-[#F5FAFA] focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                         >
                           {HAWASSA_NEIGHBORHOODS.map((n) => (
                             <option key={n} value={n}>
@@ -1539,7 +1558,7 @@ export const CheckoutScreen: React.FC = () => {
                     <div>
                       <label
                         htmlFor="addr-name"
-                        className="block text-[11px] font-medium text-[#A9C0BD] mb-1"
+                        className="block text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                       >
                         Recipient Full Name
                       </label>
@@ -1549,10 +1568,10 @@ export const CheckoutScreen: React.FC = () => {
                         value={recipientName}
                         onChange={(e) => setRecipientName(e.target.value)}
                         placeholder="e.g. Selamawit Bekele"
-                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#00D68F]"
+                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs text-[#0C2624] dark:text-[#F5FAFA] placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                       />
                       {addrErrors.recipientName && (
-                        <p className="text-[11px] text-rose-400 mt-0.5">
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
                           {addrErrors.recipientName}
                         </p>
                       )}
@@ -1561,7 +1580,7 @@ export const CheckoutScreen: React.FC = () => {
                     <div>
                       <label
                         htmlFor="addr-phone"
-                        className="block text-[11px] font-medium text-[#A9C0BD] mb-1"
+                        className="block text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                       >
                         Ethiopian Phone Number (+251)
                       </label>
@@ -1571,10 +1590,10 @@ export const CheckoutScreen: React.FC = () => {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="+251 911 234 567"
-                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#00D68F]"
+                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs text-[#0C2624] dark:text-[#F5FAFA] placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                       />
                       {addrErrors.phoneNumber && (
-                        <p className="text-[11px] text-rose-400 mt-0.5">
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
                           {addrErrors.phoneNumber}
                         </p>
                       )}
@@ -1583,7 +1602,7 @@ export const CheckoutScreen: React.FC = () => {
                     <div>
                       <label
                         htmlFor="addr-landmark"
-                        className="block text-[11px] font-medium text-[#A9C0BD] mb-1"
+                        className="block text-[11px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                       >
                         Street or Hawassa Landmark
                       </label>
@@ -1593,10 +1612,10 @@ export const CheckoutScreen: React.FC = () => {
                         value={streetOrLandmark}
                         onChange={(e) => setStreetOrLandmark(e.target.value)}
                         placeholder="e.g. Near Menhariya Bus Station, Blue Gate"
-                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#00D68F]"
+                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs text-[#0C2624] dark:text-[#F5FAFA] placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/50 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                       />
                       {addrErrors.streetOrLandmark && (
-                        <p className="text-[11px] text-rose-400 mt-0.5">
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
                           {addrErrors.streetOrLandmark}
                         </p>
                       )}
@@ -1604,7 +1623,7 @@ export const CheckoutScreen: React.FC = () => {
 
                     <button
                       type="submit"
-                      className="w-full min-h-[44px] rounded-xl bg-[#102F2B] border border-[#00D68F]/50 hover:bg-[#00D68F] hover:text-[#031719] text-[#00D68F] text-xs font-bold transition-colors"
+                      className="w-full min-h-[44px] rounded-xl bg-[#ECFDF5] dark:bg-[#102F2B] border border-[#047857]/50 dark:border-[#00D68F]/50 hover:bg-[#047857] dark:hover:bg-[#00D68F] hover:text-white dark:hover:text-[#031719] text-[#047857] dark:text-[#00D68F] text-xs font-bold transition-colors"
                     >
                       Save Hawassa Address
                     </button>
@@ -1612,14 +1631,14 @@ export const CheckoutScreen: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="p-3.5 rounded-2xl bg-[#092825] border border-[#14443F] flex items-start gap-2.5 text-xs">
-                <Store className="w-4 h-4 text-[#00D68F] shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] flex items-start gap-2.5 text-xs">
+                <Store className="w-4 h-4 text-[#047857] dark:text-[#00D68F] shrink-0 mt-0.5" />
                 <div className="min-w-0">
-                  <div className="font-bold text-[#F5FAFA]">{shop.name}</div>
-                  <div className="text-[#A9C0BD] mt-0.5">
+                  <div className="font-bold text-[#0C2624] dark:text-[#F5FAFA]">{shop.name}</div>
+                  <div className="text-[#4B6B67] dark:text-[#A9C0BD] mt-0.5">
                     {shop.address}, {getLocalizedNeighborhood(shop.neighborhood, language)}, Hawassa
                   </div>
-                  <div className="text-[11px] text-[#00D68F] mt-0.5 tabular-nums">
+                  <div className="text-[11px] text-[#047857] dark:text-[#00D68F] mt-0.5 tabular-nums">
                     Tel: {shop.phoneNumber}
                     {shopProximity ? ` · ${shopProximity.distanceLabel}` : ''}
                   </div>
@@ -1636,19 +1655,21 @@ export const CheckoutScreen: React.FC = () => {
           <section data-testid="checkout-step-2" className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-[#00D68F] shrink-0" />
-                <h2 className="text-sm font-display font-bold text-[#F5FAFA]">
+                <ClipboardCheck className="w-4 h-4 text-[#047857] dark:text-[#00D68F] shrink-0" />
+                <h2 className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                   {t('checkoutStepReview')} · {t('checkoutStep2Title')}
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#00D68F] tabular-nums">
+              <span className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] tabular-nums">
                 {fulfillmentMethod === 'delivery' ? etaEstimate.label : t('pickupEtaLabel')}
               </span>
             </div>
 
             {otherShopIds.length > 0 && (
-              <div className="p-2.5 rounded-xl bg-[#092825] border border-[#FFB547]/35 flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="font-semibold text-[#FFB547]">{t('checkoutSwitchShopNotice')}</span>
+              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-[#092825] border border-amber-300 dark:border-[#FFB547]/35 flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="font-semibold text-amber-800 dark:text-[#FFB547]">
+                  {t('checkoutSwitchShopNotice')}
+                </span>
                 {otherShopIds.map((otherId) => {
                   const otherShop = shopsById[otherId];
                   return (
@@ -1659,7 +1680,7 @@ export const CheckoutScreen: React.FC = () => {
                         localStorage.setItem('hg_checkout_shop_id', otherId);
                         setSelectedShopId(otherId);
                       }}
-                      className="px-2 py-1 rounded-lg bg-[#031719] border border-[#14443F] font-semibold text-[#F5FAFA] hover:border-[#00D68F]/50"
+                      className="px-2 py-1 rounded-lg bg-[#FCFDFC] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] font-semibold text-[#0C2624] dark:text-[#F5FAFA] hover:border-[#047857]/50 dark:hover:border-[#00D68F]/50"
                     >
                       {t('checkoutSwitchShopBtn', { shop: otherShop?.name ?? 'Shop' })}
                     </button>
@@ -1669,9 +1690,9 @@ export const CheckoutScreen: React.FC = () => {
             )}
 
             {/* Compact Product Rows & Financial Breakdown Card */}
-            <div className="rounded-2xl bg-[#092825] border border-[#14443F] overflow-hidden">
+            <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] overflow-hidden shadow-xs dark:shadow-none">
               {/* Compact Item List */}
-              <div className="divide-y divide-[#14443F]/75">
+              <div className="divide-y divide-[#D5E6E2] dark:divide-[#14443F]/75">
                 {shopItems.map((item) => {
                   const unitPrice = getCartItemUnitPrice(item);
                   return (
@@ -1679,7 +1700,7 @@ export const CheckoutScreen: React.FC = () => {
                       key={getCartItemKey(item.product.productId, item.variantId)}
                       className="p-3 flex items-center gap-3"
                     >
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#031719] border border-[#14443F] shrink-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#EDF5F3] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] shrink-0">
                         <ResilientImage
                           src={item.product.imageUrl}
                           alt={item.product.name}
@@ -1687,22 +1708,22 @@ export const CheckoutScreen: React.FC = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-[#F5FAFA] truncate">
+                        <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA] truncate">
                           {item.product.name}
                         </div>
-                        <div className="text-[11px] text-[#A9C0BD] truncate mt-0.5">
+                        <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate mt-0.5">
                           {shop.name}
                           {item.variantLabel ? ` · ${item.variantLabel}` : ''}
                         </div>
-                        <div className="text-xs font-bold text-[#00D68F] tabular-nums mt-0.5">
+                        <div className="text-xs font-bold text-[#047857] dark:text-[#00D68F] tabular-nums mt-0.5">
                           {formatETB(unitPrice)}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-[11px] text-[#A9C0BD] tabular-nums">
+                        <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] tabular-nums">
                           ×{item.quantity}
                         </div>
-                        <div className="text-xs font-extrabold text-[#F5FAFA] tabular-nums mt-0.5">
+                        <div className="text-xs font-extrabold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums mt-0.5">
                           {formatETB(unitPrice * item.quantity)}
                         </div>
                       </div>
@@ -1713,22 +1734,22 @@ export const CheckoutScreen: React.FC = () => {
 
               {/* Free Delivery Slim Bar */}
               {fulfillmentMethod === 'delivery' && (
-                <div className="px-3.5 py-2 bg-[#102F2B]/70 border-t border-[#14443F] space-y-1">
+                <div className="px-3.5 py-2 bg-[#ECFDF5] dark:bg-[#102F2B]/70 border-t border-[#D2E0DC] dark:border-[#14443F] space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#A9C0BD]">
+                    <span className="text-[#4B6B67] dark:text-[#A9C0BD]">
                       {summary.freeDeliveryUnlocked
                         ? t('freeDeliveryUnlocked')
                         : t('addMoreForFreeDelivery', {
                             amount: formatETB(summary.amountToFreeDelivery),
                           })}
                     </span>
-                    <span className="font-bold text-[#00D68F] tabular-nums">
+                    <span className="font-bold text-[#047857] dark:text-[#00D68F] tabular-nums">
                       {freeDeliveryProgressPct}%
                     </span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-[#031719] overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-[#DCEAE6] dark:bg-[#031719] overflow-hidden">
                     <div
-                      className={`h-full bg-gradient-to-r from-[#00D68F] to-[#00C8D7] rounded-full transition-all duration-300 ${getTailwindWidthClass(
+                      className={`h-full bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] rounded-full transition-all duration-300 ${getTailwindWidthClass(
                         freeDeliveryProgressPct
                       )}`}
                     />
@@ -1737,28 +1758,28 @@ export const CheckoutScreen: React.FC = () => {
               )}
 
               {/* Subtotal / Delivery / Discount Summary */}
-              <div className="p-3.5 border-t border-[#14443F] space-y-2 text-xs">
-                <div className="flex items-center justify-between text-[#A9C0BD]">
+              <div className="p-3.5 border-t border-[#D2E0DC] dark:border-[#14443F] space-y-2 text-xs">
+                <div className="flex items-center justify-between text-[#4B6B67] dark:text-[#A9C0BD]">
                   <span>{t('subtotal')}</span>
-                  <span className="font-bold text-[#F5FAFA] tabular-nums">
+                  <span className="font-bold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums">
                     {formatETB(summary.subtotal)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[#A9C0BD]">
+                <div className="flex items-center justify-between text-[#4B6B67] dark:text-[#A9C0BD]">
                   <span className="flex items-center gap-1.5">
-                    <Truck className="w-3.5 h-3.5 text-[#00D68F]" />
+                    <Truck className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F]" />
                     <span>{t('deliveryFee')}</span>
                   </span>
-                  <span className="font-bold text-[#F5FAFA] tabular-nums">
+                  <span className="font-bold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums">
                     {summary.deliveryFee === 0 ? (
-                      <span className="text-[#00D68F]">{t('free')}</span>
+                      <span className="text-[#047857] dark:text-[#00D68F]">{t('free')}</span>
                     ) : (
                       formatETB(summary.deliveryFee)
                     )}
                   </span>
                 </div>
                 {totalDiscountShown > 0 && (
-                  <div className="flex items-center justify-between text-[#00D68F] font-semibold">
+                  <div className="flex items-center justify-between text-[#047857] dark:text-[#00D68F] font-semibold">
                     <span className="flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5" />
                       <span>
@@ -1773,13 +1794,13 @@ export const CheckoutScreen: React.FC = () => {
             </div>
 
             {/* Compact Loyalty Points Toggle Card */}
-            <div className="rounded-2xl bg-[#092825] border border-[#14443F] p-3 flex items-center justify-between gap-3">
+            <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-[#FFB547]/15 border border-[#FFB547]/30 flex items-center justify-center text-[#FFB547] shrink-0">
-                  <Star className="w-4 h-4 fill-[#FFB547]" />
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-[#FFB547]/15 border border-amber-300 dark:border-[#FFB547]/30 flex items-center justify-center text-amber-600 dark:text-[#FFB547] shrink-0">
+                  <Star className="w-4 h-4 fill-amber-500 dark:fill-[#FFB547]" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-[#F5FAFA] truncate">
+                  <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA] truncate">
                     {t('loyaltyToggleUsePoints', {
                       points:
                         maxRedeemablePoints >= LOYALTY_MIN_REDEEM_POINTS
@@ -1787,7 +1808,7 @@ export const CheckoutScreen: React.FC = () => {
                           : loyaltyBalance,
                     })}
                   </div>
-                  <div className="text-[11px] text-[#A9C0BD] truncate">
+                  <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate">
                     {maxRedeemablePoints >= LOYALTY_MIN_REDEEM_POINTS
                       ? t('loyaltyDiscountPreview', {
                           amount: formatETB(maxRedeemablePoints * LOYALTY_ETB_PER_POINT_REDEEMED),
@@ -1809,7 +1830,9 @@ export const CheckoutScreen: React.FC = () => {
                   )
                 }
                 className={`w-11 h-6 rounded-full p-0.5 transition-colors shrink-0 disabled:opacity-40 ${
-                  summary.loyaltyPointsApplied > 0 ? 'bg-[#00D68F]' : 'bg-[#14443F]'
+                  summary.loyaltyPointsApplied > 0
+                    ? 'bg-[#047857] dark:bg-[#00D68F]'
+                    : 'bg-[#C4DBD6] dark:bg-[#14443F]'
                 }`}
               >
                 <span
@@ -1822,10 +1845,10 @@ export const CheckoutScreen: React.FC = () => {
 
             {/* Highlighted Total Payable Row */}
             <div className="px-1 flex items-center justify-between">
-              <span className="text-sm font-display font-bold text-[#F5FAFA]">
+              <span className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                 {t('totalPayableLabel')}
               </span>
-              <span className="text-lg font-display font-extrabold text-[#00D68F] tabular-nums">
+              <span className="text-lg font-display font-extrabold text-[#047857] dark:text-[#00D68F] tabular-nums">
                 {formatETB(summary.totalAmount)}
               </span>
             </div>
@@ -1834,7 +1857,7 @@ export const CheckoutScreen: React.FC = () => {
             <div className="space-y-1.5">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Tag className="w-3.5 h-3.5 text-[#A9C0BD] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Tag className="w-3.5 h-3.5 text-[#4B6B67] dark:text-[#A9C0BD] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="checkout-promo"
                     type="text"
@@ -1844,27 +1867,29 @@ export const CheckoutScreen: React.FC = () => {
                       setPromoFeedback(null);
                     }}
                     placeholder={t('promoCodeTitle')}
-                    className="w-full min-h-[42px] pl-9 pr-3 rounded-xl border border-[#14443F] bg-[#092825] text-xs font-mono uppercase text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#A9C0BD]/70 focus:outline-none focus:border-[#00D68F]"
+                    className="w-full min-h-[42px] pl-9 pr-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825] text-xs font-mono uppercase text-[#0C2624] dark:text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#4B6B67]/65 dark:placeholder:text-[#A9C0BD]/70 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleApplyPromo}
-                  className="px-4 min-h-[42px] rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-extrabold shrink-0 transition-all"
+                  className="px-4 min-h-[42px] rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-white dark:text-[#031719] text-xs font-extrabold shrink-0 transition-all"
                 >
                   {t('applyCode')}
                 </button>
               </div>
               {promoFeedback && summary.promoCode && (
-                <p className="text-[11px] font-semibold text-[#00D68F] px-1">{promoFeedback}</p>
+                <p className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] px-1">
+                  {promoFeedback}
+                </p>
               )}
               {promoCode && summary.promoErrorKey && (
-                <p className="text-[11px] font-medium text-rose-400 px-1">
+                <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 px-1">
                   {t(summary.promoErrorKey, { amount: formatETB(summary.promoMinSubtotal ?? 0) })}
                 </p>
               )}
               <div className="flex flex-wrap items-center gap-1.5 px-0.5 text-[10px]">
-                <span className="text-[#A9C0BD]">{t('availableCodes')}</span>
+                <span className="text-[#4B6B67] dark:text-[#A9C0BD]">{t('availableCodes')}</span>
                 {PROMO_CODES.map((rule) => (
                   <button
                     key={rule.code}
@@ -1876,8 +1901,8 @@ export const CheckoutScreen: React.FC = () => {
                     }}
                     className={`px-2 py-0.5 rounded-md border font-mono font-semibold transition-colors ${
                       summary.promoCode === rule.code
-                        ? 'bg-[#00D68F]/15 text-[#00D68F] border-[#00D68F]/50'
-                        : 'bg-[#092825] text-[#A9C0BD] border-[#14443F] hover:text-[#F5FAFA]'
+                        ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 text-[#047857] dark:text-[#00D68F] border-[#047857]/50 dark:border-[#00D68F]/50'
+                        : 'bg-[#FCFDFC] dark:bg-[#092825] text-[#4B6B67] dark:text-[#A9C0BD] border-[#D2E0DC] dark:border-[#14443F] hover:text-[#0C2624] dark:hover:text-[#F5FAFA]'
                     }`}
                   >
                     {rule.code}
@@ -1887,12 +1912,12 @@ export const CheckoutScreen: React.FC = () => {
             </div>
 
             {/* Compact Buyer Note */}
-            <div className="rounded-xl bg-[#092825] border border-[#14443F] p-3 space-y-1">
+            <div className="rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-3 space-y-1">
               <label
                 htmlFor="order-notes"
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-[#A9C0BD]"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-[#4B6B67] dark:text-[#A9C0BD]"
               >
-                <FileText className="w-3.5 h-3.5 text-[#00D68F]" />
+                <FileText className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F]" />
                 <span>{t('checkoutBuyerNotesOptional')}</span>
               </label>
               <input
@@ -1901,7 +1926,7 @@ export const CheckoutScreen: React.FC = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={t('orderNotesPlaceholder')}
-                className="w-full bg-transparent text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/60 focus:outline-none"
+                className="w-full bg-transparent text-xs text-[#0C2624] dark:text-[#F5FAFA] placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/60 focus:outline-none"
               />
             </div>
           </section>
@@ -1914,12 +1939,14 @@ export const CheckoutScreen: React.FC = () => {
           <section data-testid="checkout-step-3" className="space-y-3">
             <div>
               <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-[#00D68F] shrink-0" />
-                <h2 className="text-sm font-display font-bold text-[#F5FAFA]">
+                <CreditCard className="w-4 h-4 text-[#047857] dark:text-[#00D68F] shrink-0" />
+                <h2 className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                   {t('selectPaymentMethodTitle')}
                 </h2>
               </div>
-              <p className="text-xs text-[#A9C0BD] mt-0.5">{t('selectPaymentMethodSubtitle')}</p>
+              <p className="text-xs text-[#4B6B67] dark:text-[#A9C0BD] mt-0.5">
+                {t('selectPaymentMethodSubtitle')}
+              </p>
             </div>
 
             <div className="space-y-2.5">
@@ -1927,8 +1954,8 @@ export const CheckoutScreen: React.FC = () => {
               <div
                 className={`rounded-2xl border transition-all ${
                   paymentMethod === 'telebirr'
-                    ? 'border-[#00D68F] bg-[#102F2B]'
-                    : 'border-[#14443F] bg-[#092825]'
+                    ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B]'
+                    : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825]'
                 }`}
               >
                 <button
@@ -1943,11 +1970,13 @@ export const CheckoutScreen: React.FC = () => {
                   <div className="flex items-center gap-3 min-w-0">
                     <span
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        paymentMethod === 'telebirr' ? 'border-[#00D68F]' : 'border-[#A9C0BD]/60'
+                        paymentMethod === 'telebirr'
+                          ? 'border-[#047857] dark:border-[#00D68F]'
+                          : 'border-[#4B6B67]/50 dark:border-[#A9C0BD]/60'
                       }`}
                     >
                       {paymentMethod === 'telebirr' && (
-                        <span className="w-2 h-2 rounded-full bg-[#00D68F]" />
+                        <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#00D68F]" />
                       )}
                     </span>
                     <div className="w-9 h-9 rounded-xl bg-[#0284C7] text-white flex items-center justify-center font-display font-extrabold text-[11px] shrink-0">
@@ -1955,12 +1984,14 @@ export const CheckoutScreen: React.FC = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[#F5FAFA]">{t('telebirr')}</span>
-                        <span className="px-2 py-0.5 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-extrabold">
+                        <span className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
+                          {t('telebirr')}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-[#047857] dark:bg-[#00D68F] text-white dark:text-[#031719] text-[10px] font-extrabold">
                           {t('popularBadge')}
                         </span>
                       </div>
-                      <div className="text-[11px] text-[#A9C0BD] truncate mt-0.5">
+                      <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate mt-0.5">
                         {t('payWithTelebirrDesc')}
                       </div>
                     </div>
@@ -1968,12 +1999,14 @@ export const CheckoutScreen: React.FC = () => {
                 </button>
 
                 {paymentMethod === 'telebirr' && (
-                  <div className="px-3.5 pb-3.5 pt-2.5 border-t border-[#14443F] space-y-2.5">
+                  <div className="px-3.5 pb-3.5 pt-2.5 border-t border-[#D2E0DC] dark:border-[#14443F] space-y-2.5">
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2.5 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-between gap-2">
+                      <div className="p-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-[#A9C0BD]">{t('paymentMerchantShortcode')}</div>
-                          <div className="font-mono font-bold text-[#F5FAFA] tabular-nums mt-0.5">
+                          <div className="text-[#4B6B67] dark:text-[#A9C0BD]">
+                            {t('paymentMerchantShortcode')}
+                          </div>
+                          <div className="font-mono font-bold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums mt-0.5">
                             {ETHIOPIAN_PAYMENT_CONFIG.telebirr.shortcode}
                           </div>
                         </div>
@@ -1983,7 +2016,7 @@ export const CheckoutScreen: React.FC = () => {
                             handleCopyText(ETHIOPIAN_PAYMENT_CONFIG.telebirr.shortcode, 'tb-code')
                           }
                           aria-label={t('paymentCopyShortcode')}
-                          className="p-1.5 rounded-lg border border-[#14443F] text-[#00D68F] hover:bg-[#102F2B] shrink-0"
+                          className="p-1.5 rounded-lg border border-[#D2E0DC] dark:border-[#14443F] text-[#047857] dark:text-[#00D68F] hover:bg-[#ECFDF5] dark:hover:bg-[#102F2B] shrink-0"
                         >
                           {copiedKey === 'tb-code' ? (
                             <Check className="w-3.5 h-3.5" />
@@ -1992,9 +2025,11 @@ export const CheckoutScreen: React.FC = () => {
                           )}
                         </button>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-[#031719] border border-[#14443F]">
-                        <div className="text-[#A9C0BD]">{t('paymentAmountDue')}</div>
-                        <div className="font-bold text-[#00D68F] tabular-nums mt-0.5">
+                      <div className="p-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F]">
+                        <div className="text-[#4B6B67] dark:text-[#A9C0BD]">
+                          {t('paymentAmountDue')}
+                        </div>
+                        <div className="font-bold text-[#047857] dark:text-[#00D68F] tabular-nums mt-0.5">
                           {formatETB(summary.totalAmount)}
                         </div>
                       </div>
@@ -2003,7 +2038,7 @@ export const CheckoutScreen: React.FC = () => {
                     <div className="space-y-1">
                       <label
                         htmlFor="payment-reference-input"
-                        className="block text-[11px] font-semibold text-[#F5FAFA]"
+                        className="block text-[11px] font-semibold text-[#0C2624] dark:text-[#F5FAFA]"
                       >
                         {t('paymentReferenceLabel')}
                       </label>
@@ -2018,10 +2053,10 @@ export const CheckoutScreen: React.FC = () => {
                           setSubmitError(null);
                         }}
                         placeholder="e.g. TRX8492019 or +251911223344"
-                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-mono uppercase text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#A9C0BD]/60 focus:outline-none focus:border-[#00D68F]"
+                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#031719] text-xs font-mono uppercase text-[#0C2624] dark:text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/60 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                       />
                       {liveRefStatus.valid ? (
-                        <p className="text-[11px] font-semibold text-[#00D68F] flex items-center gap-1.5">
+                        <p className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {liveRefFeedbackText} ·{' '}
@@ -2029,16 +2064,18 @@ export const CheckoutScreen: React.FC = () => {
                           </span>
                         </p>
                       ) : paymentReference.trim().length > 0 ? (
-                        <p className="text-[11px] font-medium text-rose-400">
+                        <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
                           {t('paymentReferenceInvalidError')}
                         </p>
                       ) : (
-                        <p className="text-[10px] text-[#A9C0BD]">
+                        <p className="text-[10px] text-[#4B6B67] dark:text-[#A9C0BD]">
                           {t('paymentLiveRefFormatGuide')}
                         </p>
                       )}
                       {paymentRefError && !liveRefStatus.valid && (
-                        <p className="text-[11px] font-semibold text-rose-400">{paymentRefError}</p>
+                        <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                          {paymentRefError}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -2049,8 +2086,8 @@ export const CheckoutScreen: React.FC = () => {
               <div
                 className={`rounded-2xl border transition-all ${
                   paymentMethod === 'cbe_birr'
-                    ? 'border-[#00D68F] bg-[#102F2B]'
-                    : 'border-[#14443F] bg-[#092825]'
+                    ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B]'
+                    : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825]'
                 }`}
               >
                 <button
@@ -2065,19 +2102,23 @@ export const CheckoutScreen: React.FC = () => {
                   <div className="flex items-center gap-3 min-w-0">
                     <span
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        paymentMethod === 'cbe_birr' ? 'border-[#00D68F]' : 'border-[#A9C0BD]/60'
+                        paymentMethod === 'cbe_birr'
+                          ? 'border-[#047857] dark:border-[#00D68F]'
+                          : 'border-[#4B6B67]/50 dark:border-[#A9C0BD]/60'
                       }`}
                     >
                       {paymentMethod === 'cbe_birr' && (
-                        <span className="w-2 h-2 rounded-full bg-[#00D68F]" />
+                        <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#00D68F]" />
                       )}
                     </span>
                     <div className="w-9 h-9 rounded-xl bg-[#6D28D9] text-white flex items-center justify-center font-display font-extrabold text-[11px] shrink-0">
                       CBE
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-[#F5FAFA]">{t('cbeFullTitle')}</div>
-                      <div className="text-[11px] text-[#A9C0BD] truncate mt-0.5">
+                      <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
+                        {t('cbeFullTitle')}
+                      </div>
+                      <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate mt-0.5">
                         {t('payWithCbeDesc')}
                       </div>
                     </div>
@@ -2085,12 +2126,14 @@ export const CheckoutScreen: React.FC = () => {
                 </button>
 
                 {paymentMethod === 'cbe_birr' && (
-                  <div className="px-3.5 pb-3.5 pt-2.5 border-t border-[#14443F] space-y-2.5">
+                  <div className="px-3.5 pb-3.5 pt-2.5 border-t border-[#D2E0DC] dark:border-[#14443F] space-y-2.5">
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2.5 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-between gap-2">
+                      <div className="p-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F] flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-[#A9C0BD]">{t('paymentMerchantShortcode')}</div>
-                          <div className="font-mono font-bold text-[#F5FAFA] tabular-nums mt-0.5">
+                          <div className="text-[#4B6B67] dark:text-[#A9C0BD]">
+                            {t('paymentMerchantShortcode')}
+                          </div>
+                          <div className="font-mono font-bold text-[#0C2624] dark:text-[#F5FAFA] tabular-nums mt-0.5">
                             {ETHIOPIAN_PAYMENT_CONFIG.cbe_birr.shortcode}
                           </div>
                         </div>
@@ -2100,7 +2143,7 @@ export const CheckoutScreen: React.FC = () => {
                             handleCopyText(ETHIOPIAN_PAYMENT_CONFIG.cbe_birr.shortcode, 'cbe-code')
                           }
                           aria-label={t('paymentCopyShortcode')}
-                          className="p-1.5 rounded-lg border border-[#14443F] text-[#00D68F] hover:bg-[#102F2B] shrink-0"
+                          className="p-1.5 rounded-lg border border-[#D2E0DC] dark:border-[#14443F] text-[#047857] dark:text-[#00D68F] hover:bg-[#ECFDF5] dark:hover:bg-[#102F2B] shrink-0"
                         >
                           {copiedKey === 'cbe-code' ? (
                             <Check className="w-3.5 h-3.5" />
@@ -2109,9 +2152,11 @@ export const CheckoutScreen: React.FC = () => {
                           )}
                         </button>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-[#031719] border border-[#14443F]">
-                        <div className="text-[#A9C0BD]">{t('paymentAmountDue')}</div>
-                        <div className="font-bold text-[#00D68F] tabular-nums mt-0.5">
+                      <div className="p-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#031719] border border-[#D2E0DC] dark:border-[#14443F]">
+                        <div className="text-[#4B6B67] dark:text-[#A9C0BD]">
+                          {t('paymentAmountDue')}
+                        </div>
+                        <div className="font-bold text-[#047857] dark:text-[#00D68F] tabular-nums mt-0.5">
                           {formatETB(summary.totalAmount)}
                         </div>
                       </div>
@@ -2120,7 +2165,7 @@ export const CheckoutScreen: React.FC = () => {
                     <div className="space-y-1">
                       <label
                         htmlFor="payment-reference-input"
-                        className="block text-[11px] font-semibold text-[#F5FAFA]"
+                        className="block text-[11px] font-semibold text-[#0C2624] dark:text-[#F5FAFA]"
                       >
                         {t('paymentReferenceLabel')}
                       </label>
@@ -2135,10 +2180,10 @@ export const CheckoutScreen: React.FC = () => {
                           setSubmitError(null);
                         }}
                         placeholder={`e.g. ${ETHIOPIAN_PAYMENT_CONFIG.cbe_birr.exampleRef} or 1234567890`}
-                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-mono uppercase text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#A9C0BD]/60 focus:outline-none focus:border-[#00D68F]"
+                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#031719] text-xs font-mono uppercase text-[#0C2624] dark:text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/60 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                       />
                       {liveRefStatus.valid ? (
-                        <p className="text-[11px] font-semibold text-[#00D68F] flex items-center gap-1.5">
+                        <p className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {liveRefFeedbackText} ·{' '}
@@ -2146,16 +2191,18 @@ export const CheckoutScreen: React.FC = () => {
                           </span>
                         </p>
                       ) : paymentReference.trim().length > 0 ? (
-                        <p className="text-[11px] font-medium text-rose-400">
+                        <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
                           {t('paymentReferenceInvalidError')}
                         </p>
                       ) : (
-                        <p className="text-[10px] text-[#A9C0BD]">
+                        <p className="text-[10px] text-[#4B6B67] dark:text-[#A9C0BD]">
                           {t('paymentLiveRefFormatGuide')}
                         </p>
                       )}
                       {paymentRefError && !liveRefStatus.valid && (
-                        <p className="text-[11px] font-semibold text-rose-400">{paymentRefError}</p>
+                        <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                          {paymentRefError}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -2166,8 +2213,8 @@ export const CheckoutScreen: React.FC = () => {
               <div
                 className={`rounded-2xl border transition-all ${
                   paymentMethod === 'chapa'
-                    ? 'border-[#00D68F] bg-[#102F2B]'
-                    : 'border-[#14443F] bg-[#092825]'
+                    ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B]'
+                    : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825]'
                 }`}
               >
                 <button
@@ -2182,19 +2229,23 @@ export const CheckoutScreen: React.FC = () => {
                   <div className="flex items-center gap-3 min-w-0">
                     <span
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        paymentMethod === 'chapa' ? 'border-[#00D68F]' : 'border-[#A9C0BD]/60'
+                        paymentMethod === 'chapa'
+                          ? 'border-[#047857] dark:border-[#00D68F]'
+                          : 'border-[#4B6B67]/50 dark:border-[#A9C0BD]/60'
                       }`}
                     >
                       {paymentMethod === 'chapa' && (
-                        <span className="w-2 h-2 rounded-full bg-[#00D68F]" />
+                        <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#00D68F]" />
                       )}
                     </span>
                     <div className="w-9 h-9 rounded-xl bg-[#047857] text-white flex items-center justify-center shrink-0">
                       <CreditCard className="w-4 h-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-[#F5FAFA]">{t('chapa')}</div>
-                      <div className="text-[11px] text-[#A9C0BD] truncate mt-0.5">
+                      <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
+                        {t('chapa')}
+                      </div>
+                      <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate mt-0.5">
                         {t('payWithChapaDesc')}
                       </div>
                     </div>
@@ -2202,11 +2253,11 @@ export const CheckoutScreen: React.FC = () => {
                 </button>
 
                 {paymentMethod === 'chapa' && (
-                  <div className="px-3.5 pb-3.5 pt-2.5 border-t border-[#14443F] space-y-2.5">
+                  <div className="px-3.5 pb-3.5 pt-2.5 border-t border-[#D2E0DC] dark:border-[#14443F] space-y-2.5">
                     <div className="space-y-1">
                       <label
                         htmlFor="payment-reference-input"
-                        className="block text-[11px] font-semibold text-[#F5FAFA]"
+                        className="block text-[11px] font-semibold text-[#0C2624] dark:text-[#F5FAFA]"
                       >
                         {t('paymentReferenceLabel')}
                       </label>
@@ -2221,10 +2272,10 @@ export const CheckoutScreen: React.FC = () => {
                           setSubmitError(null);
                         }}
                         placeholder={`e.g. ${ETHIOPIAN_PAYMENT_CONFIG.chapa.exampleRef}`}
-                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-mono uppercase text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#A9C0BD]/60 focus:outline-none focus:border-[#00D68F]"
+                        className="w-full min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#031719] text-xs font-mono uppercase text-[#0C2624] dark:text-[#F5FAFA] placeholder:normal-case placeholder:font-sans placeholder:text-[#4B6B67]/60 dark:placeholder:text-[#A9C0BD]/60 focus:outline-none focus:border-[#047857] dark:focus:border-[#00D68F]"
                       />
                       {liveRefStatus.valid ? (
-                        <p className="text-[11px] font-semibold text-[#00D68F] flex items-center gap-1.5">
+                        <p className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {liveRefFeedbackText} ·{' '}
@@ -2232,12 +2283,14 @@ export const CheckoutScreen: React.FC = () => {
                           </span>
                         </p>
                       ) : paymentReference.trim().length > 0 ? (
-                        <p className="text-[11px] font-medium text-rose-400">
+                        <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
                           {t('paymentReferenceInvalidError')}
                         </p>
                       ) : null}
                       {paymentRefError && !liveRefStatus.valid && (
-                        <p className="text-[11px] font-semibold text-rose-400">{paymentRefError}</p>
+                        <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                          {paymentRefError}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -2249,8 +2302,8 @@ export const CheckoutScreen: React.FC = () => {
                 <div
                   className={`rounded-2xl border transition-all ${
                     paymentMethod === 'cash_on_delivery'
-                      ? 'border-[#00D68F] bg-[#102F2B]'
-                      : 'border-[#14443F] bg-[#092825]'
+                      ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B]'
+                      : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825]'
                   }`}
                 >
                   <button
@@ -2266,29 +2319,29 @@ export const CheckoutScreen: React.FC = () => {
                       <span
                         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
                           paymentMethod === 'cash_on_delivery'
-                            ? 'border-[#00D68F]'
-                            : 'border-[#A9C0BD]/60'
+                            ? 'border-[#047857] dark:border-[#00D68F]'
+                            : 'border-[#4B6B67]/50 dark:border-[#A9C0BD]/60'
                         }`}
                       >
                         {paymentMethod === 'cash_on_delivery' && (
-                          <span className="w-2 h-2 rounded-full bg-[#00D68F]" />
+                          <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#00D68F]" />
                         )}
                       </span>
-                      <div className="w-9 h-9 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/35 text-[#00D68F] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-[#ECFDF5] dark:bg-[#00D68F]/15 border border-[#047857]/30 dark:border-[#00D68F]/35 text-[#047857] dark:text-[#00D68F] flex items-center justify-center shrink-0">
                         <Wallet className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-[#F5FAFA]">
+                        <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                           {t('cashOnDelivery')}
                         </div>
-                        <div className="text-[11px] text-[#A9C0BD] truncate mt-0.5">
+                        <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate mt-0.5">
                           {t('payOnDeliveryDesc')}
                         </div>
                       </div>
                     </div>
                   </button>
                   {paymentMethod === 'cash_on_delivery' && (
-                    <div className="px-3.5 pb-3 pt-2 border-t border-[#14443F] flex items-start gap-2 text-[11px] text-[#FFB547]">
+                    <div className="px-3.5 pb-3 pt-2 border-t border-[#D2E0DC] dark:border-[#14443F] flex items-start gap-2 text-[11px] text-amber-800 dark:text-[#FFB547]">
                       <KeyRound className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{t('codPinHandshakeNote')}</span>
                     </div>
@@ -2298,8 +2351,8 @@ export const CheckoutScreen: React.FC = () => {
                 <div
                   className={`rounded-2xl border transition-all ${
                     paymentMethod === 'pay_at_pickup'
-                      ? 'border-[#00D68F] bg-[#102F2B]'
-                      : 'border-[#14443F] bg-[#092825]'
+                      ? 'border-[#047857] dark:border-[#00D68F] bg-[#ECFDF5] dark:bg-[#102F2B]'
+                      : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#092825]'
                   }`}
                 >
                   <button
@@ -2315,29 +2368,29 @@ export const CheckoutScreen: React.FC = () => {
                       <span
                         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
                           paymentMethod === 'pay_at_pickup'
-                            ? 'border-[#00D68F]'
-                            : 'border-[#A9C0BD]/60'
+                            ? 'border-[#047857] dark:border-[#00D68F]'
+                            : 'border-[#4B6B67]/50 dark:border-[#A9C0BD]/60'
                         }`}
                       >
                         {paymentMethod === 'pay_at_pickup' && (
-                          <span className="w-2 h-2 rounded-full bg-[#00D68F]" />
+                          <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#00D68F]" />
                         )}
                       </span>
-                      <div className="w-9 h-9 rounded-xl bg-[#00C8D7]/15 border border-[#00C8D7]/35 text-[#00C8D7] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-[#00C8D7]/15 border border-teal-300 dark:border-[#00C8D7]/35 text-[#0F766E] dark:text-[#00C8D7] flex items-center justify-center shrink-0">
                         <Store className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-[#F5FAFA]">
+                        <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                           {t('payAtPickup')}
                         </div>
-                        <div className="text-[11px] text-[#A9C0BD] truncate mt-0.5">
+                        <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate mt-0.5">
                           {t('payAtPickupDesc')}
                         </div>
                       </div>
                     </div>
                   </button>
                   {paymentMethod === 'pay_at_pickup' && (
-                    <div className="px-3.5 pb-3 pt-2 border-t border-[#14443F] flex items-start gap-2 text-[11px] text-[#FFB547]">
+                    <div className="px-3.5 pb-3 pt-2 border-t border-[#D2E0DC] dark:border-[#14443F] flex items-start gap-2 text-[11px] text-amber-800 dark:text-[#FFB547]">
                       <KeyRound className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>{t('codPinHandshakeNote')}</span>
                     </div>
@@ -2350,7 +2403,7 @@ export const CheckoutScreen: React.FC = () => {
             {selectedProviderKey && selectedProviderStatus && !selectedProviderStatus.configured && (
               <div
                 data-testid="provider-unconfigured-notice"
-                className="p-3 rounded-xl bg-[#FFB547]/10 border border-[#FFB547]/35 text-[11px] text-[#FFB547] space-y-1"
+                className="p-3 rounded-xl bg-amber-50 dark:bg-[#FFB547]/10 border border-amber-300 dark:border-[#FFB547]/35 text-[11px] text-amber-900 dark:text-[#FFB547] space-y-1"
               >
                 <p className="font-semibold leading-relaxed">{t('providerPendingSetupNotice')}</p>
                 {selectedProviderStatus.missingEnvVars.length > 0 && (
@@ -2364,8 +2417,8 @@ export const CheckoutScreen: React.FC = () => {
             )}
 
             {/* Security Trust Banner */}
-            <div className="p-3 rounded-2xl bg-[#092825] border border-[#14443F] flex items-center gap-2.5 text-xs text-[#A9C0BD]">
-              <Lock className="w-4 h-4 text-[#00D68F] shrink-0" />
+            <div className="p-3 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] flex items-center gap-2.5 text-xs text-[#4B6B67] dark:text-[#A9C0BD]">
+              <Lock className="w-4 h-4 text-[#047857] dark:text-[#00D68F] shrink-0" />
               <span className="leading-snug">{t('checkoutSecurityBanner')}</span>
             </div>
           </section>
@@ -2373,12 +2426,12 @@ export const CheckoutScreen: React.FC = () => {
       </div>
 
       {/* Sticky Compact Action Footer */}
-      <footer className="sticky bottom-0 z-20 bg-[#031719]/95 backdrop-blur-md border-t border-[#14443F]/80 px-4 py-3 mt-auto">
+      <footer className="sticky bottom-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#031719]/95 backdrop-blur-md border-t border-[#D2E0DC] dark:border-[#14443F]/80 shadow-[0_-4px_14px_-6px_rgba(15,76,68,0.1)] dark:shadow-none px-4 py-3 mt-auto">
         {activeStep === 1 && (
           <button
             type="button"
             onClick={handleContinueStep1}
-            className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all"
+            className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-white dark:text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#047857]/20 dark:shadow-[#00D68F]/20 transition-all"
           >
             <span>{t('checkoutContinueStep2')}</span>
             <ArrowRight className="w-4 h-4 shrink-0" />
@@ -2389,7 +2442,7 @@ export const CheckoutScreen: React.FC = () => {
           <button
             type="button"
             onClick={handleContinueStep2}
-            className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all"
+            className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-white dark:text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#047857]/20 dark:shadow-[#00D68F]/20 transition-all"
           >
             <span>{t('continueToPaymentBtn')}</span>
             <ArrowRight className="w-4 h-4 shrink-0" />
@@ -2403,7 +2456,7 @@ export const CheckoutScreen: React.FC = () => {
               submitting || !checkoutGov.allowed || shopCheckoutReconciliation.hasBlockingIssues
             }
             onClick={handleConfirmOrder}
-            className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 disabled:opacity-55 text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all"
+            className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 disabled:opacity-55 text-white dark:text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#047857]/20 dark:shadow-[#00D68F]/20 transition-all"
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
             <span>
@@ -2506,28 +2559,28 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
       : t('orderPlacedSubtitle');
 
   return (
-    <div className="flex-1 flex flex-col justify-between bg-[#031719] text-[#F5FAFA] min-h-full">
+    <div className="flex-1 flex flex-col justify-between bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA] min-h-full">
       <div className="px-4 pt-6 pb-4 space-y-4">
         {/* Hero Check + Truthful Confirmation Headline */}
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[#00D68F] to-[#00C8D7] text-[#031719] flex items-center justify-center shadow-xl shadow-[#00D68F]/25">
+          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719] flex items-center justify-center shadow-xl shadow-[#0F4C44]/22 dark:shadow-[#00D68F]/25">
             {isPendingElectronic ? (
               <Clock className="w-8 h-8 stroke-[2.5]" />
             ) : (
               <Check className="w-8 h-8 stroke-[3]" />
             )}
           </div>
-          <h1 className="text-xl font-display font-extrabold tracking-tight text-[#F5FAFA]">
+          <h1 className="text-xl font-display font-extrabold tracking-tight text-[#0F4C44] dark:text-[#F5FAFA]">
             {headline}
           </h1>
-          <p className="text-xs text-[#A9C0BD] max-w-[300px] mx-auto leading-relaxed">
+          <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] max-w-[300px] mx-auto leading-relaxed">
             {subtitle}
           </p>
         </div>
 
-        {/* High-Contrast White Order Summary Card (Panel 3 Reference) */}
+        {/* High-Contrast Ivory Order Summary Card */}
         {order && (
-          <div className="rounded-2xl bg-white text-slate-900 p-4 shadow-2xl space-y-3">
+          <div className="rounded-2xl bg-[#FCFDFC] text-slate-900 border border-[#D2E0DC] dark:border-transparent p-4 shadow-[0_6px_20px_-6px_rgba(15,76,68,0.12)] dark:shadow-2xl space-y-3">
             <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-slate-200/80">
               <div className="min-w-0">
                 <div className="text-[11px] font-semibold text-slate-500">
@@ -2566,7 +2619,7 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
 
               <div className="flex items-center justify-between gap-2 pt-1">
                 <span className="text-slate-500 font-medium">{t('receiptTotalAmountLabel')}</span>
-                <span className="text-base font-display font-extrabold text-[#00A870] tabular-nums">
+                <span className="text-base font-display font-extrabold text-[#047857] dark:text-[#00A870] tabular-nums">
                   {formatETB(order.totalAmount)}
                 </span>
               </div>
@@ -2594,7 +2647,7 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
                     <Clock className="w-3.5 h-3.5 text-slate-600 shrink-0" />
                     <span>{t('estimatedDeliveryLabel')}</span>
                   </span>
-                  <span className="font-bold text-[#00A870] tabular-nums">
+                  <span className="font-bold text-[#047857] dark:text-[#00A870] tabular-nums">
                     {order.deliveryEtaLabel}
                   </span>
                 </div>
@@ -2605,12 +2658,12 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
 
         {/* Verify Pending Electronic Payment Action */}
         {order && isPendingElectronic && (
-          <div className="rounded-2xl bg-[#092825] border border-[#FFB547]/40 p-3 space-y-2">
+          <div className="rounded-2xl bg-amber-50 dark:bg-[#092825] border border-amber-300 dark:border-[#FFB547]/40 p-3 space-y-2">
             <button
               type="button"
               disabled={verifyingPayment}
               onClick={handleVerifyNow}
-              className="w-full min-h-[40px] px-3 rounded-xl bg-[#FFB547]/15 border border-[#FFB547]/45 text-[#FFB547] text-xs font-bold flex items-center justify-center gap-2 hover:bg-[#FFB547]/20 disabled:opacity-60 transition-colors"
+              className="w-full min-h-[40px] px-3 rounded-xl bg-amber-100 dark:bg-[#FFB547]/15 border border-amber-300 dark:border-[#FFB547]/45 text-amber-900 dark:text-[#FFB547] text-xs font-bold flex items-center justify-center gap-2 hover:bg-amber-200/70 dark:hover:bg-[#FFB547]/20 disabled:opacity-60 transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${verifyingPayment ? 'animate-spin' : ''}`} />
               <span>
@@ -2618,23 +2671,25 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
               </span>
             </button>
             {verifyNotice && (
-              <p className="text-[11px] text-[#FFB547] text-center font-medium">{verifyNotice}</p>
+              <p className="text-[11px] text-amber-800 dark:text-[#FFB547] text-center font-medium">
+                {verifyNotice}
+              </p>
             )}
           </div>
         )}
 
         {/* Preserved Delivery Handshake PIN & Escrow Guard */}
         {order?.deliveryPin && (
-          <div className="rounded-2xl bg-[#092825] border border-[#14443F] p-3.5 space-y-2">
+          <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-2 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-[#FFB547]">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-[#FFB547]">
                 <KeyRound className="w-4 h-4 shrink-0" />
                 <span>{t('deliveryPinTitle')}</span>
               </span>
               <button
                 type="button"
                 onClick={handleCopyPin}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#031719] border border-[#14443F] text-[11px] font-semibold text-[#00D68F]"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EDF5F3] dark:bg-[#031719] border border-[#D5E6E2] dark:border-[#14443F] text-[11px] font-semibold text-[#047857] dark:text-[#00D68F]"
               >
                 {pinCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 <span>{pinCopied ? t('pinCopiedLabel') : t('copyPinBtn')}</span>
@@ -2642,11 +2697,13 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
             </div>
             <div
               data-testid="confirmation-delivery-pin"
-              className="py-1.5 px-3 rounded-xl bg-[#031719] border border-[#14443F] text-center font-mono text-lg font-extrabold tracking-[0.35em] text-[#FFB547] tabular-nums"
+              className="py-1.5 px-3 rounded-xl bg-amber-50 dark:bg-[#031719] border border-amber-200 dark:border-[#14443F] text-center font-mono text-lg font-extrabold tracking-[0.35em] text-amber-800 dark:text-[#FFB547] tabular-nums"
             >
               {order.deliveryPin}
             </div>
-            <p className="text-[11px] text-[#A9C0BD] leading-snug">{t('deliveryPinShareHint')}</p>
+            <p className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] leading-snug">
+              {t('deliveryPinShareHint')}
+            </p>
           </div>
         )}
 
@@ -2657,7 +2714,7 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
               type="button"
               data-testid="confirmation-download-pdf-btn"
               onClick={() => downloadReceiptPdf(order, shop)}
-              className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all"
+              className="w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-white dark:text-[#031719] text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#047857]/20 dark:shadow-[#00D68F]/20 transition-all"
             >
               <Download className="w-4 h-4 shrink-0" />
               <span>{t('downloadPdfReceiptBtn')}</span>
@@ -2670,9 +2727,9 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
                 type="button"
                 data-testid="confirmation-view-receipt-btn"
                 onClick={() => setReceiptModalOpen(true)}
-                className="min-h-[44px] px-3 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                className="min-h-[44px] px-3 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 text-[#0E2421] dark:text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-[0_2px_8px_-3px_rgba(15,76,68,0.08)] dark:shadow-none"
               >
-                <FileText className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                <FileText className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00D68F] shrink-0" />
                 <span className="truncate">{t('viewReceiptBtn')}</span>
               </button>
             )}
@@ -2682,9 +2739,9 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
               onClick={() => navigate({ name: 'orders', selectedOrderId: orderId, initialTab: 'active' })}
               className={`${
                 order ? '' : 'col-span-2'
-              } min-h-[44px] px-3 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors`}
+              } min-h-[44px] px-3 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 text-[#0E2421] dark:text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-[0_2px_8px_-3px_rgba(15,76,68,0.08)] dark:shadow-none`}
             >
-              <Truck className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+              <Truck className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00D68F] shrink-0" />
               <span className="truncate">{t('trackOrderBtn')}</span>
             </button>
           </div>
@@ -2692,23 +2749,23 @@ export const OrderConfirmationScreen: React.FC<{ orderId: string }> = ({ orderId
           <button
             type="button"
             onClick={() => navigate({ name: 'home' })}
-            className="w-full min-h-[44px] px-4 rounded-xl bg-[#092825]/60 border border-[#14443F] hover:border-[#00D68F]/40 text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+            className="w-full min-h-[44px] px-4 rounded-xl bg-[#FCFDFC]/90 dark:bg-[#092825]/60 border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/40 dark:hover:border-[#00D68F]/40 text-[#0E2421] dark:text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
           >
-            <ShoppingBag className="w-3.5 h-3.5 text-[#A9C0BD] shrink-0" />
+            <ShoppingBag className="w-3.5 h-3.5 text-[#46635E] dark:text-[#A9C0BD] shrink-0" />
             <span>{t('continueShopping')}</span>
           </button>
         </div>
       </div>
 
       {/* Bottom Lake Hawassa Cityscape Strip */}
-      <div className="relative h-24 w-full overflow-hidden border-t border-[#14443F]/60 mt-2">
+      <div className="relative h-24 w-full overflow-hidden border-t border-[#D5E6E2] dark:border-[#14443F]/60 mt-2">
         <img
           src={BRAND_ASSETS.banner}
           alt="Lake Hawassa"
-          className="w-full h-full object-cover opacity-55"
+          className="w-full h-full object-cover opacity-70 dark:opacity-55"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#031719] via-[#031719]/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-2 text-center text-[11px] font-bold tracking-wide text-[#F5FAFA]/90">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#031719]/85 via-[#031719]/35 to-transparent dark:from-[#031719] dark:via-[#031719]/40" />
+        <div className="absolute inset-x-0 bottom-2 text-center text-[11px] font-bold tracking-wide text-[#F5FAFA]/95">
           {t('shopSupportProsper')}
         </div>
       </div>

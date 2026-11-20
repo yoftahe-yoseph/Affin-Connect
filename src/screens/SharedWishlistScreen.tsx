@@ -98,16 +98,16 @@ export const SharedWishlistScreen: React.FC<{
 
   return (
     <div className="pb-8">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-3 py-2 flex items-center justify-between">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 backdrop-blur-md dark:bg-[#1C2420] border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-3 py-2 flex items-center justify-between">
         <button
           type="button"
           onClick={handleBack}
           aria-label="Go back"
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-stone-200 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17]"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100">
+        <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-stone-100">
           {t('sharedWishlistTitle')}
         </h1>
         <div className="w-11" />
@@ -116,10 +116,10 @@ export const SharedWishlistScreen: React.FC<{
       <div className="p-4 space-y-4">
         {loading ? (
           <div className="space-y-3" aria-busy="true">
-            <div className="h-32 rounded-2xl bg-[#E7E5E4]/70 dark:bg-[#2A3630] animate-pulse" />
+            <div className="h-32 rounded-2xl bg-[#DCE6E3]/80 dark:bg-[#2A3630] animate-pulse" />
             <div className="grid grid-cols-2 gap-3">
-              <div className="h-52 rounded-2xl bg-[#E7E5E4]/70 dark:bg-[#2A3630] animate-pulse" />
-              <div className="h-52 rounded-2xl bg-[#E7E5E4]/70 dark:bg-[#2A3630] animate-pulse" />
+              <div className="h-52 rounded-2xl bg-[#DCE6E3]/80 dark:bg-[#2A3630] animate-pulse" />
+              <div className="h-52 rounded-2xl bg-[#DCE6E3]/80 dark:bg-[#2A3630] animate-pulse" />
             </div>
           </div>
         ) : !wishlist || matchedProducts.length === 0 ? (
@@ -132,12 +132,12 @@ export const SharedWishlistScreen: React.FC<{
           />
         ) : (
           <>
-            <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+            <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
               <div>
-                <h2 className="text-base font-display font-bold text-stone-900 dark:text-stone-100">
+                <h2 className="text-base font-display font-bold text-[#0F4C44] dark:text-stone-100">
                   {wishlist.title}
                 </h2>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-600 dark:text-stone-300 mt-1 tabular-nums">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#46635E] dark:text-stone-300 mt-1 tabular-nums">
                   <span>{t('sharedByLabel', { name: wishlist.ownerName })}</span>
                   <span aria-hidden="true">·</span>
                   <span>
@@ -145,7 +145,7 @@ export const SharedWishlistScreen: React.FC<{
                     {matchedProducts.length === 1 ? t('itemSingle') : t('itemPlural')}
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-semibold text-stone-900 dark:text-stone-100">
+                  <span className="font-semibold text-[#0E2421] dark:text-stone-100">
                     {t('estimatedTotalLabel')}: {formatETB(estimatedTotal)}
                   </span>
                 </div>
@@ -156,7 +156,7 @@ export const SharedWishlistScreen: React.FC<{
                   type="button"
                   disabled={availableProducts.length === 0}
                   onClick={handleAddAllToCart}
-                  className="min-h-[44px] flex-1 px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-2 disabled:bg-stone-200 dark:disabled:bg-[#2A3630] disabled:text-stone-400 dark:disabled:text-stone-500 transition-colors whitespace-nowrap"
+                  className="min-h-[44px] flex-1 px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 dark:bg-none dark:bg-[#10B981] dark:hover:bg-[#059669] text-[#FCFDFC] dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-2 disabled:bg-none disabled:bg-[#DCE6E3] dark:disabled:bg-[#2A3630] disabled:text-[#5E7B76] dark:disabled:text-stone-500 transition-all whitespace-nowrap shadow-[0_2px_8px_-2px_rgba(15,76,68,0.28)] dark:shadow-none"
                 >
                   <ShoppingBag className="w-4 h-4 shrink-0" />
                   <span>{t('addAllToCart', { count: availableProducts.length })}</span>
@@ -167,8 +167,8 @@ export const SharedWishlistScreen: React.FC<{
                   onClick={handleSaveAllFavorites}
                   className={`min-h-[44px] flex-1 px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
                     savedAll || allAlreadySaved
-                      ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 border-[#047857]/30 dark:border-[#10B981]/40 text-[#047857] dark:text-[#10B981]'
-                      : 'bg-white dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-800 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#1C2420]'
+                      ? 'bg-[#E5F2EE] dark:bg-[#10B981]/15 border-[#0F4C44]/30 dark:border-[#10B981]/40 text-[#0F4C44] dark:text-[#10B981]'
+                      : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] text-[#0E2421] dark:text-stone-200 hover:bg-[#EBF1EE] dark:hover:bg-[#1C2420]'
                   }`}
                 >
                   {savedAll || allAlreadySaved ? (

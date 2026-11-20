@@ -948,11 +948,11 @@ export const SellerPortalScreen: React.FC<{
 
   return (
     <div className="pb-8">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-4 pt-3 pb-2 space-y-2.5">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 backdrop-blur-md dark:bg-[#1C2420] border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-4 pt-3 pb-2 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <Store className="w-5 h-5 text-[#047857] dark:text-[#10B981] shrink-0" />
-            <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100 truncate">
+            <Store className="w-5 h-5 text-[#0F4C44] dark:text-[#10B981] shrink-0" />
+            <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-stone-100 truncate">
               {t('sellerPortalShort')}
             </h1>
           </div>
@@ -962,7 +962,7 @@ export const SellerPortalScreen: React.FC<{
               type="button"
               onClick={() => openTradeChatInbox()}
               aria-label={t('tradeChatInboxTitle')}
-              className="min-h-[38px] px-2.5 rounded-lg border border-[#047857]/30 dark:border-[#10B981]/30 bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] text-xs font-bold inline-flex items-center gap-1.5 hover:bg-[#D1FAE5] dark:hover:bg-[#10B981]/25 transition-colors"
+              className="min-h-[38px] px-2.5 rounded-lg border border-[#0F4C44]/25 dark:border-[#10B981]/30 bg-[#E5F2EE] dark:bg-[#10B981]/15 text-[#0F4C44] dark:text-[#10B981] text-xs font-bold inline-flex items-center gap-1.5 hover:bg-[#D4EAE3] dark:hover:bg-[#10B981]/25 transition-colors"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               <span className="tabular-nums">
@@ -975,13 +975,13 @@ export const SellerPortalScreen: React.FC<{
                 aria-label="Select Active Shop"
                 value={currentShop?.shopId ?? ''}
                 onChange={(e) => setActiveSellerShopId(e.target.value)}
-                className="max-w-[150px] px-2.5 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-800 dark:text-stone-100 bg-[#FAF8F5] dark:bg-[#141A17] truncate focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="max-w-[150px] px-2.5 py-1.5 rounded-lg border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-[#0E2421] dark:text-stone-100 bg-[#F3F6F4] dark:bg-[#141A17] truncate focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               >
                 {managedShops.map((s) => (
                   <option
                     key={s.shopId}
                     value={s.shopId}
-                    className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                    className="bg-[#FCFDFC] dark:bg-[#1C2420] text-[#0E2421] dark:text-stone-100"
                   >
                     {s.name}
                   </option>
@@ -991,7 +991,7 @@ export const SellerPortalScreen: React.FC<{
               <button
                 type="button"
                 onClick={() => setActiveTab('shop')}
-                className="px-2.5 py-1.5 rounded-lg border border-[#10B981]/30 bg-[#10B981]/15 text-[#10B981] text-xs font-bold whitespace-nowrap"
+                className="px-2.5 py-1.5 rounded-lg border border-[#0F4C44]/30 dark:border-[#10B981]/30 bg-[#E5F2EE] dark:bg-[#10B981]/15 text-[#0F4C44] dark:text-[#10B981] text-xs font-bold whitespace-nowrap"
               >
                 + Create Shop
               </button>
@@ -1000,7 +1000,7 @@ export const SellerPortalScreen: React.FC<{
         </div>
 
         {/* Navigation Segmented Bar */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] rounded-xl text-[11px] font-semibold">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] rounded-xl text-[11px] font-semibold">
           {(
             [
               { id: 'dashboard', label: t('sellerDashboard') },
@@ -1020,8 +1020,8 @@ export const SellerPortalScreen: React.FC<{
               onClick={() => setActiveTab(item.id)}
               className={`min-h-[36px] flex-1 min-w-fit px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
                 activeTab === item.id
-                  ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                  ? 'bg-[#0F4C44] dark:bg-[#10B981]/15 text-[#FCFDFC] dark:text-[#10B981] shadow-[0_2px_8px_-3px_rgba(15,76,68,0.28)] dark:shadow-xs'
+                  : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100'
               }`}
             >
               <span>{item.label}</span>
@@ -1038,7 +1038,7 @@ export const SellerPortalScreen: React.FC<{
 
       <div className="p-4 space-y-4">
         {!currentShop && activeTab !== 'shop' && (
-          <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#10B981]/30 shadow-sm p-5 text-center space-y-3">
+          <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#10B981]/30 shadow-sm p-5 text-center space-y-3">
             <Store className="w-8 h-8 text-[#10B981] mx-auto" />
             <div className="space-y-1">
               <h2 className="text-sm font-bold text-stone-900 dark:text-stone-100">
@@ -1061,10 +1061,10 @@ export const SellerPortalScreen: React.FC<{
 
         {activeTab === 'dashboard' && currentShop && (
           <>
-            <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+            <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] shrink-0">
                     <ResilientImage
                       src={currentShop.logoUrl}
                       alt={currentShop.name}
@@ -1115,7 +1115,7 @@ export const SellerPortalScreen: React.FC<{
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E7E5E4]/70 dark:border-[#2A3630]">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#D2E0DC]/70 dark:border-[#2A3630]">
                 <button
                   type="button"
                   onClick={() => setActiveTab('shop')}
@@ -1127,7 +1127,7 @@ export const SellerPortalScreen: React.FC<{
                 <button
                   type="button"
                   onClick={() => navigate({ name: 'shop', shopId: currentShop.shopId })}
-                  className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 hover:border-[#047857]/40 transition-colors"
+                  className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-stone-700 dark:text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 hover:border-[#047857]/40 transition-colors"
                 >
                   <Store className="w-3.5 h-3.5 shrink-0 text-[#047857] dark:text-[#10B981]" />
                   <span>{t('visitShop')}</span>
@@ -1165,25 +1165,25 @@ export const SellerPortalScreen: React.FC<{
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Total Sales</div>
                 <div className="text-lg font-bold text-[#047857] dark:text-[#10B981] mt-1 tabular-nums">
                   {formatETB(totalSales)}
                 </div>
               </div>
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Pending Orders</div>
                 <div className="text-lg font-bold text-[#D97706] dark:text-[#F59E0B] mt-1 tabular-nums">
                   {pendingOrders.length}
                 </div>
               </div>
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Active Products</div>
                 <div className="text-lg font-bold text-stone-900 dark:text-stone-100 mt-1 tabular-nums">
                   {activeProductsCount}
                 </div>
               </div>
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Low Stock Alerts</div>
                 <div className="text-lg font-bold text-rose-700 dark:text-rose-400 mt-1 tabular-nums">
                   {lowStockCount}
@@ -1224,7 +1224,7 @@ export const SellerPortalScreen: React.FC<{
                 return (
                   <div
                     key={order.orderId}
-                    className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+                    className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-mono font-bold text-stone-900 dark:text-stone-100">
@@ -1285,7 +1285,7 @@ export const SellerPortalScreen: React.FC<{
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
                           placeholder="Reason for rejection (required)"
-                          className="w-full p-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                          className="w-full p-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
                         />
                         <div className="flex gap-2">
                           <button
@@ -1336,7 +1336,7 @@ export const SellerPortalScreen: React.FC<{
                               });
                             }}
                             placeholder={t('deliveryPinInputPlaceholder')}
-                            className="w-28 min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-mono font-bold tracking-widest text-center text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                            className="w-28 min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs font-mono font-bold tracking-widest text-center text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                           />
                           <button
                             type="button"
@@ -1450,7 +1450,7 @@ export const SellerPortalScreen: React.FC<{
             {showProductForm && isListingUnlocked && (
               <form
                 onSubmit={handleSaveProduct}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+                className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-stone-900 dark:text-stone-100">
@@ -1474,7 +1474,7 @@ export const SellerPortalScreen: React.FC<{
                       setAmbiguousConfirmedTarget(null);
                     }}
                     placeholder="Product Name (e.g., Sidama Roasted Coffee 500g)"
-                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   />
                   {prodErrors.name && <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.name}</p>}
                 </div>
@@ -1487,7 +1487,7 @@ export const SellerPortalScreen: React.FC<{
                       value={prodPrice}
                       onChange={(e) => setProdPrice(e.target.value)}
                       placeholder="Price (ETB)"
-                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                     />
                     {prodErrors.price && (
                       <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.price}</p>
@@ -1500,7 +1500,7 @@ export const SellerPortalScreen: React.FC<{
                       value={prodPreviousPrice}
                       onChange={(e) => setProdPreviousPrice(e.target.value)}
                       placeholder="Was ETB (opt)"
-                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                     />
                   </div>
                   <div>
@@ -1510,7 +1510,7 @@ export const SellerPortalScreen: React.FC<{
                       value={prodStock}
                       onChange={(e) => setProdStock(e.target.value)}
                       placeholder="Stock Qty"
-                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                      className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs tabular-nums text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                     />
                     {prodErrors.stock && (
                       <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.stock}</p>
@@ -1526,16 +1526,16 @@ export const SellerPortalScreen: React.FC<{
                       setProdCategory(e.target.value);
                       setAmbiguousConfirmedTarget(null);
                     }}
-                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs bg-[#FCFDFC] dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   >
                     <option
                       value={COFFEE_CATEGORY_SLUG}
-                      className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                      className="bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
                     >
                       {t('coffeeCategoryOptionLabel')}
                     </option>
                     {categories.map((c) => (
-                      <option key={c.slug} value={c.slug} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
+                      <option key={c.slug} value={c.slug} className="bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
                         {language === 'am'
                           ? c.nameAm
                           : language === 'om'
@@ -1558,7 +1558,7 @@ export const SellerPortalScreen: React.FC<{
                         setAmbiguousConfirmedTarget(null);
                       }}
                       placeholder="Product Type (opt, e.g. Roasted Coffee)"
-                      className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                      className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                     />
                     <datalist id="seller-product-type-suggestions">
                       {COFFEE_PRODUCT_TYPE_SUGGESTIONS.map((suggestion) => (
@@ -1632,7 +1632,7 @@ export const SellerPortalScreen: React.FC<{
                             }
                             setProdSubmitError(null);
                           }}
-                          className="min-h-[36px] px-2.5 rounded-lg bg-white dark:bg-[#141A17] text-stone-800 dark:text-stone-100 border border-[#E7E5E4] dark:border-[#2A3630] text-[11px] font-semibold transition-colors"
+                          className="min-h-[36px] px-2.5 rounded-lg bg-[#FCFDFC] dark:bg-[#141A17] text-stone-800 dark:text-stone-100 border border-[#D2E0DC] dark:border-[#2A3630] text-[11px] font-semibold transition-colors"
                         >
                           Keep Non-Coffee
                         </button>
@@ -1663,7 +1663,7 @@ export const SellerPortalScreen: React.FC<{
                           value={coffeeOrigin}
                           onChange={(e) => setCoffeeOrigin(e.target.value)}
                           placeholder="e.g. Sidama, Yirgacheffe"
-                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-[#FCFDFC] dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
                         />
                         <datalist id="ethiopian-coffee-origins">
                           {ETHIOPIAN_COFFEE_ORIGINS.map((origin) => (
@@ -1687,7 +1687,7 @@ export const SellerPortalScreen: React.FC<{
                           value={coffeeBrand}
                           onChange={(e) => setCoffeeBrand(e.target.value)}
                           placeholder={currentShop?.name || 'Roastery / Brand'}
-                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-[#FCFDFC] dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
                         />
                         {prodErrors.coffeeBrand && (
                           <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">
@@ -1707,7 +1707,7 @@ export const SellerPortalScreen: React.FC<{
                           onChange={(e) =>
                             setCoffeeRoastLevel(e.target.value as CoffeeRoastLevel)
                           }
-                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-[#FCFDFC] dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
                         >
                           {COFFEE_ROAST_LEVELS.map((r) => (
                             <option key={r.value} value={r.value}>
@@ -1726,7 +1726,7 @@ export const SellerPortalScreen: React.FC<{
                           onChange={(e) =>
                             setCoffeeProcessMethod(e.target.value as CoffeeProcessMethod)
                           }
-                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-[#FCFDFC] dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
                         >
                           {COFFEE_PROCESSING_METHODS.map((m) => (
                             <option key={m.value} value={m.value}>
@@ -1753,7 +1753,7 @@ export const SellerPortalScreen: React.FC<{
                               className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold transition-colors ${
                                 active
                                   ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
-                                  : 'bg-white dark:bg-[#1A100D] border-[#C68B59]/30 text-stone-700 dark:text-[#D5C3B3]'
+                                  : 'bg-[#FCFDFC] dark:bg-[#1A100D] border-[#C68B59]/30 text-stone-700 dark:text-[#D5C3B3]'
                               }`}
                             >
                               {f.value === 'whole_bean'
@@ -1777,7 +1777,7 @@ export const SellerPortalScreen: React.FC<{
                           value={coffeeWeight}
                           onChange={(e) => setCoffeeWeight(e.target.value)}
                           placeholder="250g, 500g, 1kg"
-                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-[#FCFDFC] dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
                         />
                         <datalist id="coffee-package-weights">
                           {COFFEE_PACKAGE_WEIGHTS.map((w) => (
@@ -1799,7 +1799,7 @@ export const SellerPortalScreen: React.FC<{
                           type="date"
                           value={coffeeRoastDate}
                           onChange={(e) => setCoffeeRoastDate(e.target.value)}
-                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-white dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
+                          className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#C68B59]/40 bg-[#FCFDFC] dark:bg-[#1A100D] text-xs text-stone-900 dark:text-[#F8F4EE]"
                         />
                         {prodErrors.coffeeRoastDate && (
                           <p className="text-[10px] text-rose-600 dark:text-rose-400 mt-1">
@@ -1817,7 +1817,7 @@ export const SellerPortalScreen: React.FC<{
                     value={prodDesc}
                     onChange={(e) => setProdDesc(e.target.value)}
                     placeholder="Describe product quality, weight, or sizing..."
-                    className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   />
                   {prodErrors.description && (
                     <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{prodErrors.description}</p>
@@ -1826,7 +1826,7 @@ export const SellerPortalScreen: React.FC<{
 
                 {/* Fulfillment Availability Toggles */}
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                  <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={prodDeliveryAvailable}
@@ -1835,7 +1835,7 @@ export const SellerPortalScreen: React.FC<{
                     />
                     <span>{t('deliveryAvailable')}</span>
                   </label>
-                  <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                  <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={prodPickupAvailable}
@@ -1870,7 +1870,7 @@ export const SellerPortalScreen: React.FC<{
                         autoPlay
                         playsInline
                         muted
-                        className="w-full h-44 object-cover rounded-xl bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630]"
+                        className="w-full h-44 object-cover rounded-xl bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630]"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <button
@@ -1884,7 +1884,7 @@ export const SellerPortalScreen: React.FC<{
                         <button
                           type="button"
                           onClick={stopProductCameraStream}
-                          className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                          className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
                         >
                           {t('returnCancelCamera')}
                         </button>
@@ -1896,13 +1896,13 @@ export const SellerPortalScreen: React.FC<{
                         type="button"
                         disabled={isProcessingProductPhoto}
                         onClick={handleOpenProductCamera}
-                        className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] disabled:opacity-50 text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                        className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] disabled:opacity-50 text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                       >
                         <Camera className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
                         <span>{t('docVerifyTakePhoto')}</span>
                       </button>
 
-                      <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap">
+                      <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap">
                         <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981] shrink-0" />
                         <span>{t('uploadProductPhoto')}</span>
                         <input
@@ -1927,12 +1927,12 @@ export const SellerPortalScreen: React.FC<{
                     value={prodImageUrl.startsWith('data:image/') ? '' : prodImageUrl}
                     onChange={(e) => setProdImageUrl(e.target.value)}
                     placeholder="Or paste https:// image URL (optional)"
-                    className="w-full min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   />
 
                   {prodImageUrl && (
-                    <div className="flex items-center gap-3 p-2 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17]">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-[#1C2420] shrink-0">
+                    <div className="flex items-center gap-3 p-2 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17]">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#FCFDFC] dark:bg-[#1C2420] shrink-0">
                         <ResilientImage src={prodImageUrl} alt={prodName || 'Product preview'} />
                       </div>
                       <div className="min-w-0 flex-1 text-[11px] text-stone-600 dark:text-stone-300">
@@ -1978,7 +1978,7 @@ export const SellerPortalScreen: React.FC<{
             )}
 
             {shopProducts.length === 0 ? (
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center space-y-1.5">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center space-y-1.5">
                 <Package className="w-6 h-6 text-stone-400 mx-auto" />
                 <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
                   No products listed for {currentShop?.name}
@@ -1993,9 +1993,9 @@ export const SellerPortalScreen: React.FC<{
               shopProducts.map((p) => (
                 <div
                   key={p.productId}
-                  className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm hover:shadow-md p-3 flex items-center gap-3 transition-all"
+                  className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none hover:shadow-md p-3 flex items-center gap-3 transition-all"
                 >
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] shrink-0">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#F3F6F4] dark:bg-[#141A17] shrink-0">
                     <ResilientImage src={p.imageUrl} alt={p.name} fallbackTitle={p.name} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -2012,7 +2012,7 @@ export const SellerPortalScreen: React.FC<{
                       type="button"
                       disabled={!isListingUnlocked}
                       onClick={() => openEditForm(p)}
-                      className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] disabled:opacity-40 transition-colors"
+                      className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] disabled:opacity-40 transition-colors"
                     >
                       {t('edit')}
                     </button>
@@ -2022,7 +2022,7 @@ export const SellerPortalScreen: React.FC<{
                       onClick={() => handleToggleProductStatus(p)}
                       aria-label={p.status === 'active' ? 'Archive product' : 'Restore product'}
                       title={p.status === 'active' ? 'Archive product' : 'Restore product'}
-                      className="min-w-[36px] min-h-[36px] rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] text-stone-600 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] disabled:opacity-40 flex items-center justify-center transition-colors"
+                      className="min-w-[36px] min-h-[36px] rounded-lg border border-[#D2E0DC] dark:border-[#2A3630] text-stone-600 dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] disabled:opacity-40 flex items-center justify-center transition-colors"
                     >
                       {p.status === 'active' ? (
                         <Archive className="w-3.5 h-3.5" />
@@ -2093,7 +2093,7 @@ export const SellerPortalScreen: React.FC<{
               )}
 
               {currentVerification?.status === 'rejected' && currentVerification.reviewNote && (
-                <div className="p-2.5 rounded-xl bg-white/80 dark:bg-[#141A17]/80 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200">
+                <div className="p-2.5 rounded-xl bg-[#FCFDFC]/90 dark:bg-[#141A17]/80 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-800 dark:text-rose-200">
                   <span className="font-bold">Admin review note:</span> {currentVerification.reviewNote}
                 </div>
               )}
@@ -2113,7 +2113,7 @@ export const SellerPortalScreen: React.FC<{
             {/* Business License Upload Form */}
             <form
               onSubmit={handleSubmitVerification}
-              className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3.5"
+              className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3.5"
             >
               <div>
                 <label
@@ -2129,7 +2129,7 @@ export const SellerPortalScreen: React.FC<{
                   value={businessLegalName}
                   onChange={(e) => setBusinessLegalName(e.target.value)}
                   placeholder={t('docVerifyLegalNamePlaceholder')}
-                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 {docErrors.businessLegalName && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
@@ -2153,7 +2153,7 @@ export const SellerPortalScreen: React.FC<{
                     value={licenseNumber}
                     onChange={(e) => setLicenseNumber(e.target.value)}
                     placeholder={t('docVerifyLicenseNumPlaceholder')}
-                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   />
                   {docErrors.licenseNumber && (
                     <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
@@ -2176,7 +2176,7 @@ export const SellerPortalScreen: React.FC<{
                     value={tinNumber}
                     onChange={(e) => setTinNumber(e.target.value)}
                     placeholder={t('docVerifyTinPlaceholder')}
-                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs font-mono text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   />
                   {docErrors.tinNumber && (
                     <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
@@ -2198,13 +2198,13 @@ export const SellerPortalScreen: React.FC<{
                     id="doc-issuing-authority"
                     value={issuingAuthority}
                     onChange={(e) => setIssuingAuthority(e.target.value)}
-                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   >
                     {HAWASSA_ISSUING_AUTHORITIES.map((auth) => (
                       <option
                         key={auth}
                         value={auth}
-                        className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                        className="bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
                       >
                         {auth}
                       </option>
@@ -2229,7 +2229,7 @@ export const SellerPortalScreen: React.FC<{
                     type="date"
                     value={expiryDate}
                     onChange={(e) => setExpiryDate(e.target.value)}
-                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                    className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                   />
                   {docErrors.expiryDate && (
                     <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">
@@ -2257,7 +2257,7 @@ export const SellerPortalScreen: React.FC<{
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-48 object-cover rounded-xl bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630]"
+                      className="w-full h-48 object-cover rounded-xl bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630]"
                     />
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -2271,7 +2271,7 @@ export const SellerPortalScreen: React.FC<{
                       <button
                         type="button"
                         onClick={stopCameraStream}
-                        className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                        className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
                       >
                         {t('returnCancelCamera')}
                       </button>
@@ -2282,13 +2282,13 @@ export const SellerPortalScreen: React.FC<{
                     <button
                       type="button"
                       onClick={handleOpenCamera}
-                      className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                      className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                     >
                       <Camera className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
                       <span>{t('docVerifyTakePhoto')}</span>
                     </button>
 
-                    <label className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                    <label className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#242F29] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
                       <Upload className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
                       <span>{t('docVerifyUploadFile')}</span>
                       <input
@@ -2313,7 +2313,7 @@ export const SellerPortalScreen: React.FC<{
                     <img
                       src={licenseImageDataUrl}
                       alt="Uploaded business license preview"
-                      className="w-full max-h-48 object-contain rounded-lg bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630]"
+                      className="w-full max-h-48 object-contain rounded-lg bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630]"
                     />
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
@@ -2390,10 +2390,10 @@ export const SellerPortalScreen: React.FC<{
 
             {/* Active Virtual Shop Profile & Inline Editor */}
             {currentShop && (
-              <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+              <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] shrink-0">
                       <ResilientImage
                         src={currentShop.logoUrl}
                         alt={currentShop.name}
@@ -2415,7 +2415,7 @@ export const SellerPortalScreen: React.FC<{
                     <button
                       type="button"
                       onClick={() => setIsEditingCurrentShop((v) => !v)}
-                      className="min-h-[36px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5 shrink-0"
+                      className="min-h-[36px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5 shrink-0"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       <span>{isEditingCurrentShop ? t('cancel') : t('edit')}</span>
@@ -2428,14 +2428,14 @@ export const SellerPortalScreen: React.FC<{
                     {currentShop.description}
                   </p>
                 ) : (
-                  <form onSubmit={handleSaveCurrentShopEdits} className="space-y-2.5 pt-2 border-t border-[#E7E5E4] dark:border-[#2A3630]">
+                  <form onSubmit={handleSaveCurrentShopEdits} className="space-y-2.5 pt-2 border-t border-[#D2E0DC] dark:border-[#2A3630]">
                     <div>
                       <input
                         type="text"
                         value={editShopName}
                         onChange={(e) => setEditShopName(e.target.value)}
                         placeholder="Virtual Shop Name"
-                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
                       />
                       {editShopErrors.name && (
                         <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.name}</p>
@@ -2448,7 +2448,7 @@ export const SellerPortalScreen: React.FC<{
                         value={editShopDesc}
                         onChange={(e) => setEditShopDesc(e.target.value)}
                         placeholder="Describe what your virtual shop sells..."
-                        className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                        className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
                       />
                       {editShopErrors.description && (
                         <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.description}</p>
@@ -2459,7 +2459,7 @@ export const SellerPortalScreen: React.FC<{
                       <select
                         value={editShopNeighborhood}
                         onChange={(e) => setEditShopNeighborhood(e.target.value)}
-                        className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                        className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
                       >
                         {HAWASSA_NEIGHBORHOODS.map((n) => (
                           <option key={n} value={n}>
@@ -2473,7 +2473,7 @@ export const SellerPortalScreen: React.FC<{
                           value={editShopPhone}
                           onChange={(e) => setEditShopPhone(e.target.value)}
                           placeholder="+251 9X XXX XXXX"
-                          className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                          className="w-full min-h-[44px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
                         />
                         {editShopErrors.phoneNumber && (
                           <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.phoneNumber}</p>
@@ -2487,7 +2487,7 @@ export const SellerPortalScreen: React.FC<{
                         value={editShopAddress}
                         onChange={(e) => setEditShopAddress(e.target.value)}
                         placeholder="Street / Market Stall Location"
-                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
+                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100"
                       />
                       {editShopErrors.address && (
                         <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{editShopErrors.address}</p>
@@ -2505,7 +2505,7 @@ export const SellerPortalScreen: React.FC<{
                           className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${
                             editShopTraderType === 'general'
                               ? 'bg-[#047857] border-[#047857] text-white'
-                              : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                              : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
                           }`}
                         >
                           {t('sellerTraderTypeGeneral')}
@@ -2516,7 +2516,7 @@ export const SellerPortalScreen: React.FC<{
                           className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors ${
                             editShopTraderType === 'coffee'
                               ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
-                              : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                              : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
                           }`}
                         >
                           <Coffee className="w-3.5 h-3.5 text-[#C68B59] shrink-0" />
@@ -2526,7 +2526,7 @@ export const SellerPortalScreen: React.FC<{
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                      <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={editShopDelivery}
@@ -2535,7 +2535,7 @@ export const SellerPortalScreen: React.FC<{
                         />
                         <span>{t('deliveryAvailable')}</span>
                       </label>
-                      <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                      <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={editShopPickup}
@@ -2553,7 +2553,7 @@ export const SellerPortalScreen: React.FC<{
                       <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300">
                         Shop Logo Photo
                       </span>
-                      <label className="min-h-[36px] px-3 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer">
+                      <label className="min-h-[36px] px-3 rounded-lg border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer">
                         <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
                         <span>Upload Logo</span>
                         <input
@@ -2587,7 +2587,7 @@ export const SellerPortalScreen: React.FC<{
             {/* Create a New Virtual Shop Form */}
             <form
               onSubmit={handleApplyNewShop}
-              className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+              className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
             >
               <div className="flex items-center gap-2">
                 <Store className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
@@ -2607,7 +2607,7 @@ export const SellerPortalScreen: React.FC<{
                   value={newShopName}
                   onChange={(e) => setNewShopName(e.target.value)}
                   placeholder="Virtual Shop Name (e.g. Sidama Crafts Hub)"
-                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 {shopFormErrors.name && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.name}</p>
@@ -2620,7 +2620,7 @@ export const SellerPortalScreen: React.FC<{
                   value={newShopDescription}
                   onChange={(e) => setNewShopDescription(e.target.value)}
                   placeholder="What does your shop offer? (optional, min 10 chars if provided)"
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 {shopFormErrors.description && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.description}</p>
@@ -2638,7 +2638,7 @@ export const SellerPortalScreen: React.FC<{
                     className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold transition-colors ${
                       newShopTraderType === 'general'
                         ? 'bg-[#047857] border-[#047857] text-white'
-                        : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                        : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
                     }`}
                   >
                     {t('sellerTraderTypeGeneral')}
@@ -2649,7 +2649,7 @@ export const SellerPortalScreen: React.FC<{
                     className={`min-h-[40px] px-2.5 rounded-xl border text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors ${
                       newShopTraderType === 'coffee'
                         ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
-                        : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                        : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
                     }`}
                   >
                     <Coffee className="w-3.5 h-3.5 text-[#C68B59] shrink-0" />
@@ -2662,13 +2662,13 @@ export const SellerPortalScreen: React.FC<{
                 <select
                   value={newShopNeighborhood}
                   onChange={(e) => setNewShopNeighborhood(e.target.value)}
-                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs bg-white dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs bg-[#FCFDFC] dark:bg-[#141A17] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 >
                   {HAWASSA_NEIGHBORHOODS.map((n) => (
                     <option
                       key={n}
                       value={n}
-                      className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
+                      className="bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-900 dark:text-stone-100"
                     >
                       {getLocalizedNeighborhood(n, language)}
                     </option>
@@ -2685,7 +2685,7 @@ export const SellerPortalScreen: React.FC<{
                   value={newShopAddress}
                   onChange={(e) => setNewShopAddress(e.target.value)}
                   placeholder="Street / Market Stall Location"
-                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 {shopFormErrors.address && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.address}</p>
@@ -2698,7 +2698,7 @@ export const SellerPortalScreen: React.FC<{
                   value={newShopPhone}
                   onChange={(e) => setNewShopPhone(e.target.value)}
                   placeholder="Shop Contact Phone (e.g. 0911234567)"
-                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 {shopFormErrors.phoneNumber && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{shopFormErrors.phoneNumber}</p>
@@ -2707,7 +2707,7 @@ export const SellerPortalScreen: React.FC<{
 
               {/* Delivery & Pickup Options */}
               <div className="grid grid-cols-2 gap-2">
-                <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={newShopDeliveryAvailable}
@@ -2716,7 +2716,7 @@ export const SellerPortalScreen: React.FC<{
                   />
                   <span>{t('deliveryAvailable')}</span>
                 </label>
-                <label className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
+                <label className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-2 text-xs text-stone-800 dark:text-stone-200 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={newShopPickupAvailable}
@@ -2731,16 +2731,16 @@ export const SellerPortalScreen: React.FC<{
               )}
 
               {/* Virtual Shop Logo Preview & Upload */}
-              <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17]">
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17]">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] shrink-0">
                     <ResilientImage src={newShopLogoUrl} alt="Virtual shop logo preview" />
                   </div>
                   <div className="text-[11px] font-semibold text-stone-700 dark:text-stone-200 truncate">
                     Virtual Shop Logo
                   </div>
                 </div>
-                <label className="min-h-[36px] px-3 rounded-lg border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#1C2420] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer shrink-0">
+                <label className="min-h-[36px] px-3 rounded-lg border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#1C2420] text-[11px] font-semibold text-stone-800 dark:text-stone-200 inline-flex items-center gap-1.5 cursor-pointer shrink-0">
                   <Upload className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
                   <span>Upload Logo</span>
                   <input

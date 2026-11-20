@@ -7,9 +7,26 @@
 }
 
 :root {
+  color-scheme: light;
+  --hg-canvas: #F3F6F4;
+  --hg-surface: #FCFDFC;
+  --hg-text: #0E2421;
+  --hg-border: #D2E0DC;
+  --hg-teal-deep: #0F4C44;
+  --hg-emerald: #047857;
+  --hg-emerald-hover: #0F4C44;
+  --hg-sage-tint: rgba(15, 76, 68, 0.09);
+  --hg-honey: #D97706;
+  --hg-terracotta: #C2410C;
+  --hg-terracotta-tint: rgba(194, 65, 12, 0.12);
+  --hg-scroll-thumb: rgba(15, 76, 68, 0.25);
+}
+
+html.dark {
   color-scheme: dark;
   --hg-canvas: #031719;
   --hg-surface: #092825;
+  --hg-text: #F5FAFA;
   --hg-border: #14443F;
   --hg-emerald: #00D68F;
   --hg-emerald-hover: #00C8D7;
@@ -17,11 +34,7 @@
   --hg-honey: #F59E0B;
   --hg-terracotta: #FB923C;
   --hg-terracotta-tint: rgba(251, 146, 60, 0.14);
-}
-
-html,
-html.dark {
-  color-scheme: dark;
+  --hg-scroll-thumb: rgba(0, 214, 143, 0.35);
   background-color: #031719;
 }
 
@@ -29,8 +42,8 @@ html.dark {
   html,
   body {
     font-family: var(--font-sans);
-    background-color: #031719;
-    color: #F5FAFA;
+    background-color: var(--hg-canvas);
+    color: var(--hg-text);
   }
 
   h1, h2, h3, .font-display {
@@ -47,7 +60,7 @@ html.dark {
   background: transparent;
 }
 .mobile-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 214, 143, 0.35);
+  background: var(--hg-scroll-thumb);
   border-radius: 9999px;
 }
 

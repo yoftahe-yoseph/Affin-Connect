@@ -116,12 +116,14 @@ import {
   isSuperAdminEmail,
   isUserPendingEmailVerification,
   isValidOtpCode,
+  isValidThemePreference,
   normalizePhoneToE164,
   parseSharedWishlistFallbackIds,
   rankShopsByProximity,
   resolveActiveSellerShopId,
   resolveClosestNeighborhood,
   resolveInitialOrderPaymentStatus,
+  resolveThemePreference,
   sanitizeWishlistProductIds,
   shouldTriggerPriceAlert,
   validateEmailSignInInput,
@@ -389,6 +391,7 @@ interface MarketplaceContextValue {
   themePreference: ThemePreference;
   resolvedTheme: ResolvedTheme;
   setThemePreference: (theme: ThemePreference) => void;
+  toggleTheme: () => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
   selectedNeighborhood: string;
   setSelectedNeighborhood: (n: string) => void;
@@ -730,7 +733,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [language, setLanguageState] = useState<SupportedLanguage>(() =>
     readStorage<SupportedLanguage>(STORAGE_KEYS.LANGUAGE, 'en')
   );
-  const themePreference: ThemePreference = 'dark';
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
+    const stored = readStorage<unknown>(STORAGE_KEYS.THEME, 'dark');
+    return isValidThemePreference(stored) ? stored : 'dark';
+  });
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : true
+  );
   const [selectedNeighborhood, setSelectedNeighborhoodState] = useState<string>(() =>
     readStorage<string>(STORAGE_KEYS.NEIGHBORHOOD, 'All Hawassa')
   );
@@ -900,20 +911,31 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const resolvedTheme: ResolvedTheme = 'dark';
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches);
+    mq.addEventListener?.('change', handleChange);
+    return () => mq.removeEventListener?.('change', handleChange);
+  }, []);
 
-  // Enforce dark mode class & colorScheme on <html>
+  const resolvedTheme: ResolvedTheme = resolveThemePreference(
+    themePreference,
+    systemPrefersDark
+  );
+
+  // Sync dark mode class, colorScheme, and localStorage persistence
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
+      document.documentElement.style.colorScheme = resolvedTheme;
     }
     try {
-      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify('dark'));
+      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(themePreference));
     } catch {
       // ignore storage errors
     }
-  }, []);
+  }, [resolvedTheme, themePreference]);
 
   // Persist local states cleanly
   useEffect(() => {
@@ -1995,16 +2017,23 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const setThemePreference = (_theme: ThemePreference) => {
+  const setThemePreference = (nextTheme: ThemePreference) => {
+    const validTheme: ThemePreference = isValidThemePreference(nextTheme) ? nextTheme : 'dark';
+    setThemePreferenceState(validTheme);
+    const nextResolved = resolveThemePreference(validTheme, systemPrefersDark);
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
+      document.documentElement.classList.toggle('dark', nextResolved === 'dark');
+      document.documentElement.style.colorScheme = nextResolved;
     }
     try {
-      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify('dark'));
+      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(validTheme));
     } catch {
       // ignore storage errors
     }
+  };
+
+  const toggleTheme = () => {
+    setThemePreference(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   const setSelectedNeighborhood = (n: string) => {
@@ -5369,6 +5398,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         themePreference,
         resolvedTheme,
         setThemePreference,
+        toggleTheme,
         t,
         selectedNeighborhood,
         setSelectedNeighborhood,

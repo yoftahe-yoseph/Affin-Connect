@@ -554,15 +554,15 @@ export const AdminPortalScreen: React.FC<{
 
   return (
     <div className="pb-10">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-4 pt-3 pb-2 space-y-2.5">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 backdrop-blur-md dark:bg-[#1C2420] border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-4 pt-3 pb-2 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <ShieldCheck className="w-5 h-5 text-[#D97706] dark:text-[#F59E0B] shrink-0" />
+            <ShieldCheck className="w-5 h-5 text-[#0F4C44] dark:text-[#F59E0B] shrink-0" />
             <div className="min-w-0">
-              <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100 truncate">
+              <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-stone-100 truncate">
                 {t('adminTitle')}
               </h1>
-              <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">
+              <div className="text-[10px] text-[#46635E] dark:text-stone-400 truncate">
                 {isCloudAdmin ? 'Cloud Governance Active' : 'Local Governance Preview'}
               </div>
             </div>
@@ -574,14 +574,14 @@ export const AdminPortalScreen: React.FC<{
             className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold shrink-0 transition-colors ${
               governanceConfig.orderingPaused
                 ? 'bg-rose-600 text-white'
-                : 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
+                : 'bg-[#E5F2EE] dark:bg-[#10B981]/15 border border-[#0F4C44]/20 dark:border-transparent text-[#0F4C44] dark:text-[#10B981]'
             }`}
           >
             {governanceConfig.orderingPaused ? 'Ordering Paused' : 'Market Live'}
           </button>
         </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] rounded-xl text-[11px] font-semibold">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] rounded-xl text-[11px] font-semibold">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -589,8 +589,8 @@ export const AdminPortalScreen: React.FC<{
               onClick={() => setActiveTab(item.id)}
               className={`min-h-[36px] px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
                 activeTab === item.id
-                  ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                  ? 'bg-[#0F4C44] dark:bg-[#10B981]/15 text-[#FCFDFC] dark:text-[#10B981] shadow-[0_2px_8px_-3px_rgba(15,76,68,0.28)] dark:shadow-xs'
+                  : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100'
               }`}
             >
               <span>{item.label}</span>
@@ -627,7 +627,7 @@ export const AdminPortalScreen: React.FC<{
         {activeTab === 'overview' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Gross Volume</div>
                 <div className="text-base font-bold text-stone-900 dark:text-stone-100 tabular-nums mt-0.5">
                   {formatETB(totalGmv)}
@@ -637,7 +637,7 @@ export const AdminPortalScreen: React.FC<{
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Merchants</div>
                 <div className="text-base font-bold text-stone-900 dark:text-stone-100 tabular-nums mt-0.5">
                   {shops.length} shops
@@ -647,7 +647,7 @@ export const AdminPortalScreen: React.FC<{
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Returns & Disputes</div>
                 <div className="text-base font-bold text-stone-900 dark:text-stone-100 tabular-nums mt-0.5">
                   {openReturnsCount} open
@@ -657,7 +657,7 @@ export const AdminPortalScreen: React.FC<{
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5">
                 <div className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Accounts & Risk</div>
                 <div className="text-base font-bold text-stone-900 dark:text-stone-100 tabular-nums mt-0.5">
                   {adminUsers.length} users
@@ -669,7 +669,7 @@ export const AdminPortalScreen: React.FC<{
             </div>
 
             {/* Emergency Kill-Switch Shortcut */}
-            <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+            <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
@@ -708,7 +708,7 @@ export const AdminPortalScreen: React.FC<{
                       'Toggled strict shop verification'
                     ).then(() => notifyAction('Verification policy updated.'))
                   }
-                  className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-800 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] flex items-center justify-center gap-1.5 transition-colors"
+                  className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-stone-800 dark:text-stone-200 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-[#047857] dark:text-[#10B981]" />
                   <span>{governanceConfig.strictShopVerification ? 'Strict Verify: ON' : 'Strict Verify: OFF'}</span>
@@ -717,7 +717,7 @@ export const AdminPortalScreen: React.FC<{
             </section>
 
             {/* Priority Governance Queues */}
-            <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm divide-y divide-[#E7E5E4]/70 dark:divide-[#2A3630]">
+            <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none divide-y divide-[#D2E0DC]/70 dark:divide-[#2A3630]">
               <div className="px-4 py-3 text-xs font-bold text-stone-900 dark:text-stone-100">
                 Governance Queues
               </div>
@@ -727,7 +727,7 @@ export const AdminPortalScreen: React.FC<{
                   setVerificationFilter('pending_review');
                   setActiveTab('verifications');
                 }}
-                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 <span className="flex items-center gap-2 text-stone-700 dark:text-stone-200 font-medium">
                   <FileCheck2 className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
@@ -743,7 +743,7 @@ export const AdminPortalScreen: React.FC<{
                   setShopStatusFilter('pending');
                   setActiveTab('shops');
                 }}
-                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 <span className="flex items-center gap-2 text-stone-700 dark:text-stone-200 font-medium">
                   <Store className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B]" />
@@ -757,7 +757,7 @@ export const AdminPortalScreen: React.FC<{
                   setProductStatusFilter('pending_review');
                   setActiveTab('products');
                 }}
-                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 <span className="flex items-center gap-2 text-stone-700 dark:text-stone-200 font-medium">
                   <Flag className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B]" />
@@ -772,7 +772,7 @@ export const AdminPortalScreen: React.FC<{
                   setReturnStatusFilter('requested');
                   setActiveTab('orders');
                 }}
-                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 <span className="flex items-center gap-2 text-stone-700 dark:text-stone-200 font-medium">
                   <RefreshCw className="w-4 h-4 text-rose-600 dark:text-rose-400" />
@@ -786,7 +786,7 @@ export const AdminPortalScreen: React.FC<{
                   setSupervisionFilter('attention');
                   setActiveTab('supervision');
                 }}
-                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 <span className="flex items-center gap-2 text-stone-700 dark:text-stone-200 font-medium">
                   <MessageSquare className="w-4 h-4 text-[#D97706] dark:text-[#F59E0B]" />
@@ -799,7 +799,7 @@ export const AdminPortalScreen: React.FC<{
               <button
                 type="button"
                 onClick={() => setActiveTab('audit')}
-                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between text-xs hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 <span className="flex items-center gap-2 text-stone-700 dark:text-stone-200 font-medium">
                   <ClipboardList className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
@@ -821,7 +821,7 @@ export const AdminPortalScreen: React.FC<{
                 value={shopSearch}
                 onChange={(e) => setShopSearch(e.target.value)}
                 placeholder="Search shops by name, neighborhood, or phone..."
-                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
 
@@ -834,7 +834,7 @@ export const AdminPortalScreen: React.FC<{
                   className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 border transition-colors ${
                     shopStatusFilter === st
                       ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                      : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                      : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                   }`}
                 >
                   {st}
@@ -845,7 +845,7 @@ export const AdminPortalScreen: React.FC<{
             {filteredShops.map((shop) => (
               <div
                 key={shop.shopId}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+                className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -906,7 +906,7 @@ export const AdminPortalScreen: React.FC<{
                         reason: shop.featured ? 'Removed featured badge' : 'Promoted as featured merchant',
                       }).then(() => notifyAction(shop.featured ? 'Unfeatured shop.' : 'Featured shop.'))
                     }
-                    className="min-h-[40px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                    className="min-h-[40px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-200 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Star className="w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B]" />
                     <span>{shop.featured ? 'Unfeature' : 'Feature'}</span>
@@ -974,7 +974,7 @@ export const AdminPortalScreen: React.FC<{
                 value={verificationSearch}
                 onChange={(e) => setVerificationSearch(e.target.value)}
                 placeholder="Search by shop, legal name, license no., or TIN..."
-                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
 
@@ -987,7 +987,7 @@ export const AdminPortalScreen: React.FC<{
                   className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 border transition-colors ${
                     verificationFilter === st
                       ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                      : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                      : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                   }`}
                 >
                   {st.replace('_', ' ')}
@@ -996,7 +996,7 @@ export const AdminPortalScreen: React.FC<{
             </div>
 
             {filteredVerifications.length === 0 ? (
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center space-y-1.5">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center space-y-1.5">
                 <FileCheck2 className="w-6 h-6 text-stone-400 mx-auto" />
                 <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
                   No matching document submissions
@@ -1009,7 +1009,7 @@ export const AdminPortalScreen: React.FC<{
               filteredVerifications.map((ver) => (
                 <div
                   key={ver.verificationId}
-                  className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+                  className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -1033,7 +1033,7 @@ export const AdminPortalScreen: React.FC<{
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4]/60 dark:border-[#2A3630] text-[11px]">
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC]/60 dark:border-[#2A3630] text-[11px]">
                     <div>
                       <div className="text-stone-500 dark:text-stone-400">License No.</div>
                       <div className="font-mono font-bold text-stone-900 dark:text-stone-100 truncate">
@@ -1052,7 +1052,7 @@ export const AdminPortalScreen: React.FC<{
                         {ver.issuingAuthority}
                       </div>
                     </div>
-                    <div className="col-span-2 flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400 tabular-nums pt-1 border-t border-[#E7E5E4] dark:border-[#2A3630]">
+                    <div className="col-span-2 flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400 tabular-nums pt-1 border-t border-[#D2E0DC] dark:border-[#2A3630]">
                       <span>Submitted {new Date(ver.submittedAt).toLocaleDateString()}</span>
                       <span>{ver.expiryDate ? `Expires ${ver.expiryDate}` : 'No expiry noted'}</span>
                     </div>
@@ -1069,7 +1069,7 @@ export const AdminPortalScreen: React.FC<{
                           imageUrl: ver.licenseImageDataUrl,
                         })
                       }
-                      className="w-full rounded-xl overflow-hidden border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] group relative"
+                      className="w-full rounded-xl overflow-hidden border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] group relative"
                     >
                       <img
                         src={ver.licenseImageDataUrl}
@@ -1084,7 +1084,7 @@ export const AdminPortalScreen: React.FC<{
                   </div>
 
                   {ver.reviewNote && (
-                    <div className="p-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] text-[11px] text-stone-700 dark:text-stone-300">
+                    <div className="p-2.5 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] text-[11px] text-stone-700 dark:text-stone-300">
                       <span className="font-semibold">Review note:</span> {ver.reviewNote}
                     </div>
                   )}
@@ -1204,7 +1204,7 @@ export const AdminPortalScreen: React.FC<{
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
                 placeholder="Search products, shops, or categories..."
-                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
 
@@ -1217,7 +1217,7 @@ export const AdminPortalScreen: React.FC<{
                   className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 border transition-colors ${
                     productStatusFilter === st
                       ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                      : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                      : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                   }`}
                 >
                   {st.replace('_', ' ')}
@@ -1228,7 +1228,7 @@ export const AdminPortalScreen: React.FC<{
             {filteredProducts.map((p) => (
               <div
                 key={p.productId}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5 space-y-2.5"
+                className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5 space-y-2.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -1321,7 +1321,7 @@ export const AdminPortalScreen: React.FC<{
                             }),
                         })
                       }
-                      className="min-h-[38px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
+                      className="min-h-[38px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
                     >
                       <Package className="w-3.5 h-3.5" />
                       <span>Freeze Stock</span>
@@ -1348,7 +1348,7 @@ export const AdminPortalScreen: React.FC<{
                             }),
                         })
                       }
-                      className="min-h-[38px] px-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
+                      className="min-h-[38px] px-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-stone-700 dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
                     >
                       <Archive className="w-3.5 h-3.5" />
                       <span>Takedown</span>
@@ -1382,7 +1382,7 @@ export const AdminPortalScreen: React.FC<{
         {/* TAB 4: ORDERS & RETURN DISPUTES */}
         {activeTab === 'orders' && (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] rounded-xl text-xs font-semibold">
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] rounded-xl text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setOrdersSubTab('orders')}
@@ -1420,7 +1420,7 @@ export const AdminPortalScreen: React.FC<{
                       className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 border transition-colors ${
                         orderStatusFilter === st
                           ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                          : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                          : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                       }`}
                     >
                       {st.replace(/_/g, ' ')}
@@ -1429,14 +1429,14 @@ export const AdminPortalScreen: React.FC<{
                 </div>
 
                 {filteredOrders.length === 0 ? (
-                  <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center text-xs text-stone-500 dark:text-stone-400">
+                  <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center text-xs text-stone-500 dark:text-stone-400">
                     No matching orders found.
                   </div>
                 ) : (
                   filteredOrders.map((order) => (
                     <div
                       key={order.orderId}
-                      className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5"
+                      className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-2.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -1535,7 +1535,7 @@ export const AdminPortalScreen: React.FC<{
                       className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 border transition-colors ${
                         returnStatusFilter === st
                           ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                          : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                          : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                       }`}
                     >
                       {st}
@@ -1544,14 +1544,14 @@ export const AdminPortalScreen: React.FC<{
                 </div>
 
                 {filteredReturns.length === 0 ? (
-                  <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center text-xs text-stone-500 dark:text-stone-400">
+                  <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center text-xs text-stone-500 dark:text-stone-400">
                     No matching return or exchange requests.
                   </div>
                 ) : (
                   filteredReturns.map((req) => (
                     <div
                       key={req.returnId}
-                      className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5"
+                      className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-2.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -1576,12 +1576,12 @@ export const AdminPortalScreen: React.FC<{
                         <img
                           src={req.photoDataUrl}
                           alt="Damage proof"
-                          className="w-24 h-20 object-cover rounded-xl border border-[#E7E5E4] dark:border-[#2A3630]"
+                          className="w-24 h-20 object-cover rounded-xl border border-[#D2E0DC] dark:border-[#2A3630]"
                         />
                       )}
 
                       {req.resolutionNote && (
-                        <div className="p-2 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] text-[11px] text-stone-700 dark:text-stone-300">
+                        <div className="p-2 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] text-[11px] text-stone-700 dark:text-stone-300">
                           Resolution: {req.resolutionNote}
                         </div>
                       )}
@@ -1672,7 +1672,7 @@ export const AdminPortalScreen: React.FC<{
         {/* TAB 4B: MARKETPLACE ADMIN SUPERVISION CONSOLE */}
         {activeTab === 'supervision' && (
           <div className="space-y-3">
-            <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+            <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-extrabold text-stone-900 dark:text-stone-100">
@@ -1694,7 +1694,7 @@ export const AdminPortalScreen: React.FC<{
                   value={supervisionSearch}
                   onChange={(e) => setSupervisionSearch(e.target.value)}
                   placeholder="Search Order #, shop, buyer, or escalation reason..."
-                  className="w-full min-h-[42px] pl-9 pr-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                  className="w-full min-h-[42px] pl-9 pr-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#047857]"
                 />
               </div>
 
@@ -1715,7 +1715,7 @@ export const AdminPortalScreen: React.FC<{
                     className={`min-h-[36px] px-3 rounded-xl text-[11px] font-bold whitespace-nowrap shrink-0 border transition-colors ${
                       supervisionFilter === pill.id
                         ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                        : 'bg-[#FAF8F5] dark:bg-[#141A17] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                        : 'bg-[#F3F6F4] dark:bg-[#141A17] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                     }`}
                   >
                     {pill.label}
@@ -1725,7 +1725,7 @@ export const AdminPortalScreen: React.FC<{
             </div>
 
             {filteredSupervisionChats.length === 0 ? (
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center text-xs text-stone-500 dark:text-stone-400">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center text-xs text-stone-500 dark:text-stone-400">
                 {t('adminSupervisionEmpty')}
               </div>
             ) : (
@@ -1745,7 +1745,7 @@ export const AdminPortalScreen: React.FC<{
                         className={`w-full text-left p-3.5 rounded-2xl border transition-colors space-y-1.5 ${
                           isSelected
                             ? 'bg-[#ECFDF5]/60 dark:bg-[#064E3B]/30 border-[#047857] dark:border-[#10B981]'
-                            : 'bg-white dark:bg-[#1C2420] border-[#E7E5E4] dark:border-[#2A3630] hover:border-[#047857]/50'
+                            : 'bg-[#FCFDFC] dark:bg-[#1C2420] border-[#D2E0DC] dark:border-[#2A3630] hover:border-[#047857]/50'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -1781,8 +1781,8 @@ export const AdminPortalScreen: React.FC<{
 
                 {/* Transcript & Mediator Actions Panel */}
                 {selectedSupervisedThread && (
-                  <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm overflow-hidden">
-                    <div className="p-4 border-b border-[#E7E5E4] dark:border-[#2A3630] space-y-2.5 bg-[#FAF8F5] dark:bg-[#141A17]">
+                  <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none overflow-hidden">
+                    <div className="p-4 border-b border-[#D2E0DC] dark:border-[#2A3630] space-y-2.5 bg-[#F3F6F4] dark:bg-[#141A17]">
                       <div className="flex items-start justify-between gap-2 flex-wrap">
                         <div>
                           <h3 className="text-xs font-extrabold text-stone-900 dark:text-stone-100">
@@ -1865,13 +1865,13 @@ export const AdminPortalScreen: React.FC<{
                           onChange={(e) => setResolutionNoteInput(e.target.value)}
                           placeholder="Optional resolution summary when marking resolved..."
                           maxLength={300}
-                          className="w-full min-h-[38px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#1C2420] text-[11px] text-stone-900 dark:text-stone-100"
+                          className="w-full min-h-[38px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#1C2420] text-[11px] text-stone-900 dark:text-stone-100"
                         />
                       )}
                     </div>
 
                     {/* Message Transcript Feed */}
-                    <div className="p-4 space-y-2.5 max-h-72 overflow-y-auto bg-[#FAF8F5]/50 dark:bg-[#141A17]/50">
+                    <div className="p-4 space-y-2.5 max-h-72 overflow-y-auto bg-[#F3F6F4]/50 dark:bg-[#141A17]/50">
                       {adminSupervisedMessages.length === 0 ? (
                         <p className="text-xs text-stone-500 dark:text-stone-400 text-center py-4">
                           No messages in this thread yet.
@@ -1885,7 +1885,7 @@ export const AdminPortalScreen: React.FC<{
                                 ? 'bg-[#ECFDF5] dark:bg-[#064E3B]/45 border border-[#10B981]/50'
                                 : msg.senderRole === 'system'
                                 ? 'bg-[#FEF3C7]/70 dark:bg-[#78350F]/30 border border-[#F59E0B]/40'
-                                : 'bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630]'
+                                : 'bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630]'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
@@ -1943,7 +1943,7 @@ export const AdminPortalScreen: React.FC<{
                           setMediatingSubmitting(false);
                         }
                       }}
-                      className="p-3 border-t border-[#E7E5E4] dark:border-[#2A3630] flex items-center gap-2 bg-white dark:bg-[#1C2420]"
+                      className="p-3 border-t border-[#D2E0DC] dark:border-[#2A3630] flex items-center gap-2 bg-[#FCFDFC] dark:bg-[#1C2420]"
                     >
                       <input
                         type="text"
@@ -1951,7 +1951,7 @@ export const AdminPortalScreen: React.FC<{
                         onChange={(e) => setMediatorReply(e.target.value)}
                         placeholder={t('adminMediatorInputPlaceholder')}
                         maxLength={1000}
-                        className="flex-1 min-h-[42px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#047857]"
+                        className="flex-1 min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-[#047857]"
                       />
                       <button
                         type="submit"
@@ -1975,7 +1975,7 @@ export const AdminPortalScreen: React.FC<{
             {/* Grant / Change Role by Email Quick Form */}
             <form
               onSubmit={handleGrantRoleByEmail}
-              className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+              className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -2001,7 +2001,7 @@ export const AdminPortalScreen: React.FC<{
                     if (grantFeedback) setGrantFeedback(null);
                   }}
                   placeholder={t('grantAdminByEmailPlaceholder')}
-                  className="w-full min-h-[42px] pl-9 pr-3 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[42px] pl-9 pr-3 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
 
@@ -2010,7 +2010,7 @@ export const AdminPortalScreen: React.FC<{
                   aria-label="Target role for email lookup"
                   value={grantRoleTarget}
                   onChange={(e) => setGrantRoleTarget(e.target.value as UserRole)}
-                  className="min-h-[42px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs font-semibold text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="min-h-[42px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs font-semibold text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 >
                   <option value="admin">{t('adminRoleAdminBtn')}</option>
                   <option value="seller">{t('adminRoleSellerBtn')}</option>
@@ -2058,7 +2058,7 @@ export const AdminPortalScreen: React.FC<{
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   placeholder="Search users by name, email, phone, or UID..."
-                  className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
 
@@ -2078,7 +2078,7 @@ export const AdminPortalScreen: React.FC<{
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap shrink-0 border transition-colors ${
                       userRoleFilter === pill.id
                         ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                        : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630] hover:bg-[#FAF8F5] dark:hover:bg-[#242E29]'
+                        : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630] hover:bg-[#EBF1EE] dark:hover:bg-[#242E29]'
                     }`}
                   >
                     {pill.label}
@@ -2088,7 +2088,7 @@ export const AdminPortalScreen: React.FC<{
             </div>
 
             {filteredUsers.length === 0 ? (
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center text-xs text-stone-500 dark:text-stone-400">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center text-xs text-stone-500 dark:text-stone-400">
                 No matching user profiles found.
               </div>
             ) : (
@@ -2099,7 +2099,7 @@ export const AdminPortalScreen: React.FC<{
                 return (
                   <div
                     key={usr.uid}
-                    className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3"
+                    className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -2131,7 +2131,7 @@ export const AdminPortalScreen: React.FC<{
                               ? 'bg-[#FFF7ED] dark:bg-[#F59E0B]/15 text-[#C2410C] dark:text-[#FBBF24] border border-[#FDBA74]/50 dark:border-[#F59E0B]/30'
                               : usr.role === 'seller'
                                 ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] border border-[#A7F3D0] dark:border-[#10B981]/30'
-                                : 'bg-stone-100 dark:bg-[#141A17] text-stone-600 dark:text-stone-300 border border-[#E7E5E4] dark:border-[#2A3630]'
+                                : 'bg-stone-100 dark:bg-[#141A17] text-stone-600 dark:text-stone-300 border border-[#D2E0DC] dark:border-[#2A3630]'
                           }`}
                         >
                           {usr.role}
@@ -2151,9 +2151,9 @@ export const AdminPortalScreen: React.FC<{
                     </div>
 
                     {/* Direct One-Click Role Buttons + Active/Suspended Status Toggle */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#E7E5E4]/60 dark:border-[#2A3630]">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D2E0DC]/60 dark:border-[#2A3630]">
                       <div
-                        className="inline-flex items-center p-1 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] gap-1"
+                        className="inline-flex items-center p-1 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] gap-1"
                         role="group"
                         aria-label={`Change role for ${usr.displayName}`}
                       >
@@ -2225,14 +2225,14 @@ export const AdminPortalScreen: React.FC<{
                 value={reviewSearch}
                 onChange={(e) => setReviewSearch(e.target.value)}
                 placeholder="Search reviews by customer or comment..."
-                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full min-h-[40px] pl-8 pr-3 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
 
             {filteredReviews.map((rev) => (
               <div
                 key={rev.reviewId}
-                className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-3.5 space-y-2"
+                className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5 space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -2274,7 +2274,7 @@ export const AdminPortalScreen: React.FC<{
           <div className="space-y-3">
             <form
               onSubmit={handleAddCategory}
-              className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2.5"
+              className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-2.5"
             >
               <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
                 <FolderPlus className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
@@ -2285,7 +2285,7 @@ export const AdminPortalScreen: React.FC<{
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="Category Name (English)"
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input
@@ -2293,21 +2293,21 @@ export const AdminPortalScreen: React.FC<{
                   value={newCatAm}
                   onChange={(e) => setNewCatAm(e.target.value)}
                   placeholder="Amharic Name"
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 <input
                   type="text"
                   value={newCatOm}
                   onChange={(e) => setNewCatOm(e.target.value)}
                   placeholder="Afaan Oromo Name"
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
                 <input
                   type="text"
                   value={newCatSid}
                   onChange={(e) => setNewCatSid(e.target.value)}
                   placeholder="Sidamu Afoo Name"
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
               <button
@@ -2319,7 +2319,7 @@ export const AdminPortalScreen: React.FC<{
               </button>
             </form>
 
-            <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm divide-y divide-[#E7E5E4]/70 dark:divide-[#2A3630]">
+            <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none divide-y divide-[#D2E0DC]/70 dark:divide-[#2A3630]">
               {categories.map((cat) => (
                 <div key={cat.slug} className="p-3.5 flex items-center justify-between gap-2">
                   <div>
@@ -2339,7 +2339,7 @@ export const AdminPortalScreen: React.FC<{
                     className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       cat.isActive
                         ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
-                        : 'bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] text-stone-500 dark:text-stone-400'
+                        : 'bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] text-stone-500 dark:text-stone-400'
                     }`}
                   >
                     {cat.isActive ? 'Active' : 'Disabled'}
@@ -2354,7 +2354,7 @@ export const AdminPortalScreen: React.FC<{
         {activeTab === 'config' && (
           <form
             onSubmit={handleSaveConfig}
-            className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-4"
+            className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-4"
           >
             <div className="flex items-center gap-2">
               <Sliders className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
@@ -2364,7 +2364,7 @@ export const AdminPortalScreen: React.FC<{
             </div>
 
             <div className="space-y-2.5">
-              <label className="flex items-start justify-between gap-3 p-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] cursor-pointer">
+              <label className="flex items-start justify-between gap-3 p-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] cursor-pointer">
                 <div>
                   <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
                     Pause All Customer Ordering
@@ -2381,7 +2381,7 @@ export const AdminPortalScreen: React.FC<{
                 />
               </label>
 
-              <label className="flex items-start justify-between gap-3 p-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] cursor-pointer">
+              <label className="flex items-start justify-between gap-3 p-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] cursor-pointer">
                 <div>
                   <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
                     Strict Shop Verification
@@ -2410,7 +2410,7 @@ export const AdminPortalScreen: React.FC<{
                 value={maintenanceBanner}
                 onChange={(e) => setMaintenanceBanner(e.target.value)}
                 placeholder="e.g. Scheduled payment maintenance until 18:00 EAT."
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
 
@@ -2426,7 +2426,7 @@ export const AdminPortalScreen: React.FC<{
                   max={50000}
                   value={feeInput}
                   onChange={(e) => setFeeInput(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
 
@@ -2441,7 +2441,7 @@ export const AdminPortalScreen: React.FC<{
                   max={1000000}
                   value={thresholdInput}
                   onChange={(e) => setThresholdInput(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
 
@@ -2456,7 +2456,7 @@ export const AdminPortalScreen: React.FC<{
                   max={10000000}
                   value={maxOrderInput}
                   onChange={(e) => setMaxOrderInput(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 tabular-nums focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
 
@@ -2471,7 +2471,7 @@ export const AdminPortalScreen: React.FC<{
                   value={policyReason}
                   onChange={(e) => setPolicyReason(e.target.value)}
                   placeholder="Reason for policy update..."
-                  className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                  className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
                 />
               </div>
             </div>
@@ -2499,7 +2499,7 @@ export const AdminPortalScreen: React.FC<{
                   className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 border transition-colors ${
                     auditTypeFilter === tt
                       ? 'bg-[#047857] dark:bg-[#10B981] text-white dark:text-[#0B1410] border-[#047857] dark:border-[#10B981]'
-                      : 'bg-white dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630]'
+                      : 'bg-[#FCFDFC] dark:bg-[#1C2420] text-stone-600 dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630]'
                   }`}
                 >
                   {tt.replace(/_/g, ' ')}
@@ -2508,11 +2508,11 @@ export const AdminPortalScreen: React.FC<{
             </div>
 
             {filteredAuditLogs.length === 0 ? (
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-6 text-center text-xs text-stone-500 dark:text-stone-400">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-6 text-center text-xs text-stone-500 dark:text-stone-400">
                 No audit entries recorded yet. Every governance action creates an immutable record here.
               </div>
             ) : (
-              <div className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm divide-y divide-[#E7E5E4]/70 dark:divide-[#2A3630]">
+              <div className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none divide-y divide-[#D2E0DC]/70 dark:divide-[#2A3630]">
                 {filteredAuditLogs.map((log) => (
                   <div key={log.logId} className="p-3.5 space-y-1">
                     <div className="flex items-center justify-between gap-2 text-[11px]">
@@ -2555,7 +2555,7 @@ export const AdminPortalScreen: React.FC<{
         >
           <form
             onSubmit={handleConfirmEnforcement}
-            className="w-full max-w-md bg-white dark:bg-[#1C2420] rounded-t-3xl sm:rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] p-5 space-y-3.5 max-h-[85vh] overflow-y-auto shadow-xl"
+            className="w-full max-w-md bg-[#FCFDFC] dark:bg-[#1C2420] rounded-t-3xl sm:rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] p-5 space-y-3.5 max-h-[85vh] overflow-y-auto shadow-xl"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2">
@@ -2598,7 +2598,7 @@ export const AdminPortalScreen: React.FC<{
                 value={actionReason}
                 onChange={(e) => setActionReason(e.target.value)}
                 placeholder={pendingAction.placeholder}
-                className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 resize-none focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+                className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 resize-none focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
               />
             </div>
 
@@ -2612,7 +2612,7 @@ export const AdminPortalScreen: React.FC<{
               <button
                 type="button"
                 onClick={() => setPendingAction(null)}
-                className="flex-1 min-h-[44px] rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] transition-colors"
+                className="flex-1 min-h-[44px] rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] transition-colors"
               >
                 Cancel
               </button>
@@ -2642,8 +2642,8 @@ export const AdminPortalScreen: React.FC<{
           aria-modal="true"
           aria-labelledby="license-lightbox-title"
         >
-          <div className="w-full max-w-lg bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] overflow-hidden shadow-2xl">
-            <div className="px-4 py-3 border-b border-[#E7E5E4] dark:border-[#2A3630] flex items-start justify-between gap-2">
+          <div className="w-full max-w-lg bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] overflow-hidden shadow-2xl">
+            <div className="px-4 py-3 border-b border-[#D2E0DC] dark:border-[#2A3630] flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3
                   id="license-lightbox-title"
@@ -2659,7 +2659,7 @@ export const AdminPortalScreen: React.FC<{
                 type="button"
                 onClick={() => setInspectingDocUrl(null)}
                 aria-label="Close license preview"
-                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-500 hover:bg-[#FAF8F5] dark:hover:bg-[#242F29] shrink-0"
+                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-500 hover:bg-[#EBF1EE] dark:hover:bg-[#242F29] shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>

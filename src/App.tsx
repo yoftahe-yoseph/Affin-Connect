@@ -56,7 +56,7 @@ const AccessRestrictedView: React.FC<{ target: 'seller' | 'admin' }> = ({ target
             setActiveRoleView('customer');
             navigate({ name: 'home' });
           }}
-          className="w-full min-h-[44px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold transition-colors"
+          className="w-full min-h-[44px] rounded-xl bg-[#0F4C44] hover:bg-[#047857] dark:bg-[#10B981] dark:hover:bg-[#059669] text-[#FCFDFC] dark:text-[#0B1410] text-xs font-semibold transition-colors shadow-xs"
         >
           {t('backToHome')}
         </button>
@@ -66,7 +66,7 @@ const AccessRestrictedView: React.FC<{ target: 'seller' | 'admin' }> = ({ target
             setActiveRoleView('customer');
             navigate({ name: 'profile' });
           }}
-          className="w-full min-h-[44px] rounded-xl bg-white dark:bg-[#1C2420] border border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-[#FAF8F5] dark:hover:bg-[#242E29] transition-colors"
+          className="w-full min-h-[44px] rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#D2E0DC] dark:border-[#2A3630] text-[#0E2421] dark:text-stone-200 text-xs font-semibold hover:bg-[#EBF1EE] dark:hover:bg-[#242E29] transition-colors"
         >
           {t('goToAccount')}
         </button>
@@ -88,15 +88,15 @@ const ScreenRouter: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#031719] text-[#F5FAFA] min-h-dvh">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA] min-h-dvh">
         <img
           src={BRAND_ASSETS.logo}
           alt="Affin Connect"
           referrerPolicy="no-referrer"
-          className="w-16 h-16 rounded-2xl object-cover border border-[#00C8D7]/35 shadow-lg mb-5"
+          className="w-16 h-16 rounded-2xl object-cover border border-[#0F4C44]/25 dark:border-[#00C8D7]/35 shadow-lg mb-5"
         />
-        <Loader2 className="w-6 h-6 animate-spin text-[#00D68F] mb-3" />
-        <p className="text-xs sm:text-sm font-medium text-[#A9C0BD]">
+        <Loader2 className="w-6 h-6 animate-spin text-[#0F4C44] dark:text-[#00D68F] mb-3" />
+        <p className="text-xs sm:text-sm font-medium text-[#46635E] dark:text-[#A9C0BD]">
           {t('authCheckingSession')}
         </p>
       </div>

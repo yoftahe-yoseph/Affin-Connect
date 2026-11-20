@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useMarketplace, type SearchSessionState } from '../context/MarketplaceContext';
 import { CategoryIcon, ProductCard, ResilientImage, ShopCard } from '../components/SharedUI';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
 import { BRAND_ASSETS } from '../data/seedData';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
@@ -539,20 +540,20 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
   );
 
   return (
-    <div className="min-h-full bg-[#031719] text-[#F5FAFA] pb-8 flex flex-col">
+    <div className="min-h-full bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA] pb-8 flex flex-col">
       {/* Compact Sticky Safe-Area Header */}
-      <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#031719]/92 backdrop-blur-md border-b border-[#D2E0DC] dark:border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
               onClick={goBack}
               aria-label="Go back"
-              className="min-w-[40px] min-h-[40px] -ml-1 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#F5FAFA] shrink-0 transition-colors"
+              className="min-w-[40px] min-h-[40px] -ml-1 rounded-xl bg-[#F3F6F4] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 flex items-center justify-center text-[#0F4C44] dark:text-[#F5FAFA] shrink-0 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#092825] border border-[#14443F] shrink-0 shadow-sm">
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] shrink-0 shadow-xs">
               <img
                 src={BRAND_ASSETS.logo}
                 alt="Affin Connect"
@@ -561,25 +562,27 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-display font-bold tracking-tight text-[#F5FAFA] truncate">
+              <div className="text-sm font-display font-bold tracking-tight text-[#0F4C44] dark:text-[#F5FAFA] truncate">
                 Affin Connect
               </div>
-              <p className="text-[11px] text-[#A9C0BD] truncate">
+              <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
                 {t('authHeaderSubtitle')}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <ThemeToggleButton />
+
             <button
               type="button"
               onClick={() => navigate({ name: 'notifications' })}
               aria-label={t('notifications')}
-              className="relative min-w-[44px] min-h-[44px] rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#F5FAFA] transition-colors"
+              className="relative min-w-[44px] min-h-[44px] rounded-xl bg-[#F3F6F4] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 flex items-center justify-center text-[#0E2421] dark:text-[#F5FAFA] transition-colors"
             >
-              <Bell className="w-5 h-5 text-[#00D68F]" />
+              <Bell className="w-5 h-5 text-[#0F4C44] dark:text-[#00D68F]" />
               {unreadNotificationCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
                   {unreadNotificationCount}
                 </span>
               )}
@@ -589,9 +592,9 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               type="button"
               onClick={() => navigate({ name: 'profile' })}
               aria-label={t('openProfileAria')}
-              className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
+              className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#0F4C44]/20 dark:shadow-[#00D68F]/20 active:scale-95 transition-transform"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#FCFDFC] dark:bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                 {firebaseUser?.photoURL ? (
                   <img
                     src={firebaseUser.photoURL}
@@ -602,7 +605,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                 ) : avatarInitials ? (
                   <span>{avatarInitials}</span>
                 ) : (
-                  <User className="w-4 h-4 text-[#00D68F]" />
+                  <User className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
                 )}
               </div>
             </button>
@@ -615,9 +618,9 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
         <form
           onSubmit={handleSearchSubmit}
           role="search"
-          className="relative flex items-center rounded-2xl bg-[#092825] border border-[#14443F] focus-within:border-[#00D68F] focus-within:ring-2 focus-within:ring-[#00D68F]/20 shadow-md shadow-black/20 transition-all"
+          className="relative flex items-center rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] focus-within:border-[#0F4C44] dark:focus-within:border-[#00D68F] focus-within:ring-2 focus-within:ring-[#0F4C44]/15 dark:focus-within:ring-[#00D68F]/20 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-md dark:shadow-black/20 transition-all"
         >
-          <Search className="w-4 h-4 text-[#00D68F] ml-3.5 shrink-0 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F] ml-3.5 shrink-0 pointer-events-none" />
           <input
             ref={searchInputRef}
             type="search"
@@ -626,7 +629,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             onChange={(e) => setQueryInput(e.target.value)}
             placeholder={t('homeSearchPlaceholder')}
             aria-label={t('homeSearchPlaceholder')}
-            className="w-full min-h-[46px] bg-transparent px-2.5 text-xs sm:text-sm text-[#F5FAFA] placeholder:text-[#A9C0BD]/70 focus:outline-none"
+            className="w-full min-h-[46px] bg-transparent px-2.5 text-xs sm:text-sm text-[#0C2624] dark:text-[#F5FAFA] placeholder:text-[#6B8783] dark:placeholder:text-[#A9C0BD]/70 focus:outline-none"
           />
           {queryInput && (
             <button
@@ -636,7 +639,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                 searchInputRef.current?.focus();
               }}
               aria-label={t('searchClearSearchBtn')}
-              className="min-w-[40px] min-h-[40px] mr-1 flex items-center justify-center rounded-xl text-[#A9C0BD] hover:text-[#F5FAFA] hover:bg-white/5 transition-colors"
+              className="min-w-[40px] min-h-[40px] mr-1 flex items-center justify-center rounded-xl text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA] hover:bg-[#EDF5F3] dark:hover:bg-white/5 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -662,8 +665,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                   aria-pressed={selected}
                   className={`min-h-[40px] px-3.5 rounded-xl text-xs whitespace-nowrap shrink-0 transition-all active:scale-95 ${
                     selected
-                      ? 'bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] font-bold shadow-md shadow-[#00D68F]/20'
-                      : 'bg-[#092825] border border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/50 font-semibold'
+                      ? 'bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719] font-bold shadow-md shadow-[#0F4C44]/18 dark:shadow-[#00D68F]/20'
+                      : 'bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#46635E] dark:text-[#A9C0BD] hover:text-[#0F4C44] dark:hover:text-[#F5FAFA] hover:border-[#0F4C44]/45 dark:hover:border-[#00D68F]/50 font-semibold shadow-xs dark:shadow-none'
                   }`}
                 >
                   {opt.label}
@@ -679,14 +682,14 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             aria-expanded={isDrawerOpen}
             className={`min-h-[40px] px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors ${
               isDrawerOpen || activeFilterCount > 0
-                ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                : 'bg-[#092825] border-[#00D68F]/40 hover:border-[#00D68F] text-[#F5FAFA]'
+                ? 'bg-[#E5F2EE] dark:bg-[#00D68F]/15 border-[#0F4C44] dark:border-[#00D68F] text-[#0F4C44] dark:text-[#00D68F]'
+                : 'bg-[#FCFDFC] dark:bg-[#092825] border-[#0F4C44]/35 dark:border-[#00D68F]/40 hover:border-[#0F4C44] dark:hover:border-[#00D68F] text-[#0F4C44] dark:text-[#F5FAFA] shadow-xs dark:shadow-none'
             }`}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00D68F] shrink-0" />
             <span>{t('searchFilterBtn')}</span>
             {activeFilterCount > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1 rounded-md bg-[#00D68F] text-[#031719] text-[10px] font-bold tabular-nums flex items-center justify-center">
+              <span className="min-w-[18px] h-[18px] px-1 rounded-md bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] text-[10px] font-bold tabular-nums flex items-center justify-center">
                 {activeFilterCount}
               </span>
             )}
@@ -700,7 +703,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ category: 'all' })}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#ECFDF5] dark:bg-[#00D68F]/15 border border-[#047857]/35 dark:border-[#00D68F]/40 text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] whitespace-nowrap shrink-0"
               >
                 <span>{getCategoryLabel(activeCategoryObj)}</span>
                 <X className="w-3 h-3" />
@@ -711,7 +714,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ minPrice: '', maxPrice: '' })}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#00C8D7]/15 border border-[#00C8D7]/40 text-[11px] font-semibold text-[#00C8D7] whitespace-nowrap shrink-0 tabular-nums"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-50 dark:bg-[#00C8D7]/15 border border-teal-300 dark:border-[#00C8D7]/40 text-[11px] font-semibold text-[#0F766E] dark:text-[#00C8D7] whitespace-nowrap shrink-0 tabular-nums"
               >
                 <span>
                   {committedMinPrice != null && committedMaxPrice != null
@@ -728,7 +731,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ verifiedOnly: false })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/40 text-[11px] font-semibold text-[#00D68F] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#ECFDF5] dark:bg-[#00D68F]/15 border border-[#047857]/35 dark:border-[#00D68F]/40 text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] whitespace-nowrap shrink-0"
               >
                 <BadgeCheck className="w-3 h-3" />
                 <span>{t('verifiedMerchantLabel')}</span>
@@ -740,7 +743,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ minShopRating: null })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[11px] font-semibold text-[#FDE68A] whitespace-nowrap shrink-0 tabular-nums"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 dark:bg-[#F59E0B]/15 border border-amber-300 dark:border-[#F59E0B]/40 text-[11px] font-semibold text-amber-800 dark:text-[#FDE68A] whitespace-nowrap shrink-0 tabular-nums"
               >
                 <Star className="w-3 h-3 fill-current text-[#F59E0B]" />
                 <span>{minShopRating.toFixed(1)}+</span>
@@ -757,11 +760,11 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     selectedNeighborhoods: selectedNeighborhoods.filter((item) => item !== area),
                   })
                 }
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] text-[11px] font-semibold text-[#F5FAFA] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[11px] font-semibold text-[#0C2624] dark:text-[#F5FAFA] whitespace-nowrap shrink-0"
               >
-                <MapPin className="w-3 h-3 text-[#00D68F]" />
+                <MapPin className="w-3 h-3 text-[#047857] dark:text-[#00D68F]" />
                 <span>{getLocalizedNeighborhood(area, language)}</span>
-                <X className="w-3 h-3 text-[#A9C0BD]" />
+                <X className="w-3 h-3 text-[#4B6B67] dark:text-[#A9C0BD]" />
               </button>
             ))}
 
@@ -769,10 +772,10 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ inStockOnly: false })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] text-[11px] font-medium text-[#F5FAFA] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[11px] font-medium text-[#0C2624] dark:text-[#F5FAFA] whitespace-nowrap shrink-0"
               >
                 <span>{t('inStockOnly')}</span>
-                <X className="w-3 h-3 text-[#A9C0BD]" />
+                <X className="w-3 h-3 text-[#4B6B67] dark:text-[#A9C0BD]" />
               </button>
             )}
 
@@ -780,10 +783,10 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ deliveryOnly: false })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] text-[11px] font-medium text-[#F5FAFA] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[11px] font-medium text-[#0C2624] dark:text-[#F5FAFA] whitespace-nowrap shrink-0"
               >
                 <span>{t('deliveryAvailable')}</span>
-                <X className="w-3 h-3 text-[#A9C0BD]" />
+                <X className="w-3 h-3 text-[#4B6B67] dark:text-[#A9C0BD]" />
               </button>
             )}
 
@@ -791,10 +794,10 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ pickupOnly: false })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] text-[11px] font-medium text-[#F5FAFA] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[11px] font-medium text-[#0C2624] dark:text-[#F5FAFA] whitespace-nowrap shrink-0"
               >
                 <span>{t('filterPickupReady')}</span>
-                <X className="w-3 h-3 text-[#A9C0BD]" />
+                <X className="w-3 h-3 text-[#4B6B67] dark:text-[#A9C0BD]" />
               </button>
             )}
 
@@ -802,17 +805,17 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <button
                 type="button"
                 onClick={() => updateSearchState({ sortBy: 'relevance' })}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] text-[11px] font-medium text-[#F5FAFA] whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[11px] font-medium text-[#0C2624] dark:text-[#F5FAFA] whitespace-nowrap shrink-0"
               >
                 <span>{getSortChipLabel(sortBy)}</span>
-                <X className="w-3 h-3 text-[#A9C0BD]" />
+                <X className="w-3 h-3 text-[#4B6B67] dark:text-[#A9C0BD]" />
               </button>
             )}
 
             <button
               type="button"
               onClick={() => resetAllFilters(false)}
-              className="px-2.5 py-1.5 text-[11px] font-semibold text-[#00D68F] hover:text-[#00C8D7] whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] hover:text-[#0F766E] dark:hover:text-[#00C8D7] whitespace-nowrap shrink-0"
             >
               {t('filterClearAllBtn')}
             </button>
@@ -823,20 +826,20 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
       {/* Main Content Body */}
       <div className="px-4 pt-4 space-y-5 flex-1">
         {searchError ? (
-          <div className="rounded-3xl bg-[#092825] border border-rose-500/35 p-6 text-center space-y-3 shadow-lg shadow-black/25">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+          <div className="rounded-3xl bg-[#FCFDFC] dark:bg-[#092825] border border-rose-300 dark:border-rose-500/35 p-6 text-center space-y-3 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-lg dark:shadow-black/25">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-sm font-display font-bold text-[#F5FAFA]">
+              <h2 className="text-sm font-display font-bold text-[#0E2421] dark:text-[#F5FAFA]">
                 {t('searchErrorTitle')}
               </h2>
-              <p className="text-xs text-[#A9C0BD] leading-relaxed">{searchError}</p>
+              <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] leading-relaxed">{searchError}</p>
             </div>
             <button
               type="button"
               onClick={handleRetryCatalog}
-              className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] text-xs font-bold inline-flex items-center gap-2 hover:brightness-105 transition-all"
+              className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719] text-xs font-bold inline-flex items-center gap-2 hover:brightness-105 transition-all"
             >
               <RotateCcw className="w-4 h-4 shrink-0" />
               <span>{t('searchRetryBtn')}</span>
@@ -845,14 +848,14 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
         ) : isSearching || (authLoading && products.length === 0 && shops.length === 0) ? (
           <div aria-busy="true" aria-label="Loading search results" className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="h-4 w-44 rounded-lg bg-[#092825] animate-pulse" />
-              <div className="h-4 w-16 rounded-lg bg-[#092825] animate-pulse" />
+              <div className="h-4 w-44 rounded-lg bg-[#E4ECE9] dark:bg-[#092825] animate-pulse" />
+              <div className="h-4 w-16 rounded-lg bg-[#E4ECE9] dark:bg-[#092825] animate-pulse" />
             </div>
             <div className="flex gap-3 overflow-hidden">
               {Array.from({ length: 2 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-56 h-52 shrink-0 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
+                  className="w-56 h-52 shrink-0 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
@@ -860,7 +863,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-56 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
+                  className="h-56 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
@@ -868,11 +871,11 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
         ) : !hasAnySearchOrFilter ? (
           /* Initial State */
           <div className="space-y-5">
-            <section className="rounded-2xl bg-gradient-to-br from-[#092825] via-[#061D1B] to-[#031719] border border-[#14443F] p-4 space-y-1.5">
-              <h1 className="text-lg font-display font-bold text-[#F5FAFA] text-balance">
+            <section className="rounded-2xl bg-gradient-to-br from-[#E6F1ED] via-[#FCFDFC] to-[#F3F6F4] dark:from-[#092825] dark:via-[#061D1B] dark:to-[#031719] border border-[#0F4C44]/22 dark:border-[#14443F] p-4 space-y-1.5 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none">
+              <h1 className="text-lg font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA] text-balance">
                 {t('searchInitialTitle')}
               </h1>
-              <p className="text-xs text-[#A9C0BD] leading-relaxed">
+              <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] leading-relaxed">
                 {t('searchInitialDesc')}
               </p>
             </section>
@@ -881,7 +884,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             <section aria-labelledby="suggested-categories-heading" className="space-y-2.5">
               <h2
                 id="suggested-categories-heading"
-                className="text-xs font-bold uppercase tracking-wider text-[#A9C0BD]"
+                className="text-xs font-bold uppercase tracking-wider text-[#0F4C44] dark:text-[#A9C0BD] pb-1 border-b border-[#D2E0DC]/70 dark:border-transparent"
               >
                 {t('searchSuggestedCategories')}
               </h2>
@@ -894,12 +897,12 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       key={cat.slug}
                       type="button"
                       onClick={() => updateSearchState({ category: cat.slug })}
-                      className="min-h-[48px] px-3 py-2.5 rounded-2xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/55 flex items-center gap-2.5 text-left transition-colors active:scale-[0.99]"
+                      className="min-h-[48px] px-3 py-2.5 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/55 flex items-center gap-2.5 text-left transition-colors active:scale-[0.99] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.08)] dark:shadow-none"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F] shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-[#E5F2EE] dark:bg-[#031719] border border-[#0F4C44]/18 dark:border-[#14443F] flex items-center justify-center text-[#0F4C44] dark:text-[#00D68F] shrink-0">
                         <CategoryIcon iconName={cat.iconName} className="w-4 h-4" />
                       </div>
-                      <span className="text-xs font-semibold text-[#F5FAFA] line-clamp-2 leading-tight">
+                      <span className="text-xs font-semibold text-[#0E2421] dark:text-[#F5FAFA] line-clamp-2 leading-tight">
                         {getCategoryLabel(cat)}
                       </span>
                     </button>
@@ -912,9 +915,9 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <section aria-labelledby="recent-searches-heading" className="space-y-2.5">
                 <h2
                   id="recent-searches-heading"
-                  className="text-xs font-bold uppercase tracking-wider text-[#A9C0BD] flex items-center gap-1.5"
+                  className="text-xs font-bold uppercase tracking-wider text-[#0F4C44] dark:text-[#A9C0BD] flex items-center gap-1.5"
                 >
-                  <History className="w-3.5 h-3.5 text-[#00D68F]" />
+                  <History className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00D68F]" />
                   <span>{t('recentSearches')}</span>
                 </h2>
                 <div className="flex flex-wrap gap-2">
@@ -923,7 +926,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       key={term}
                       type="button"
                       onClick={() => commitQueryImmediately(term, false)}
-                      className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/55 text-xs font-medium text-[#F5FAFA] transition-colors"
+                      className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/55 text-xs font-medium text-[#0E2421] dark:text-[#F5FAFA] transition-colors shadow-xs dark:shadow-none"
                     >
                       {term}
                     </button>
@@ -937,7 +940,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               <section aria-labelledby="recently-viewed-heading" className="space-y-2.5">
                 <h2
                   id="recently-viewed-heading"
-                  className="text-xs font-bold uppercase tracking-wider text-[#A9C0BD]"
+                  className="text-xs font-bold uppercase tracking-wider text-[#0F4C44] dark:text-[#A9C0BD]"
                 >
                   {t('recentlyViewed')}
                 </h2>
@@ -947,9 +950,9 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       key={item.productId}
                       type="button"
                       onClick={() => navigate({ name: 'product', productId: item.productId })}
-                      className="w-32 shrink-0 bg-[#092825] rounded-2xl border border-[#14443F] hover:border-[#00D68F]/50 overflow-hidden text-left transition-all"
+                      className="w-32 shrink-0 bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/45 dark:hover:border-[#00D68F]/50 overflow-hidden text-left transition-all shadow-[0_2px_10px_-3px_rgba(15,76,68,0.08)] dark:shadow-none"
                     >
-                      <div className="aspect-[4/3] bg-[#061D1B]">
+                      <div className="aspect-[4/3] bg-[#E8EFEA] dark:bg-[#061D1B]">
                         <ResilientImage
                           src={item.imageUrl}
                           alt={item.name}
@@ -959,10 +962,10 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         />
                       </div>
                       <div className="p-2.5">
-                        <div className="text-[11px] font-semibold text-[#F5FAFA] line-clamp-1">
+                        <div className="text-[11px] font-semibold text-[#0E2421] dark:text-[#F5FAFA] line-clamp-1">
                           {item.name}
                         </div>
-                        <div className="text-[11px] font-bold text-[#00D68F] tabular-nums mt-0.5">
+                        <div className="text-[11px] font-bold text-[#0F4C44] dark:text-[#00D68F] tabular-nums mt-0.5">
                           {formatETB(item.price)}
                         </div>
                       </div>
@@ -976,14 +979,14 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
           /* Results View */
           <div className="space-y-5">
             {/* Search Results Header */}
-            <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-white/10">
+            <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-[#D2E0DC] dark:border-white/10">
               <div className="min-w-0">
                 {hasCommittedQuery ? (
-                  <h1 className="text-sm font-display font-bold text-[#F5FAFA] break-words">
+                  <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA] break-words">
                     {t('searchShowingResultsFor', { query: debouncedQuery.trim() })}
                   </h1>
                 ) : (
-                  <h1 className="text-sm font-display font-bold text-[#F5FAFA]">
+                  <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                     {activeCategoryObj
                       ? getCategoryLabel(activeCategoryObj)
                       : searchType === 'shops'
@@ -993,7 +996,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           : t('searchTypeAll')}
                   </h1>
                 )}
-                <p className="text-[11px] text-[#A9C0BD] mt-0.5 tabular-nums">
+                <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] mt-0.5 tabular-nums">
                   {totalResultCount === 1
                     ? t('searchResultSingle')
                     : t('searchResultCount', { count: totalResultCount })}
@@ -1004,7 +1007,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                 <button
                   type="button"
                   onClick={() => resetAllFilters(true)}
-                  className="min-h-[36px] px-2.5 rounded-lg text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] shrink-0 transition-colors"
+                  className="min-h-[36px] px-2.5 rounded-lg text-xs font-semibold text-[#0F4C44] dark:text-[#00D68F] hover:text-[#047857] dark:hover:text-[#00C8D7] shrink-0 transition-colors"
                 >
                   {t('searchClearSearchBtn')}
                 </button>
@@ -1013,22 +1016,22 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
 
             {totalResultCount === 0 ? (
               /* No Results State */
-              <div className="rounded-3xl bg-[#092825] border border-[#14443F] p-6 text-center space-y-4">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#031719] border border-[#14443F] flex items-center justify-center text-[#00D68F]">
+              <div className="rounded-3xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-6 text-center space-y-4 shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-[#E5F2EE] dark:bg-[#031719] border border-[#0F4C44]/20 dark:border-[#14443F] flex items-center justify-center text-[#0F4C44] dark:text-[#00D68F]">
                   <Search className="w-7 h-7" />
                 </div>
                 <div className="space-y-1.5 max-w-xs mx-auto">
-                  <h2 className="text-base font-display font-bold text-[#F5FAFA]">
+                  <h2 className="text-base font-display font-bold text-[#0E2421] dark:text-[#F5FAFA]">
                     {t('searchNoResultsTitle')}
                   </h2>
-                  <p className="text-xs text-[#A9C0BD] leading-relaxed">
+                  <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] leading-relaxed">
                     {t('searchNoResultsDesc')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => resetAllFilters(true)}
-                  className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] text-[#031719] text-xs font-bold inline-flex items-center justify-center gap-2 hover:brightness-105 transition-all"
+                  className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] text-[#FCFDFC] dark:text-[#031719] text-xs font-bold inline-flex items-center justify-center gap-2 hover:brightness-105 transition-all"
                 >
                   <span>{t('searchClearSearchBtn')}</span>
                 </button>
@@ -1041,11 +1044,11 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     <div className="flex items-center justify-between gap-2">
                       <h2
                         id="search-shops-heading"
-                        className="text-sm font-display font-bold text-[#F5FAFA] flex items-center gap-2"
+                        className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA] flex items-center gap-2"
                       >
-                        <Store className="w-4 h-4 text-[#00D68F]" />
+                        <Store className="w-4 h-4 text-[#047857] dark:text-[#00D68F]" />
                         <span>{t('searchShopsSectionTitle')}</span>
-                        <span className="text-xs font-semibold text-[#00D68F] tabular-nums">
+                        <span className="text-xs font-semibold text-[#047857] dark:text-[#00D68F] tabular-nums">
                           ({matchingShops.length})
                         </span>
                       </h2>
@@ -1053,7 +1056,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         <button
                           type="button"
                           onClick={() => updateSearchState({ searchType: 'shops' })}
-                          className="text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
+                          className="text-xs font-semibold text-[#047857] dark:text-[#00D68F] hover:text-[#0F766E] dark:hover:text-[#00C8D7] transition-colors"
                         >
                           {t('viewAll')}
                         </button>
@@ -1098,10 +1101,10 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       <div className="flex items-center justify-between gap-2">
                         <h2
                           id="search-products-heading"
-                          className="text-sm font-display font-bold text-[#F5FAFA] flex items-center gap-2"
+                          className="text-sm font-display font-bold text-[#0C2624] dark:text-[#F5FAFA] flex items-center gap-2"
                         >
                           <span>{t('searchProductsSectionTitle')}</span>
-                          <span className="text-xs font-semibold text-[#00D68F] tabular-nums">
+                          <span className="text-xs font-semibold text-[#047857] dark:text-[#00D68F] tabular-nums">
                             ({matchingProducts.length})
                           </span>
                         </h2>
@@ -1109,7 +1112,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           <button
                             type="button"
                             onClick={() => updateSearchState({ searchType: 'products' })}
-                            className="text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
+                            className="text-xs font-semibold text-[#047857] dark:text-[#00D68F] hover:text-[#0F766E] dark:hover:text-[#00C8D7] transition-colors"
                           >
                             {t('viewAll')}
                           </button>
@@ -1136,31 +1139,31 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
       {/* Bottom-Sheet Advanced Filter Panel */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/65 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/55 dark:bg-black/65 backdrop-blur-xs"
           onClick={() => setIsDrawerOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="filter-drawer-heading"
         >
           <div
-            className="w-full sm:max-w-md max-h-[88vh] bg-[#041D1F] border-t sm:border border-[#14443F] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden"
+            className="w-full sm:max-w-md max-h-[88vh] bg-[#F3F6F4] dark:bg-[#041D1F] border-t sm:border border-[#D2E0DC] dark:border-[#14443F] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Mobile Drag Handle */}
             <div className="sm:hidden pt-2.5 pb-1 flex justify-center shrink-0">
-              <div className="w-10 h-1.5 rounded-full bg-white/20" aria-hidden="true" />
+              <div className="w-10 h-1.5 rounded-full bg-[#B9CFC8] dark:bg-white/20" aria-hidden="true" />
             </div>
 
             {/* Drawer Header */}
-            <div className="bg-[#041D1F] border-b border-white/10 px-4 py-3.5 flex items-start justify-between gap-3 shrink-0">
+            <div className="bg-[#FCFDFC] dark:bg-[#041D1F] border-b border-[#D2E0DC] dark:border-white/10 px-4 py-3.5 flex items-start justify-between gap-3 shrink-0">
               <div className="min-w-0">
                 <h2
                   id="filter-drawer-heading"
-                  className="text-base font-display font-bold text-[#F5FAFA] leading-tight"
+                  className="text-base font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA] leading-tight"
                 >
                   {t('filterDrawerTitle')}
                 </h2>
-                <p className="text-xs text-[#A9C0BD] mt-0.5 leading-snug">
+                <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] mt-0.5 leading-snug">
                   {t('filterDrawerSubtitle')}
                 </p>
               </div>
@@ -1168,7 +1171,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
                 aria-label="Close filter drawer"
-                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-[#092825] border border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/50 shrink-0 transition-colors"
+                className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center bg-[#F3F6F4] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#46635E] dark:text-[#A9C0BD] hover:text-[#0F4C44] dark:hover:text-[#F5FAFA] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 shrink-0 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1177,8 +1180,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             {/* Scrollable Filter Sections */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
               {/* 1. Sort By */}
-              <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-3.5 space-y-2.5">
-                <div className="text-xs font-bold text-[#F5FAFA]">{t('sortBy')}</div>
+              <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-2.5 shadow-xs dark:shadow-none">
+                <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">{t('sortBy')}</div>
                 <div className="grid grid-cols-2 gap-2">
                   {sortOptions.map((option) => {
                     const active = draftSortBy === option.value;
@@ -1189,8 +1192,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         onClick={() => setDraftSortBy(option.value)}
                         className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-semibold text-left flex items-center justify-between gap-2 transition-colors ${
                           active
-                            ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                            : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/45'
+                            ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                            : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA] hover:border-[#047857]/45 dark:hover:border-[#00D68F]/45'
                         }`}
                       >
                         <span className="leading-tight">{option.label}</span>
@@ -1202,8 +1205,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               </section>
 
               {/* 2. Category */}
-              <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-3.5 space-y-2.5">
-                <div className="text-xs font-bold text-[#F5FAFA]">
+              <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-2.5">
+                <div className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                   {t('searchCategoryFilterTitle')}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -1212,8 +1215,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     onClick={() => setDraftCategory('all')}
                     className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold transition-colors ${
                       draftCategory === 'all'
-                        ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                        : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA]'
+                        ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                        : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA]'
                     }`}
                   >
                     {t('all')}
@@ -1229,8 +1232,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           onClick={() => setDraftCategory(cat.slug)}
                           className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold transition-colors ${
                             active
-                              ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA]'
+                              ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                              : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA]'
                           }`}
                         >
                           {getCategoryLabel(cat)}
@@ -1242,12 +1245,12 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
 
               {/* 3. Price Range (ETB) */}
               {searchType !== 'shops' && (
-                <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-3.5 space-y-3">
+                <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xs font-bold text-[#F5FAFA]">
+                    <h3 className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                       {t('filterPriceRangeTitle')}
                     </h3>
-                    <span className="text-[11px] font-semibold text-[#00D68F] tabular-nums">
+                    <span className="text-[11px] font-semibold text-[#047857] dark:text-[#00D68F] tabular-nums">
                       {formatETB(sliderMinVal)} – {formatETB(sliderMaxVal)}
                     </span>
                   </div>
@@ -1256,7 +1259,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     <div>
                       <label
                         htmlFor="drawer-min-price"
-                        className="block text-[11px] font-semibold text-[#A9C0BD] mb-1"
+                        className="block text-[11px] font-semibold text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                       >
                         {t('filterMinPriceLabel')}
                       </label>
@@ -1267,13 +1270,13 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         placeholder={String(priceBounds.min)}
                         value={draftMinPrice}
                         onChange={(e) => setDraftMinPrice(e.target.value)}
-                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-semibold tabular-nums text-[#F5FAFA] placeholder:text-[#A9C0BD]/50 focus:outline-none focus:ring-2 focus:ring-[#00D68F]/25 focus:border-[#00D68F]"
+                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs font-semibold tabular-nums text-[#0E2421] dark:text-[#F5FAFA] placeholder:text-[#5E7B76] dark:placeholder:text-[#A9C0BD]/50 focus:outline-none focus:ring-2 focus:ring-[#0F4C44]/20 dark:focus:ring-[#00D68F]/25 focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
                       />
                     </div>
                     <div>
                       <label
                         htmlFor="drawer-max-price"
-                        className="block text-[11px] font-semibold text-[#A9C0BD] mb-1"
+                        className="block text-[11px] font-semibold text-[#4B6B67] dark:text-[#A9C0BD] mb-1"
                       >
                         {t('filterMaxPriceLabel')}
                       </label>
@@ -1284,7 +1287,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         placeholder={String(priceBounds.max)}
                         value={draftMaxPrice}
                         onChange={(e) => setDraftMaxPrice(e.target.value)}
-                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#14443F] bg-[#031719] text-xs font-semibold tabular-nums text-[#F5FAFA] placeholder:text-[#A9C0BD]/50 focus:outline-none focus:ring-2 focus:ring-[#00D68F]/25 focus:border-[#00D68F]"
+                        className="w-full min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#031719] text-xs font-semibold tabular-nums text-[#0E2421] dark:text-[#F5FAFA] placeholder:text-[#5E7B76] dark:placeholder:text-[#A9C0BD]/50 focus:outline-none focus:ring-2 focus:ring-[#0F4C44]/20 dark:focus:ring-[#00D68F]/25 focus:border-[#0F4C44] dark:focus:border-[#00D68F]"
                       />
                     </div>
                   </div>
@@ -1304,7 +1307,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           setDraftMaxPrice(String(nextMin));
                         }
                       }}
-                      className="w-full accent-[#00D68F] cursor-pointer"
+                      className="w-full accent-[#047857] dark:accent-[#00D68F] cursor-pointer"
                     />
                     <input
                       type="range"
@@ -1320,7 +1323,7 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           setDraftMinPrice(String(nextMax));
                         }
                       }}
-                      className="w-full accent-[#00D68F] cursor-pointer"
+                      className="w-full accent-[#047857] dark:accent-[#00D68F] cursor-pointer"
                     />
                   </div>
 
@@ -1343,8 +1346,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           }}
                           className={`min-h-[42px] px-3 py-2 rounded-xl border text-xs font-semibold tabular-nums transition-colors ${
                             isSelected
-                              ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/45'
+                              ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                              : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA] hover:border-[#047857]/45 dark:hover:border-[#00D68F]/45'
                           }`}
                         >
                           {preset.label}
@@ -1356,21 +1359,21 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               )}
 
               {/* 4. Merchant Verification & Rating */}
-              <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-3.5 space-y-3">
+              <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-3">
                 <button
                   type="button"
                   onClick={() => setDraftVerifiedOnly((v) => !v)}
                   className={`w-full min-h-[48px] px-3.5 py-2.5 rounded-xl border flex items-center justify-between gap-2 text-left transition-colors ${
                     draftVerifiedOnly
-                      ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                      : 'bg-[#031719] border-[#14443F] text-[#F5FAFA] hover:border-[#00D68F]/45'
+                      ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                      : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#0C2624] dark:text-[#F5FAFA] hover:border-[#047857]/45 dark:hover:border-[#00D68F]/45'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <BadgeCheck className="w-4 h-4 text-[#00D68F] shrink-0" />
+                    <BadgeCheck className="w-4 h-4 text-[#047857] dark:text-[#00D68F] shrink-0" />
                     <div className="min-w-0">
                       <div className="text-xs font-semibold">{t('searchVerifiedMerchantsOnly')}</div>
-                      <div className="text-[11px] text-[#A9C0BD] truncate">
+                      <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] truncate">
                         {t('searchVerifiedMerchantsHint')}
                       </div>
                     </div>
@@ -1380,10 +1383,10 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
 
                 <div className="space-y-2 pt-1">
                   <div>
-                    <h3 className="text-xs font-bold text-[#F5FAFA]">
+                    <h3 className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                       {t('filterShopRatingTitle')}
                     </h3>
-                    <p className="text-[11px] text-[#A9C0BD] mt-0.5">
+                    <p className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] mt-0.5">
                       {t('filterShopRatingHint')}
                     </p>
                   </div>
@@ -1397,8 +1400,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                           onClick={() => setDraftMinShopRating(opt.value)}
                           className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 tabular-nums transition-colors ${
                             active
-                              ? 'bg-[#F59E0B]/15 border-[#F59E0B] text-[#FDE68A]'
-                              : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#F59E0B]/45'
+                              ? 'bg-amber-50 dark:bg-[#F59E0B]/15 border-amber-500 dark:border-[#F59E0B] text-amber-800 dark:text-[#FDE68A]'
+                              : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA] hover:border-amber-400 dark:hover:border-[#F59E0B]/45'
                           }`}
                         >
                           {opt.value != null && <Star className="w-3.5 h-3.5 fill-current text-[#F59E0B] shrink-0" />}
@@ -1411,8 +1414,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               </section>
 
               {/* 5. Stock & Handoff Availability */}
-              <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-3.5 space-y-2.5">
-                <h3 className="text-xs font-bold text-[#F5FAFA]">
+              <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-2.5">
+                <h3 className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                   {t('filterFulfillmentTitle')}
                 </h3>
                 <div className="space-y-2">
@@ -1422,8 +1425,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                       onClick={() => setDraftInStockOnly((v) => !v)}
                       className={`w-full min-h-[44px] px-3 py-2 rounded-xl border flex items-center justify-between gap-2 text-xs font-semibold transition-colors ${
                         draftInStockOnly
-                          ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                          : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA]'
+                          ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                          : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA]'
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -1439,8 +1442,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     onClick={() => setDraftDeliveryOnly((v) => !v)}
                     className={`w-full min-h-[44px] px-3 py-2 rounded-xl border flex items-center justify-between gap-2 text-xs font-semibold transition-colors ${
                       draftDeliveryOnly
-                        ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                        : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA]'
+                        ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                        : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -1455,8 +1458,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     onClick={() => setDraftPickupOnly((v) => !v)}
                     className={`w-full min-h-[44px] px-3 py-2 rounded-xl border flex items-center justify-between gap-2 text-xs font-semibold transition-colors ${
                       draftPickupOnly
-                        ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                        : 'bg-[#031719] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA]'
+                        ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                        : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD] hover:text-[#0C2624] dark:hover:text-[#F5FAFA]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -1469,13 +1472,13 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
               </section>
 
               {/* 6. Hawassa Neighborhood Availability */}
-              <section className="bg-[#092825] rounded-2xl border border-[#14443F] p-3.5 space-y-2.5">
+              <section className="bg-[#FCFDFC] dark:bg-[#092825] rounded-2xl border border-[#D2E0DC] dark:border-[#14443F] p-3.5 space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-xs font-bold text-[#F5FAFA]">
+                    <h3 className="text-xs font-bold text-[#0C2624] dark:text-[#F5FAFA]">
                       {t('filterNeighborhoodAvailabilityTitle')}
                     </h3>
-                    <p className="text-[11px] text-[#A9C0BD] mt-0.5">
+                    <p className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] mt-0.5">
                       {t('filterSelectAreasHint')}
                     </p>
                   </div>
@@ -1484,8 +1487,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                     onClick={() => setDraftNeighborhoods([])}
                     className={`min-h-[36px] px-2.5 py-1 rounded-xl border text-[11px] font-semibold shrink-0 transition-colors ${
                       draftNeighborhoods.length === 0
-                        ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                        : 'bg-[#031719] border-[#14443F] text-[#A9C0BD]'
+                        ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F] text-[#047857] dark:text-[#00D68F]'
+                        : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] text-[#4B6B67] dark:text-[#A9C0BD]'
                     }`}
                   >
                     {t('allHawassa')}
@@ -1503,19 +1506,19 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         onClick={() => toggleDraftNeighborhood(area)}
                         className={`min-h-[48px] px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 transition-colors ${
                           active
-                            ? 'bg-[#00D68F]/15 border-[#00D68F]'
-                            : 'bg-[#031719] border-[#14443F] hover:border-[#00D68F]/45'
+                            ? 'bg-[#ECFDF5] dark:bg-[#00D68F]/15 border-[#047857] dark:border-[#00D68F]'
+                            : 'bg-[#F3F6F4] dark:bg-[#031719] border-[#D2E0DC] dark:border-[#14443F] hover:border-[#047857]/45 dark:hover:border-[#00D68F]/45'
                         }`}
                       >
                         <div className="min-w-0">
                           <div
                             className={`text-xs font-semibold truncate ${
-                              active ? 'text-[#00D68F]' : 'text-[#F5FAFA]'
+                              active ? 'text-[#047857] dark:text-[#00D68F]' : 'text-[#0C2624] dark:text-[#F5FAFA]'
                             }`}
                           >
                             {getLocalizedNeighborhood(area, language)}
                           </div>
-                          <div className="text-[11px] text-[#A9C0BD] tabular-nums">
+                          <div className="text-[11px] text-[#4B6B67] dark:text-[#A9C0BD] tabular-nums">
                             {t('filterNeighborhoodStats', {
                               shops: stats.shopCount,
                               products: stats.productCount,
@@ -1525,8 +1528,8 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
                         <span
                           className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
                             active
-                              ? 'bg-[#00D68F] border-[#00D68F] text-[#031719]'
-                              : 'border-[#14443F] bg-[#041D1F]'
+                              ? 'bg-[#0F4C44] dark:bg-[#00D68F] border-[#0F4C44] dark:border-[#00D68F] text-[#FCFDFC] dark:text-[#031719]'
+                              : 'border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC] dark:bg-[#041D1F]'
                           }`}
                         >
                           {active && <Check className="w-3.5 h-3.5" />}
@@ -1539,18 +1542,18 @@ export const SearchScreen: React.FC<{ initialQuery?: string; initialCategory?: s
             </div>
 
             {/* Sticky Bottom Sheet Footer */}
-            <div className="bg-[#041D1F] border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2.5 shrink-0">
+            <div className="bg-[#FCFDFC] dark:bg-[#041D1F] border-t border-[#D2E0DC] dark:border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={clearDraftFilters}
-                className="min-h-[44px] px-4 rounded-xl border border-[#14443F] bg-[#092825] hover:border-[#00D68F]/50 text-xs font-semibold text-[#F5FAFA] shrink-0 transition-colors"
+                className="min-h-[44px] px-4 rounded-xl border border-[#D2E0DC] dark:border-[#14443F] bg-[#F3F6F4] dark:bg-[#092825] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 text-xs font-semibold text-[#0E2421] dark:text-[#F5FAFA] shrink-0 transition-colors"
               >
                 {t('searchResetFiltersBtn')}
               </button>
               <button
                 type="button"
                 onClick={applyDraftFilters}
-                className="flex-1 min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all tabular-nums"
+                className="flex-1 min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#0F4C44]/18 dark:shadow-[#00D68F]/20 transition-all tabular-nums"
               >
                 <span>{t('searchApplyFiltersBtn')}</span>
                 <span>({draftResultsCount})</span>

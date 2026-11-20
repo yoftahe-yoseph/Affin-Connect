@@ -116,17 +116,17 @@ export const OrdersScreen: React.FC<{
   const shownOrders = tab === 'active' ? activeOrders : historyOrders;
 
   return (
-    <div className="flex flex-col min-h-full pb-6">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-4 pt-3 pb-2 space-y-3">
-        <h1 className="text-base font-display font-bold text-stone-900 dark:text-stone-100">{t('orders')}</h1>
-        <div className="grid grid-cols-2 gap-1 p-1 bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] rounded-xl">
+    <div className="flex flex-col min-h-full bg-[#F3F6F4] dark:bg-transparent pb-6">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#1C2420] backdrop-blur-md border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-4 pt-3 pb-2 space-y-3">
+        <h1 className="text-base font-display font-bold text-[#0F4C44] dark:text-stone-100">{t('orders')}</h1>
+        <div className="grid grid-cols-2 gap-1 p-1 bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] rounded-xl">
           <button
             type="button"
             onClick={() => setTab('active')}
             className={`py-2 rounded-lg text-xs font-semibold transition-colors ${
               tab === 'active'
-                ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                ? 'bg-[#0F4C44] dark:bg-[#10B981]/15 text-[#FCFDFC] dark:text-[#10B981] shadow-xs'
+                : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100'
             }`}
           >
             {t('activeCount', { count: activeOrders.length })}
@@ -136,8 +136,8 @@ export const OrdersScreen: React.FC<{
             onClick={() => setTab('history')}
             className={`py-2 rounded-lg text-xs font-semibold transition-colors ${
               tab === 'history'
-                ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                ? 'bg-[#0F4C44] dark:bg-[#10B981]/15 text-[#FCFDFC] dark:text-[#10B981] shadow-xs'
+                : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100'
             }`}
           >
             {t('historyCount', { count: historyOrders.length })}
@@ -164,27 +164,27 @@ export const OrdersScreen: React.FC<{
                 key={order.orderId}
                 type="button"
                 onClick={() => setActiveOrderId(order.orderId)}
-                className="w-full bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm hover:shadow-md p-4 text-left space-y-2.5 hover:border-[#047857]/40 dark:hover:border-[#10B981]/40 transition-all"
+                className="w-full bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none hover:shadow-md p-4 text-left space-y-2.5 hover:border-[#0F4C44]/40 dark:hover:border-[#10B981]/40 transition-all"
               >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono font-bold text-stone-900 dark:text-stone-100">
+                  <span className="font-mono font-bold text-[#0E2421] dark:text-stone-100">
                     #{order.orderId.slice(-6).toUpperCase()}
                   </span>
                   <OrderStatusBadge status={order.orderStatus} />
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#047857] dark:text-[#10B981]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#0F4C44] dark:text-[#10B981]">
                   <Store className="w-3.5 h-3.5 shrink-0" />
                   <span>{order.shopName}</span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 pt-2 border-t border-[#E7E5E4] dark:border-[#2A3630]">
+                <div className="flex items-center justify-between text-xs text-[#46635E] dark:text-stone-400 pt-2 border-t border-[#D2E0DC] dark:border-[#2A3630]">
                   <span>
                     {order.items.reduce((sum, i) => sum + i.quantity, 0)} items ·{' '}
                     {order.fulfillmentMethod === 'delivery' ? 'Delivery' : 'Shop Pickup'}
                     {orderReturnCount > 0 ? ` · ${orderReturnCount} ${t('requestReturnBtn')}` : ''}
                   </span>
-                  <span className="font-bold text-stone-900 dark:text-stone-100 tabular-nums">
+                  <span className="font-bold text-[#0F4C44] dark:text-stone-100 tabular-nums">
                     {formatETB(order.totalAmount)}
                   </span>
                 </div>
@@ -310,17 +310,17 @@ const OrderDetailView: React.FC<{
   };
 
   return (
-    <div className="pb-8">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-3 py-2 flex items-center justify-between">
+    <div className="min-h-full bg-[#F3F6F4] dark:bg-transparent pb-8">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#1C2420] backdrop-blur-md border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-3 py-2 flex items-center justify-between">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to orders"
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17]"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="text-xs font-mono font-bold text-stone-900 dark:text-stone-100">
+        <span className="text-xs font-mono font-bold text-[#0F4C44] dark:text-stone-100">
           Order #{order.orderId.slice(-6).toUpperCase()}
         </span>
         <div className="w-11" />
@@ -328,10 +328,10 @@ const OrderDetailView: React.FC<{
 
       <div className="p-4 space-y-4">
         {/* Live Order Tracking Milestone Stepper */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3.5">
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3.5">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+              <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">
                 {t('orderStatusTimeline')}
               </h2>
               <div className="text-[11px] text-[#047857] dark:text-[#10B981] font-medium mt-0.5">
@@ -415,7 +415,7 @@ const OrderDetailView: React.FC<{
                     {t('deliveryPinShareHint')}
                   </p>
                 </div>
-                <div className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#1C2420] border border-[#FDE68A] dark:border-[#F59E0B]/40 font-mono text-base font-extrabold tracking-widest text-stone-950 dark:text-[#F59E0B] tabular-nums shrink-0">
+                <div className="px-3 py-1.5 rounded-xl bg-[#FCFDFC] dark:bg-[#1C2420] border border-[#FDE68A] dark:border-[#F59E0B]/40 font-mono text-base font-extrabold tracking-widest text-[#0E2421] dark:text-[#F59E0B] tabular-nums shrink-0">
                   {order.deliveryPin}
                 </div>
               </div>
@@ -423,11 +423,11 @@ const OrderDetailView: React.FC<{
         </section>
 
         {/* Items Snapshot */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
-          <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
+          <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">
             {t('itemsFromShop', { shop: order.shopName })}
           </h2>
-          <div className="divide-y divide-[#E7E5E4]/80 dark:divide-[#2A3630]">
+          <div className="divide-y divide-[#D2E0DC]/75 dark:divide-[#2A3630]">
             {order.items.map((item, idx) => {
               const existingRating = getExistingRating(item.productId);
               const itemReturn = getItemReturnRequest(
@@ -446,35 +446,35 @@ const OrderDetailView: React.FC<{
                   className="py-2.5 space-y-2.5"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] shrink-0">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] shrink-0">
                       <ResilientImage src={item.imageUrl} alt={item.name} fallbackTitle={item.name} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-stone-900 dark:text-stone-100 truncate">{item.name}</div>
+                      <div className="text-xs font-semibold text-[#0E2421] dark:text-stone-100 truncate">{item.name}</div>
                       {item.variantLabel && (
                         <div className="text-[11px] font-medium text-[#047857] dark:text-[#10B981]">
                           {item.variantLabel}
                         </div>
                       )}
-                      <div className="text-[11px] text-stone-500 dark:text-stone-400 tabular-nums">
+                      <div className="text-[11px] text-[#46635E] dark:text-stone-400 tabular-nums">
                         Qty {item.quantity} × {formatETB(item.price)}
                       </div>
                     </div>
-                    <div className="text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
+                    <div className="text-xs font-bold text-[#0F4C44] dark:text-stone-100 tabular-nums">
                       {formatETB(item.price * item.quantity)}
                     </div>
                   </div>
 
                   {itemReturn && (
-                    <div className="p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center justify-between gap-2.5">
+                    <div className="p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center justify-between gap-2.5">
                       <div className="min-w-0">
-                        <div className="text-[11px] font-bold text-stone-900 dark:text-stone-100">
+                        <div className="text-[11px] font-bold text-[#0E2421] dark:text-stone-100">
                           {itemReturn.requestType === 'exchange'
                             ? t('exchangeRequestedLabel')
                             : t('returnRequestedLabel')}{' '}
                           · {t(RETURN_STATUS_LABEL_KEYS[itemReturn.status])}
                         </div>
-                        <div className="text-[11px] text-stone-600 dark:text-stone-300 truncate mt-0.5">
+                        <div className="text-[11px] text-[#46635E] dark:text-stone-300 truncate mt-0.5">
                           {reasonOption ? t(reasonOption.labelKey) : itemReturn.reason}
                         </div>
                       </div>
@@ -482,7 +482,7 @@ const OrderDetailView: React.FC<{
                         <img
                           src={itemReturn.photoDataUrl}
                           alt={t('returnPhotoAttached')}
-                          className="w-10 h-10 rounded-lg object-cover border border-[#E7E5E4] dark:border-[#2A3630] shrink-0"
+                          className="w-10 h-10 rounded-lg object-cover border border-[#D2E0DC] dark:border-[#2A3630] shrink-0"
                         />
                       )}
                     </div>
@@ -495,7 +495,7 @@ const OrderDetailView: React.FC<{
                           type="button"
                           onClick={() => setReturnTargetItem(item)}
                           aria-label={`${t('requestReturnBtn')} - ${item.name}`}
-                          className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#1C2420] hover:bg-[#FFFBEB] dark:hover:bg-[#F59E0B]/10 hover:border-[#FDE68A] dark:hover:border-[#F59E0B]/40 text-[11px] font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                          className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#1C2420] hover:bg-[#FFFBEB] dark:hover:bg-[#F59E0B]/10 hover:border-[#FDE68A] dark:hover:border-[#F59E0B]/40 text-[11px] font-semibold text-[#0E2421] dark:text-stone-200 flex items-center gap-1.5 transition-colors whitespace-nowrap"
                         >
                           <RotateCcw className="w-3.5 h-3.5 text-[#D97706] dark:text-[#F59E0B] shrink-0" />
                           <span>{t('requestReturnBtn')}</span>
@@ -505,7 +505,7 @@ const OrderDetailView: React.FC<{
                         <button
                           type="button"
                           onClick={() => onReviewProduct(item.productId)}
-                          className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#10B981]/15 hover:border-[#047857]/30 dark:hover:border-[#10B981]/40 text-[11px] font-semibold text-[#047857] dark:text-[#10B981] flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                          className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#E5F2EE] dark:bg-[#141A17] hover:bg-[#D5EBE4] dark:hover:bg-[#10B981]/15 hover:border-[#0F4C44]/30 dark:hover:border-[#10B981]/40 text-[11px] font-semibold text-[#0F4C44] dark:text-[#10B981] flex items-center gap-1.5 transition-colors whitespace-nowrap"
                         >
                           <Star className="w-3.5 h-3.5 fill-[#D97706] text-[#D97706] dark:fill-[#F59E0B] dark:text-[#F59E0B] shrink-0" />
                           <span>
@@ -571,14 +571,14 @@ const OrderDetailView: React.FC<{
 
         {/* Easy Returns Guarantee Card */}
         {isPurchaseEligible && (
-          <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 flex items-center justify-between gap-3">
+          <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 flex items-center justify-between gap-3">
             <div className="flex items-start gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-[#FFFBEB] dark:bg-[#F59E0B]/15 text-[#D97706] dark:text-[#F59E0B] flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-bold text-stone-900 dark:text-stone-100">{t('easyReturnsTitle')}</div>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 leading-relaxed">
+                <div className="text-xs font-bold text-[#0E2421] dark:text-stone-100">{t('easyReturnsTitle')}</div>
+                <p className="text-[11px] text-[#46635E] dark:text-stone-400 mt-0.5 leading-relaxed">
                   {t('easyReturnsSubtitle')}
                 </p>
               </div>
@@ -587,7 +587,7 @@ const OrderDetailView: React.FC<{
               <button
                 type="button"
                 onClick={() => setReturnTargetItem(firstReturnableItem)}
-                className="min-h-[44px] px-3.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#FFFBEB] dark:hover:bg-[#F59E0B]/10 text-xs font-semibold text-stone-800 dark:text-stone-200 shrink-0 whitespace-nowrap transition-colors"
+                className="min-h-[44px] px-3.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] hover:bg-[#FFFBEB] dark:hover:bg-[#F59E0B]/10 text-xs font-semibold text-[#0E2421] dark:text-stone-200 shrink-0 whitespace-nowrap transition-colors"
               >
                 {t('requestReturnBtn')}
               </button>
@@ -596,7 +596,7 @@ const OrderDetailView: React.FC<{
         )}
 
         {/* Fulfillment & Payment */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2 text-xs">
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-2 text-xs">
           <div className="flex justify-between">
             <span className="text-stone-500 dark:text-stone-400">{t('fulfillmentLabel')}</span>
             <span className="font-semibold capitalize text-stone-900 dark:text-stone-100">{order.fulfillmentMethod}</span>
@@ -726,7 +726,7 @@ const OrderDetailView: React.FC<{
           <button
             type="button"
             onClick={handleReorder}
-            className="min-h-[44px] px-3 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            className="min-h-[44px] px-3 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 dark:bg-none dark:bg-[#10B981] dark:hover:bg-[#059669] text-[#FCFDFC] dark:text-[#0B1410] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t('reorderItems')}</span>
@@ -735,7 +735,7 @@ const OrderDetailView: React.FC<{
           <button
             type="button"
             onClick={handleCopyReceipt}
-            className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#1C2420] hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] text-stone-800 dark:text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#FCFDFC] dark:bg-[#1C2420] hover:bg-[#EBF1EE] dark:hover:bg-[#141A17] text-[#0E2421] dark:text-stone-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
           >
             {receiptCopied ? (
               <>
@@ -937,11 +937,11 @@ const EasyReturnModal: React.FC<{
       aria-labelledby="easy-return-modal-title"
       className="fixed inset-0 z-50 bg-stone-950/50 dark:bg-black/75 flex items-end sm:items-center justify-center p-0 sm:p-4"
     >
-      <div className="w-full max-w-md bg-white dark:bg-[#1C2420] rounded-t-3xl sm:rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] p-4 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-[#FCFDFC] dark:bg-[#1C2420] rounded-t-3xl sm:rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] p-4 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between gap-2">
           <h2
             id="easy-return-modal-title"
-            className="text-sm font-display font-bold text-stone-900 dark:text-stone-100"
+            className="text-sm font-display font-bold text-[#0F4C44] dark:text-stone-100"
           >
             {t('returnModalTitle')}
           </h2>
@@ -952,20 +952,20 @@ const EasyReturnModal: React.FC<{
               onClose();
             }}
             aria-label="Close"
-            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-500 dark:text-stone-400 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]"
+            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#46635E] dark:text-stone-400 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Selected Order Item Snapshot */}
-        <div className="p-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl overflow-hidden bg-stone-200 dark:bg-[#1C2420] shrink-0">
+        <div className="p-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl overflow-hidden bg-[#E5EEEC] dark:bg-[#1C2420] shrink-0">
             <ResilientImage src={item.imageUrl} alt={item.name} fallbackTitle={item.name} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold text-stone-900 dark:text-stone-100 truncate">{item.name}</div>
-            <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-0.5 tabular-nums">
+            <div className="text-xs font-bold text-[#0E2421] dark:text-stone-100 truncate">{item.name}</div>
+            <div className="text-[11px] text-[#46635E] dark:text-stone-400 truncate mt-0.5 tabular-nums">
               {order.shopName} · #{order.orderId.slice(-6).toUpperCase()}
               {item.variantLabel ? ` · ${item.variantLabel}` : ''}
             </div>
@@ -975,17 +975,17 @@ const EasyReturnModal: React.FC<{
         <form onSubmit={handleFormSubmit} className="space-y-3.5">
           {/* Request Type Selector */}
           <div className="space-y-1.5">
-            <span className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300">
+            <span className="block text-[11px] font-semibold text-[#0E2421] dark:text-stone-300">
               {t('returnTypeLabel')}
             </span>
-            <div className="grid grid-cols-2 gap-1 p-1 bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] rounded-xl">
+            <div className="grid grid-cols-2 gap-1 p-1 bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] rounded-xl">
               <button
                 type="button"
                 onClick={() => setRequestType('return')}
                 className={`min-h-[44px] px-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                   requestType === 'return'
-                    ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-[#0F4C44] dark:bg-[#10B981]/15 text-[#FCFDFC] dark:text-[#10B981] shadow-xs'
+                    : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100'
                 }`}
               >
                 {t('returnTypeRefund')}
@@ -995,8 +995,8 @@ const EasyReturnModal: React.FC<{
                 onClick={() => setRequestType('exchange')}
                 className={`min-h-[44px] px-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                   requestType === 'exchange'
-                    ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] shadow-xs'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-[#0F4C44] dark:bg-[#10B981]/15 text-[#FCFDFC] dark:text-[#10B981] shadow-xs'
+                    : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100'
                 }`}
               >
                 {t('returnTypeExchange')}
@@ -1008,7 +1008,7 @@ const EasyReturnModal: React.FC<{
           <div className="space-y-1.5">
             <label
               htmlFor="return-reason-select"
-              className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300"
+              className="block text-[11px] font-semibold text-[#0E2421] dark:text-stone-300"
             >
               {t('returnReasonLabel')}
             </label>
@@ -1016,10 +1016,10 @@ const EasyReturnModal: React.FC<{
               id="return-reason-select"
               value={reason}
               onChange={(e) => setReason(e.target.value as ReturnRequestReason)}
-              className="w-full min-h-[44px] px-3 py-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              className="w-full min-h-[44px] px-3 py-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs text-[#0E2421] dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
             >
               {RETURN_REASON_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
+                <option key={opt.value} value={opt.value} className="bg-[#FCFDFC] dark:bg-[#1C2420] text-[#0E2421] dark:text-stone-100">
                   {t(opt.labelKey)}
                 </option>
               ))}
@@ -1056,7 +1056,7 @@ const EasyReturnModal: React.FC<{
                   <button
                     type="button"
                     onClick={stopCameraStream}
-                    className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17] transition-colors"
+                    className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] text-xs font-semibold text-[#0E2421] dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17] transition-colors"
                   >
                     {t('returnCancelCamera')}
                   </button>
@@ -1067,14 +1067,14 @@ const EasyReturnModal: React.FC<{
                 <button
                   type="button"
                   onClick={handleOpenCamera}
-                  className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] hover:bg-[#ECFDF5] dark:hover:bg-[#10B981]/10 text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                  className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] hover:bg-[#E5F2EE] dark:hover:bg-[#10B981]/10 text-xs font-semibold text-[#0E2421] dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                 >
-                  <Camera className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                  <Camera className="w-4 h-4 text-[#0F4C44] dark:text-[#10B981] shrink-0" />
                   <span>{t('returnTakePhotoCamera')}</span>
                 </button>
 
-                <label className="min-h-[44px] px-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] hover:bg-[#FAF8F5] dark:hover:bg-[#1C2420] text-xs font-semibold text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
-                  <Upload className="w-4 h-4 text-[#047857] dark:text-[#10B981] shrink-0" />
+                <label className="min-h-[44px] px-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] hover:bg-[#E5F2EE] dark:hover:bg-[#1C2420] text-xs font-semibold text-[#0E2421] dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap">
+                  <Upload className="w-4 h-4 text-[#0F4C44] dark:text-[#10B981] shrink-0" />
                   <span>{t('returnUploadPhoto')}</span>
                   <input
                     id="return-photo-input"
@@ -1095,19 +1095,19 @@ const EasyReturnModal: React.FC<{
             )}
 
             {photoDataUrl && (
-              <div className="p-2.5 rounded-xl border border-[#047857]/30 dark:border-[#10B981]/30 bg-[#ECFDF5]/60 dark:bg-[#10B981]/10 space-y-2">
+              <div className="p-2.5 rounded-xl border border-[#0F4C44]/30 dark:border-[#10B981]/30 bg-[#E5F2EE]/60 dark:bg-[#10B981]/10 space-y-2">
                 <img
                   src={photoDataUrl}
                   alt={t('returnPhotoAttached')}
-                  className="w-full max-h-40 object-cover rounded-lg border border-[#E7E5E4] dark:border-[#2A3630]"
+                  className="w-full max-h-40 object-cover rounded-lg border border-[#D2E0DC] dark:border-[#2A3630]"
                 />
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="text-[11px] font-semibold text-[#047857] dark:text-[#10B981] flex items-center gap-1">
+                    <span className="text-[11px] font-semibold text-[#0F4C44] dark:text-[#10B981] flex items-center gap-1">
                       <Check className="w-3.5 h-3.5 shrink-0" />
                       <span>{t('returnPhotoAttached')}</span>
                     </span>
-                    <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums mt-0.5">
+                    <div className="text-[10px] text-[#46635E] dark:text-stone-400 tabular-nums mt-0.5">
                       {t('imageSizeLimitHint', {
                         size: formatImageByteSize(estimateDataUrlByteSize(photoDataUrl)),
                       })}
@@ -1131,11 +1131,11 @@ const EasyReturnModal: React.FC<{
             <div className="flex items-center justify-between">
               <label
                 htmlFor="return-details-input"
-                className="text-[11px] font-semibold text-stone-700 dark:text-stone-300"
+                className="text-[11px] font-semibold text-[#0E2421] dark:text-stone-300"
               >
                 {t('returnDetailsLabel')}
               </label>
-              <span className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">
+              <span className="text-[11px] text-[#5E7B76] dark:text-stone-500 tabular-nums">
                 {details.trim().length}/600
               </span>
             </div>
@@ -1146,7 +1146,7 @@ const EasyReturnModal: React.FC<{
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder={t('returnDetailsPlaceholder')}
-              className="w-full p-3 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981] resize-none"
+              className="w-full p-3 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs text-[#0E2421] dark:text-stone-100 placeholder:text-[#5E7B76] dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981] resize-none"
             />
           </div>
 
@@ -1157,7 +1157,7 @@ const EasyReturnModal: React.FC<{
           <button
             type="submit"
             disabled={submitting}
-            className="w-full min-h-[44px] px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:bg-stone-300 dark:disabled:bg-[#2A3630] dark:disabled:text-stone-500 text-white dark:text-[#0B1410] text-xs font-semibold transition-colors"
+            className="w-full min-h-[44px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 dark:bg-none dark:bg-[#10B981] dark:hover:bg-[#059669] disabled:bg-stone-300 dark:disabled:bg-[#2A3630] dark:disabled:text-stone-500 text-[#FCFDFC] dark:text-[#0B1410] text-xs font-semibold transition-all"
           >
             {t('returnSubmitBtn')}
           </button>

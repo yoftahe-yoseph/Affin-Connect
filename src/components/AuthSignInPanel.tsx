@@ -342,19 +342,19 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
   // Shared style tokens based on variant (glass obsidian vs embedded card)
   const labelClass = isGlass
     ? 'block text-xs font-semibold text-[#CBE3E4] mb-1.5'
-    : 'block text-[11px] font-semibold text-stone-600 dark:text-stone-300 mb-1';
+    : 'block text-[11px] font-semibold text-[#46635E] dark:text-stone-300 mb-1';
 
   const iconClass = isGlass
     ? 'w-4 h-4 text-[#00C8D7]/70 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none'
-    : 'w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none';
+    : 'w-3.5 h-3.5 text-[#5E7B76] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none';
 
   const inputBaseClass = isGlass
     ? 'w-full min-h-[46px] rounded-xl border border-[#123E42] bg-[#021113]/75 text-sm font-medium text-[#F5FAFA] placeholder:text-[#6B9396] focus:outline-none focus:border-[#00C8D7] focus:ring-4 focus:ring-[#00C8D7]/15 transition-all duration-200'
-    : 'w-full min-h-[44px] rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-medium text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981] transition-colors';
+    : 'w-full min-h-[44px] rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs font-medium text-[#0E2421] dark:text-stone-100 placeholder:text-[#5E7B76] focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981] transition-colors';
 
   const primaryGradientBtnClass = isGlass
     ? 'w-full min-h-[48px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 active:scale-[0.99] disabled:opacity-70 text-[#031719] text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00C8D7]'
-    : 'w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#047857] via-[#059669] to-[#0D9488] hover:from-[#065F46] hover:to-[#047857] disabled:opacity-85 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-emerald-900/15 transition-all duration-200 cursor-pointer';
+    : 'w-full min-h-[46px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 disabled:opacity-85 text-[#FCFDFC] text-xs font-semibold flex items-center justify-center gap-2 shadow-[0_2px_10px_-2px_rgba(15,76,68,0.28)] dark:shadow-none transition-all duration-200 cursor-pointer';
 
   const errorBannerClass = isGlass
     ? 'p-3 rounded-xl bg-rose-500/12 border border-rose-400/35 text-xs text-rose-200 flex items-start gap-2.5 leading-relaxed'
@@ -362,7 +362,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
 
   const successBannerClass = isGlass
     ? 'p-3 rounded-xl bg-[#00D68F]/12 border border-[#00D68F]/35 text-xs text-[#9EF5D7] flex items-start gap-2.5 leading-relaxed font-medium'
-    : 'p-2.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/15 border border-[#047857]/25 dark:border-[#10B981]/35 text-[11px] text-[#065F46] dark:text-[#6EE7B7] flex items-start gap-2 leading-relaxed font-medium';
+    : 'p-2.5 rounded-xl bg-[#E5F2EE] dark:bg-[#10B981]/15 border border-[#0F4C44]/25 dark:border-[#10B981]/35 text-[11px] text-[#0F4C44] dark:text-[#6EE7B7] flex items-start gap-2 leading-relaxed font-medium';
 
   if (firebaseUser && needsEmailVerification) {
     const resolvedDisplayName =
@@ -467,7 +467,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             className={`w-full min-h-[44px] px-4 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-60 cursor-pointer ${
               isGlass
                 ? 'bg-[#03191B] border-[#123E42] hover:border-[#00C8D7]/45 text-[#E8F6F6]'
-                : 'bg-white dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] hover:border-[#047857] text-stone-800 dark:text-stone-100'
+                : 'bg-[#FCFDFC] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] hover:border-[#0F4C44] text-[#0E2421] dark:text-stone-100'
             }`}
           >
             {resendingVerify ? (
@@ -521,7 +521,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
         className={`grid grid-cols-3 gap-1 p-1 rounded-2xl border ${
           isGlass
             ? 'bg-[#021113]/85 border-[#123E42]'
-            : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630]'
+            : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630]'
         }`}
       >
         {(
@@ -545,8 +545,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                     ? 'bg-gradient-to-r from-[#00D68F]/22 to-[#00C8D7]/22 border border-[#00C8D7]/40 text-[#F5FAFA] shadow-sm font-semibold'
                     : 'text-[#89AFB2] hover:text-[#DCEFEF] font-medium'
                   : isActive
-                  ? 'bg-white dark:bg-[#1C2420] text-[#047857] dark:text-[#10B981] shadow-xs font-semibold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-medium'
+                  ? 'bg-[#FCFDFC] dark:bg-[#1C2420] text-[#0F4C44] dark:text-[#10B981] shadow-[0_2px_8px_-3px_rgba(15,76,68,0.14)] dark:shadow-xs font-semibold'
+                  : 'text-[#46635E] dark:text-stone-400 hover:text-[#0E2421] dark:hover:text-stone-100 font-medium'
               }`}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -730,8 +730,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                         ? 'bg-[#00D68F] border-[#00D68F] text-[#031719]'
                         : 'bg-[#021113]/80 border-[#1A5156] group-hover:border-[#00C8D7]'
                       : rememberMe
-                      ? 'bg-[#047857] dark:bg-[#10B981] border-[#047857] dark:border-[#10B981] text-white dark:text-[#0B1410]'
-                      : 'bg-white dark:bg-[#141A17] border-stone-300 dark:border-stone-600'
+                      ? 'bg-[#0F4C44] dark:bg-[#10B981] border-[#0F4C44] dark:border-[#10B981] text-[#FCFDFC] dark:text-[#0B1410]'
+                      : 'bg-[#FCFDFC] dark:bg-[#141A17] border-[#D2E0DC] dark:border-stone-600'
                   }`}
                 >
                   {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
@@ -919,8 +919,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                       ? 'border-[#00D68F] bg-[#00D68F]/14 text-[#F5FAFA] shadow-sm shadow-[#00D68F]/10'
                       : 'border-[#123E42] bg-[#021113]/75 text-[#B4CFD1] hover:border-[#00C8D7]/45'
                     : accountType === 'customer'
-                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
-                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300'
+                    ? 'border-[#0F4C44] dark:border-[#10B981] bg-[#E5F2EE] dark:bg-[#10B981]/15 text-[#0F4C44] dark:text-[#10B981]'
+                    : 'border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-[#46635E] dark:text-stone-300'
                 }`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold">
@@ -943,8 +943,8 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
                       ? 'border-[#00C8D7] bg-[#00C8D7]/14 text-[#F5FAFA] shadow-sm shadow-[#00C8D7]/10'
                       : 'border-[#123E42] bg-[#021113]/75 text-[#B4CFD1] hover:border-[#00C8D7]/45'
                     : accountType === 'seller'
-                    ? 'border-[#047857] dark:border-[#10B981] bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981]'
-                    : 'border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-stone-700 dark:text-stone-300'
+                    ? 'border-[#0F4C44] dark:border-[#10B981] bg-[#E5F2EE] dark:bg-[#10B981]/15 text-[#0F4C44] dark:text-[#10B981]'
+                    : 'border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-[#46635E] dark:text-stone-300'
                 }`}
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold">
@@ -1192,13 +1192,13 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
           >
             <span
               className={`flex-1 h-px ${
-                isGlass ? 'bg-[#123E42]' : 'bg-[#E7E5E4] dark:bg-[#2A3630]'
+                isGlass ? 'bg-[#123E42]' : 'bg-[#D2E0DC] dark:bg-[#2A3630]'
               }`}
             />
             <span>{t('authOrDivider')}</span>
             <span
               className={`flex-1 h-px ${
-                isGlass ? 'bg-[#123E42]' : 'bg-[#E7E5E4] dark:bg-[#2A3630]'
+                isGlass ? 'bg-[#123E42]' : 'bg-[#D2E0DC] dark:bg-[#2A3630]'
               }`}
             />
           </div>
@@ -1210,7 +1210,7 @@ export const AuthSignInPanel: React.FC<AuthSignInPanelProps> = ({
             className={`w-full min-h-[46px] px-4 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer ${
               isGlass
                 ? 'bg-[#03191B] border-[#13464B] hover:border-[#00C8D7]/55 hover:bg-[#06272A] text-[#F5FAFA] shadow-sm shadow-black/25'
-                : 'bg-white dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] hover:border-[#047857] dark:hover:border-[#10B981] text-stone-800 dark:text-stone-100'
+                : 'bg-[#FCFDFC] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] hover:border-[#0F4C44] dark:hover:border-[#10B981] text-[#0E2421] dark:text-stone-100 shadow-[0_2px_8px_-3px_rgba(15,76,68,0.08)] dark:shadow-none'
             }`}
           >
             {googleBusy ? (

@@ -90,21 +90,21 @@ export const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({
       aria-modal="true"
       aria-labelledby="order-receipt-modal-title"
       data-testid="order-receipt-modal"
-      className="fixed inset-0 z-50 bg-[#031719] flex flex-col max-w-md mx-auto"
+      className="fixed inset-0 z-50 bg-[#F3F6F4] dark:bg-[#031719] flex flex-col max-w-md mx-auto"
     >
       {/* Top Bar */}
-      <header className="px-3 py-2.5 flex items-center justify-between border-b border-[#14443F] bg-[#031719]/95 shrink-0">
+      <header className="px-3 py-2.5 flex items-center justify-between border-b border-[#D2E0DC] dark:border-[#14443F] bg-[#FCFDFC]/95 dark:bg-[#031719]/95 shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none shrink-0">
         <button
           type="button"
           onClick={onClose}
           aria-label={t('close')}
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#F5FAFA] hover:bg-[#092825] transition-colors"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-[#F5FAFA] hover:bg-[#EBF1EE] dark:hover:bg-[#092825] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1
           id="order-receipt-modal-title"
-          className="text-sm font-display font-bold text-[#F5FAFA]"
+          className="text-sm font-display font-bold text-[#0F4C44] dark:text-[#F5FAFA]"
         >
           {t('receiptTitle')}
         </h1>
@@ -112,7 +112,7 @@ export const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({
           type="button"
           onClick={handleShare}
           aria-label={t('shareReceiptBtn')}
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#F5FAFA] hover:bg-[#092825] transition-colors"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-[#F5FAFA] hover:bg-[#EBF1EE] dark:hover:bg-[#092825] transition-colors"
         >
           <Share2 className="w-4 h-4" />
         </button>
@@ -121,12 +121,12 @@ export const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({
       {/* Scrollable Receipt Body */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {feedback && (
-          <div className="px-3 py-2 rounded-xl bg-[#00D68F]/15 border border-[#00D68F]/40 text-[#00D68F] text-xs font-semibold text-center">
+          <div className="px-3 py-2 rounded-xl bg-[#E5F2EE] dark:bg-[#00D68F]/15 border border-[#0F4C44]/30 dark:border-[#00D68F]/40 text-[#0F4C44] dark:text-[#00D68F] text-xs font-semibold text-center">
             {feedback}
           </div>
         )}
 
-        <article className="rounded-2xl bg-white text-slate-900 shadow-2xl overflow-hidden border border-slate-200/80">
+        <article className="rounded-2xl bg-[#FCFDFC] text-slate-900 shadow-[0_8px_24px_-8px_rgba(15,76,68,0.18)] dark:shadow-2xl overflow-hidden border border-[#D2E0DC]">
           <div className="p-4 space-y-3.5">
             {/* Brand Header */}
             <div className="flex items-center justify-center gap-2.5 pt-1">
@@ -316,13 +316,13 @@ export const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({
       </div>
 
       {/* Bottom Sticky Action Bar */}
-      <footer className="px-4 py-3 bg-[#031719]/95 border-t border-[#14443F] grid grid-cols-2 gap-2.5 shrink-0">
+      <footer className="px-4 py-3 bg-[#FCFDFC]/95 dark:bg-[#031719]/95 border-t border-[#D2E0DC] dark:border-[#14443F] grid grid-cols-2 gap-2.5 shrink-0">
         <button
           type="button"
           onClick={handleShare}
-          className="min-h-[46px] px-3 rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+          className="min-h-[46px] px-3 rounded-xl bg-[#F3F6F4] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 text-[#0E2421] dark:text-[#F5FAFA] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
         >
-          <Share2 className="w-4 h-4 text-[#00D68F]" />
+          <Share2 className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
           <span>{t('shareReceiptBtn')}</span>
         </button>
 
@@ -330,7 +330,7 @@ export const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({
           type="button"
           data-testid="receipt-download-pdf-btn"
           onClick={handleDownloadPdf}
-          className="min-h-[46px] px-3 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#00D68F]/20 transition-all"
+          className="min-h-[46px] px-3 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#0F4C44]/15 dark:shadow-[#00D68F]/20 transition-all"
         >
           <Download className="w-4 h-4" />
           <span>{t('downloadPdfBtn')}</span>

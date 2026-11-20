@@ -286,30 +286,30 @@ export const VideoStudioScreen: React.FC = () => {
 
   return (
     <div className="pb-8">
-      <header className="sticky top-0 z-20 bg-white dark:bg-[#1C2420] border-b border-[#E7E5E4] dark:border-[#2A3630] px-3 py-2 flex items-center justify-between">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 backdrop-blur-md dark:bg-[#1C2420] border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-3 py-2 flex items-center justify-between">
         <button
           type="button"
           onClick={goBack}
           aria-label="Go back"
-          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-[#FAF8F5] dark:hover:bg-[#141A17]"
+          className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-[#0F4C44] dark:text-stone-300 hover:bg-[#EBF1EE] dark:hover:bg-[#141A17]"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <h1 className="text-sm font-display font-bold text-stone-900 dark:text-stone-100">
+          <h1 className="text-sm font-display font-bold text-[#0F4C44] dark:text-stone-100">
             Photo-to-Video Studio
           </h1>
-          <p className="text-[10px] text-stone-500 dark:text-stone-400">Create 16:9 or 9:16 Shop Reels</p>
+          <p className="text-[10px] text-[#46635E] dark:text-stone-400">Create 16:9 or 9:16 Shop Reels</p>
         </div>
         <div className="w-11" />
       </header>
 
       <div className="p-4 space-y-4">
         {/* Source Photo Selection */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">1. Choose or Upload Photo</h2>
-            <label className="px-3 py-1.5 rounded-xl bg-stone-900 dark:bg-[#2A3630] text-white text-[11px] font-semibold cursor-pointer flex items-center gap-1.5 hover:bg-stone-800 dark:hover:bg-[#34423B] transition-colors">
+            <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">1. Choose or Upload Photo</h2>
+            <label className="px-3 py-1.5 rounded-xl bg-[#0F4C44] dark:bg-[#2A3630] text-[#FCFDFC] text-[11px] font-semibold cursor-pointer flex items-center gap-1.5 hover:bg-[#0B3B35] dark:hover:bg-[#34423B] transition-colors">
               <ImagePlus className="w-3.5 h-3.5" />
               <span>Upload Photo</span>
               <input
@@ -325,17 +325,17 @@ export const VideoStudioScreen: React.FC = () => {
             aria-label="Pick a Hawassa catalog photo"
             value={selectedProductId}
             onChange={(e) => handleSelectCatalogProduct(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] text-xs font-medium text-stone-800 dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+            className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs font-medium text-[#0E2421] dark:text-stone-100 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
           >
             {products.map((p) => (
-              <option key={p.productId} value={p.productId} className="bg-white dark:bg-[#1C2420] text-stone-900 dark:text-stone-100">
+              <option key={p.productId} value={p.productId} className="bg-[#FCFDFC] dark:bg-[#1C2420] text-[#0E2421] dark:text-stone-100">
                 {p.name} ({formatETB(p.price)})
               </option>
             ))}
           </select>
 
           {imageSrc && (
-            <div className="rounded-xl overflow-hidden border border-[#E7E5E4] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#141A17] flex justify-center">
+            <div className="rounded-xl overflow-hidden border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] flex justify-center">
               <img
                 src={imageSrc}
                 alt="Selected reel frame"
@@ -348,8 +348,8 @@ export const VideoStudioScreen: React.FC = () => {
         </section>
 
         {/* Aspect Ratio, Motion & Overlay Copy */}
-        <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
-          <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">2. Format & Promo Copy</h2>
+        <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
+          <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">2. Format & Promo Copy</h2>
 
           <div className="grid grid-cols-2 gap-2">
             {(
@@ -364,8 +364,8 @@ export const VideoStudioScreen: React.FC = () => {
                 onClick={() => setAspectRatio(opt.id)}
                 className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-colors ${
                   aspectRatio === opt.id
-                    ? 'bg-[#ECFDF5] dark:bg-[#10B981]/15 text-[#047857] dark:text-[#10B981] border-[#047857] dark:border-[#10B981]'
-                    : 'bg-white dark:bg-[#141A17] text-stone-700 dark:text-stone-300 border-[#E7E5E4] dark:border-[#2A3630] hover:bg-[#FAF8F5] dark:hover:bg-[#1C2420]'
+                    ? 'bg-[#E5F2EE] dark:bg-[#10B981]/15 text-[#0F4C44] dark:text-[#10B981] border-[#0F4C44] dark:border-[#10B981]'
+                    : 'bg-[#F3F6F4] dark:bg-[#141A17] text-[#46635E] dark:text-stone-300 border-[#D2E0DC] dark:border-[#2A3630] hover:bg-[#EBF1EE] dark:hover:bg-[#1C2420]'
                 }`}
               >
                 {opt.label}
@@ -388,7 +388,7 @@ export const VideoStudioScreen: React.FC = () => {
                 className={`py-2 px-2 rounded-lg text-[11px] font-semibold border transition-colors ${
                   motionStyle === m.id
                     ? 'bg-[#FFFBEB] dark:bg-[#F59E0B]/15 border-[#D97706] dark:border-[#F59E0B] text-[#92400E] dark:text-[#F59E0B]'
-                    : 'bg-[#FAF8F5] dark:bg-[#141A17] border-[#E7E5E4] dark:border-[#2A3630] text-stone-700 dark:text-stone-300'
+                    : 'bg-[#F3F6F4] dark:bg-[#141A17] border-[#D2E0DC] dark:border-[#2A3630] text-[#46635E] dark:text-stone-300'
                 }`}
               >
                 {m.label}
@@ -398,12 +398,12 @@ export const VideoStudioScreen: React.FC = () => {
 
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-400">Video Overlay Text</span>
+              <span className="text-[11px] font-semibold text-[#46635E] dark:text-stone-400">Video Overlay Text</span>
               <button
                 type="button"
                 onClick={handleGenerateAiCaption}
                 disabled={captionLoading}
-                className="text-[11px] font-semibold text-[#047857] dark:text-[#10B981] hover:underline flex items-center gap-1 disabled:opacity-50"
+                className="text-[11px] font-semibold text-[#0F4C44] dark:text-[#10B981] hover:underline flex items-center gap-1 disabled:opacity-50"
               >
                 {captionLoading ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -418,14 +418,14 @@ export const VideoStudioScreen: React.FC = () => {
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
               placeholder="Headline"
-              className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs text-[#0E2421] dark:text-stone-100 placeholder:text-[#5E7B76] dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
             />
             <input
               type="text"
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="Subtitle / Price"
-              className="w-full p-2.5 rounded-xl border border-[#E7E5E4] dark:border-[#2A3630] bg-white dark:bg-[#141A17] text-xs text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#ECFDF5] dark:focus:ring-[#10B981]/20 focus:border-[#047857] dark:focus:border-[#10B981]"
+              className="w-full p-2.5 rounded-xl border border-[#D2E0DC] dark:border-[#2A3630] bg-[#F3F6F4] dark:bg-[#141A17] text-xs text-[#0E2421] dark:text-stone-100 placeholder:text-[#5E7B76] dark:placeholder:text-stone-500 focus:outline-none focus:ring-4 focus:ring-[#E5F2EE] dark:focus:ring-[#10B981]/20 focus:border-[#0F4C44] dark:focus:border-[#10B981]"
             />
           </div>
 
@@ -433,7 +433,7 @@ export const VideoStudioScreen: React.FC = () => {
             type="button"
             onClick={handleAnimateToVideo}
             disabled={rendering || !imageSrc}
-            className="w-full min-h-[46px] rounded-xl bg-[#047857] hover:bg-[#065F46] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#0B1410] text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+            className="w-full min-h-[46px] rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] hover:brightness-105 dark:bg-none dark:bg-[#10B981] dark:hover:bg-[#059669] text-[#FCFDFC] dark:text-[#0B1410] text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-[0_2px_8px_-2px_rgba(15,76,68,0.28)] dark:shadow-none"
           >
             {rendering ? (
               <>
@@ -456,16 +456,16 @@ export const VideoStudioScreen: React.FC = () => {
         )}
 
         {videoUrl && (
-          <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-3">
+          <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                <Film className="w-4 h-4 text-[#047857] dark:text-[#10B981]" />
+              <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100 flex items-center gap-1.5">
+                <Film className="w-4 h-4 text-[#0F4C44] dark:text-[#10B981]" />
                 <span>Generated Promo Video ({aspectRatio})</span>
               </h2>
               <a
                 href={videoUrl}
                 download={`hawasa-gebeya-reel-${aspectRatio.replace(':', 'x')}.webm`}
-                className="px-3 py-1.5 rounded-lg bg-stone-900 dark:bg-[#2A3630] hover:bg-stone-800 dark:hover:bg-[#34423B] text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-[#0F4C44] dark:bg-[#2A3630] hover:bg-[#0B3B35] dark:hover:bg-[#34423B] text-[#FCFDFC] text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download</span>
@@ -484,21 +484,21 @@ export const VideoStudioScreen: React.FC = () => {
         )}
 
         {firebaseUser && savedReels.length > 0 && (
-          <section className="bg-white dark:bg-[#1C2420] rounded-2xl border border-[#E7E5E4] dark:border-[#2A3630] shadow-sm p-4 space-y-2">
-            <h2 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+          <section className="bg-[#FCFDFC] dark:bg-[#1C2420] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-4 space-y-2">
+            <h2 className="text-xs font-bold text-[#0F4C44] dark:text-stone-100">
               Recent Shop Reels ({savedReels.length})
             </h2>
             <div className="space-y-1.5">
               {savedReels.slice(0, 5).map((r) => (
                 <div
                   key={r.id}
-                  className="p-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#141A17] border border-[#E7E5E4] dark:border-[#2A3630] flex items-center justify-between gap-2 text-xs"
+                  className="p-2.5 rounded-xl bg-[#F3F6F4] dark:bg-[#141A17] border border-[#D2E0DC] dark:border-[#2A3630] flex items-center justify-between gap-2 text-xs"
                 >
                   <div className="min-w-0">
-                    <div className="font-semibold text-stone-900 dark:text-stone-100 truncate">{r.title}</div>
-                    <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{r.caption}</div>
+                    <div className="font-semibold text-[#0E2421] dark:text-stone-100 truncate">{r.title}</div>
+                    <div className="text-[10px] text-[#46635E] dark:text-stone-400 truncate">{r.caption}</div>
                   </div>
-                  <span className="text-[10px] font-mono font-bold text-[#047857] dark:text-[#10B981] shrink-0">
+                  <span className="text-[10px] font-mono font-bold text-[#0F4C44] dark:text-[#10B981] shrink-0">
                     {r.aspectRatio}
                   </span>
                 </div>

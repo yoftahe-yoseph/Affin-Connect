@@ -19,14 +19,25 @@
     <script>
       (function () {
         try {
-          localStorage.setItem('hg_theme_v1', JSON.stringify('dark'));
+          var raw = localStorage.getItem('hg_theme_v1');
+          var saved = raw ? JSON.parse(raw) : 'dark';
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var resolved = saved === 'light' ? 'light' : saved === 'system' ? (prefersDark ? 'dark' : 'light') : 'dark';
+          if (resolved === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          } else {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          }
+        } catch (e) {
           document.documentElement.classList.add('dark');
           document.documentElement.style.colorScheme = 'dark';
-        } catch (e) {}
+        }
       })();
     </script>
   </head>
-  <body class="bg-[#031719] text-[#F5FAFA] antialiased selection:bg-[#00D68F] selection:text-[#031719]">
+  <body class="bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA] antialiased selection:bg-[#0F4C44] selection:text-[#FCFDFC] dark:selection:bg-[#00D68F] dark:selection:text-[#031719]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { ResilientImage } from '../components/SharedUI';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
   COFFEE_BEAN_FORMS,
@@ -223,17 +224,17 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
     selectedShopId !== 'all' ? shopsById[selectedShopId] : undefined;
 
   return (
-    <div className="min-h-full bg-[#031719] text-[#F8F4EE] pb-10">
+    <div className="min-h-full bg-[#F6F1EA] dark:bg-[#031719] text-[#3A221A] dark:text-[#F8F4EE] pb-10">
       {/* Sticky Top Header */}
-      <header className="sticky top-0 z-20 bg-[#1B110E]/95 backdrop-blur-md border-b border-[#C68B59]/25 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+      <header className="sticky top-0 z-20 bg-[#F6F1EA]/95 dark:bg-[#1B110E]/95 backdrop-blur-md border-b border-[#DFD0BF] dark:border-[#C68B59]/25 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 shadow-[0_2px_12px_-6px_rgba(75,46,36,0.14)] dark:shadow-none">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => navigate({ name: 'home' })}
             aria-label={t('coffeeBackToMarketplace')}
-            className="min-h-[42px] px-2.5 rounded-xl bg-[#4B2E24]/70 border border-[#C68B59]/35 hover:border-[#C68B59] text-[#F8F4EE] flex items-center gap-1.5 text-xs font-semibold transition-colors shrink-0"
+            className="min-h-[42px] px-2.5 rounded-xl bg-[#FCFBF8] dark:bg-[#4B2E24]/70 border border-[#DFD0BF] dark:border-[#C68B59]/35 hover:border-[#8C5530] dark:hover:border-[#C68B59] text-[#3A221A] dark:text-[#F8F4EE] flex items-center gap-1.5 text-xs font-semibold transition-colors shrink-0 shadow-xs dark:shadow-none"
           >
-            <ArrowLeft className="w-4 h-4 text-[#C68B59] shrink-0" />
+            <ArrowLeft className="w-4 h-4 text-[#8C5530] dark:text-[#C68B59] shrink-0" />
             <span className="hidden xs:inline sm:inline">{t('coffeeBackToMarketplace')}</span>
           </button>
 
@@ -241,21 +242,23 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C68B59] to-[#8C5530] text-[#1B110E] flex items-center justify-center shadow-sm shrink-0">
               <Coffee className="w-4 h-4 stroke-[2.25]" />
             </div>
-            <h1 className="text-sm font-display font-bold text-[#F8F4EE] truncate">
+            <h1 className="text-sm font-display font-bold text-[#3A221A] dark:text-[#F8F4EE] truncate">
               {t('coffeeTradersTitle')}
             </h1>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <ThemeToggleButton className="min-w-[40px] min-h-[40px]" />
+
             <button
               type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
               aria-label="Refresh coffee marketplace"
-              className="min-w-[40px] min-h-[40px] rounded-xl bg-[#2A1A15] border border-[#C68B59]/25 hover:border-[#C68B59]/60 text-[#F8F4EE] flex items-center justify-center transition-colors disabled:opacity-50"
+              className="min-w-[40px] min-h-[40px] rounded-xl bg-[#FCFBF8] dark:bg-[#2A1A15] border border-[#DFD0BF] dark:border-[#C68B59]/25 hover:border-[#8C5530] dark:hover:border-[#C68B59]/60 text-[#3A221A] dark:text-[#F8F4EE] flex items-center justify-center transition-colors disabled:opacity-50 shadow-xs dark:shadow-none"
             >
               <RefreshCw
-                className={`w-4 h-4 text-[#C68B59] ${isRefreshing ? 'animate-spin' : ''}`}
+                className={`w-4 h-4 text-[#8C5530] dark:text-[#C68B59] ${isRefreshing ? 'animate-spin' : ''}`}
               />
             </button>
 
@@ -263,11 +266,11 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
               type="button"
               onClick={() => navigate({ name: 'cart' })}
               aria-label={t('cart')}
-              className="relative min-w-[40px] min-h-[40px] rounded-xl bg-[#2A1A15] border border-[#C68B59]/25 hover:border-[#00D68F]/60 text-[#F8F4EE] flex items-center justify-center transition-colors"
+              className="relative min-w-[40px] min-h-[40px] rounded-xl bg-[#FCFBF8] dark:bg-[#2A1A15] border border-[#DFD0BF] dark:border-[#C68B59]/25 hover:border-[#0F4C44] dark:hover:border-[#00D68F]/60 text-[#3A221A] dark:text-[#F8F4EE] flex items-center justify-center transition-colors shadow-xs dark:shadow-none"
             >
-              <ShoppingBag className="w-4 h-4 text-[#00D68F]" />
+              <ShoppingBag className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
+                <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
                   {cartCount}
                 </span>
               )}
@@ -347,21 +350,21 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
         {refreshError && (
           <div
             role="alert"
-            className="rounded-2xl bg-rose-950/60 border border-rose-500/40 p-3.5 flex items-center justify-between gap-3"
+            className="rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 p-3.5 flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <div className="min-w-0">
-                <div className="text-xs font-bold text-rose-100">
+                <div className="text-xs font-bold text-rose-900 dark:text-rose-100">
                   {t('coffeeLoadErrorTitle')}
                 </div>
-                <p className="text-[11px] text-rose-200/85 truncate">{refreshError}</p>
+                <p className="text-[11px] text-rose-700 dark:text-rose-200/85 truncate">{refreshError}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleRefresh}
-              className="min-h-[36px] px-3 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-100 text-[11px] font-semibold shrink-0 hover:bg-rose-500/30"
+              className="min-h-[36px] px-3 rounded-lg bg-rose-100 dark:bg-rose-500/20 border border-rose-300 dark:border-rose-400/40 text-rose-900 dark:text-rose-100 text-[11px] font-semibold shrink-0 hover:bg-rose-200 dark:hover:bg-rose-500/30"
             >
               {t('coffeeLoadErrorRetry')}
             </button>
@@ -373,16 +376,16 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
           <div className="flex items-center justify-between gap-2">
             <h2
               id="coffee-traders-dir-heading"
-              className="text-sm font-bold text-[#F8F4EE] flex items-center gap-1.5"
+              className="text-sm font-bold text-[#3A221A] dark:text-[#F8F4EE] flex items-center gap-1.5"
             >
-              <Store className="w-4 h-4 text-[#C68B59] shrink-0" />
+              <Store className="w-4 h-4 text-[#8C5530] dark:text-[#C68B59] shrink-0" />
               <span>{t('coffeeTradersDirectoryTitle')}</span>
             </h2>
             {selectedShopObj && (
               <button
                 type="button"
                 onClick={() => setSelectedShopId('all')}
-                className="text-[11px] font-semibold text-[#C68B59] hover:text-[#F8F4EE] flex items-center gap-1"
+                className="text-[11px] font-semibold text-[#8C5530] dark:text-[#C68B59] hover:text-[#3A221A] dark:hover:text-[#F8F4EE] flex items-center gap-1"
               >
                 <X className="w-3 h-3" />
                 <span>{t('coffeeFilterAll')}</span>
@@ -395,19 +398,19 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
               {Array.from({ length: 2 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-64 h-40 rounded-2xl bg-[#241612] border border-[#C68B59]/20 animate-pulse shrink-0"
+                  className="w-64 h-40 rounded-2xl bg-[#EFE5D8] dark:bg-[#241612] border border-[#E6D5C3] dark:border-[#C68B59]/20 animate-pulse shrink-0"
                 />
               ))}
             </div>
           ) : coffeeTraders.length === 0 ? (
-            <div className="rounded-2xl bg-[#1F1410] border border-[#C68B59]/25 p-5 text-center space-y-2">
-              <Coffee className="w-6 h-6 text-[#C68B59] mx-auto" />
-              <div className="text-xs font-bold text-[#F8F4EE]">
+            <div className="rounded-2xl bg-[#FCFBF8] dark:bg-[#1F1410] border border-[#DFD0BF] dark:border-[#C68B59]/25 p-5 text-center space-y-2 shadow-[0_2px_10px_-3px_rgba(75,46,36,0.10)] dark:shadow-none">
+              <Coffee className="w-6 h-6 text-[#8C5530] dark:text-[#C68B59] mx-auto" />
+              <div className="text-xs font-bold text-[#3A221A] dark:text-[#F8F4EE]">
                 {allCoffeeTradersCount === 0
                   ? t('coffeeEmptyNoCatalogTitle')
                   : t('coffeeEmptyTitle')}
               </div>
-              <p className="text-[11px] text-[#D5C3B3] leading-relaxed">
+              <p className="text-[11px] text-[#6E5144] dark:text-[#D5C3B3] leading-relaxed">
                 {allCoffeeTradersCount === 0
                   ? t('coffeeEmptyNoCatalogDesc')
                   : t('coffeeEmptyDesc')}
@@ -423,12 +426,12 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                     key={shop.shopId}
                     className={`w-[272px] shrink-0 rounded-2xl p-3.5 border transition-all flex flex-col justify-between gap-3 ${
                       isSelected
-                        ? 'bg-gradient-to-br from-[#4B2E24] to-[#281812] border-[#C68B59] shadow-lg shadow-black/40'
-                        : 'bg-gradient-to-br from-[#271813] to-[#170F0C] border-[#C68B59]/25 hover:border-[#C68B59]/60'
+                        ? 'bg-[#F2E6D8] dark:bg-gradient-to-br dark:from-[#4B2E24] dark:to-[#281812] border-[#8C5530] dark:border-[#C68B59] shadow-md dark:shadow-lg shadow-[#4B2E24]/15 dark:shadow-black/40'
+                        : 'bg-[#FCFBF8] dark:bg-gradient-to-br dark:from-[#271813] dark:to-[#170F0C] border-[#DFD0BF] dark:border-[#C68B59]/25 hover:border-[#8C5530]/60 dark:hover:border-[#C68B59]/60 shadow-[0_2px_10px_-3px_rgba(75,46,36,0.10)] dark:shadow-none'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#120B09] border border-[#C68B59]/35 shrink-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#F5ECE2] dark:bg-[#120B09] border border-[#E2CEBA] dark:border-[#C68B59]/35 shrink-0">
                         <ResilientImage
                           src={shop.logoUrl}
                           alt={shop.name}
@@ -438,34 +441,34 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                       </div>
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-1">
-                          <h3 className="text-xs font-bold text-[#F8F4EE] truncate">
+                          <h3 className="text-xs font-bold text-[#3A221A] dark:text-[#F8F4EE] truncate">
                             {shop.name}
                           </h3>
                           {isVerified && (
                             <BadgeCheck
-                              className="w-3.5 h-3.5 text-[#00D68F] shrink-0"
+                              className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F] shrink-0"
                               aria-label={t('verifiedMerchantLabel')}
                             />
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] text-[#D5C3B3] truncate">
-                          <MapPin className="w-3 h-3 text-[#C68B59] shrink-0" />
+                        <div className="flex items-center gap-1 text-[11px] text-[#6E5144] dark:text-[#D5C3B3] truncate">
+                          <MapPin className="w-3 h-3 text-[#8C5530] dark:text-[#C68B59] shrink-0" />
                           <span className="truncate">
                             {getLocalizedNeighborhood(shop.neighborhood, language)}, {shop.city}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-[11px] tabular-nums">
                           {shop.reviewCount > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-[#F8F4EE] font-semibold">
+                            <span className="inline-flex items-center gap-0.5 text-[#3A221A] dark:text-[#F8F4EE] font-semibold">
                               <Star className="w-3 h-3 fill-[#C68B59] text-[#C68B59]" />
                               {shop.rating.toFixed(1)}
-                              <span className="text-[#D5C3B3] font-normal">
+                              <span className="text-[#6E5144] dark:text-[#D5C3B3] font-normal">
                                 ({shop.reviewCount})
                               </span>
                             </span>
                           )}
                           {minPrice !== null && (
-                            <span className="text-[#00D68F] font-semibold">
+                            <span className="text-[#047857] dark:text-[#00D68F] font-semibold">
                               {t('coffeeFromPrice', { price: formatETB(minPrice) })}
                             </span>
                           )}
@@ -478,12 +481,12 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                         {origins.slice(0, 3).map((origin) => (
                           <span
                             key={origin}
-                            className="px-2 py-0.5 rounded-md bg-[#4B2E24]/70 border border-[#C68B59]/30 text-[10px] font-medium text-[#F3D9BF]"
+                            className="px-2 py-0.5 rounded-md bg-[#F6ECE1] dark:bg-[#4B2E24]/70 border border-[#DEC7AE] dark:border-[#C68B59]/30 text-[10px] font-medium text-[#5A3626] dark:text-[#F3D9BF]"
                           >
                             {origin}
                           </span>
                         ))}
-                        <span className="px-2 py-0.5 rounded-md bg-[#092825]/80 border border-[#14443F] text-[10px] font-medium text-[#A9C0BD] tabular-nums">
+                        <span className="px-2 py-0.5 rounded-md bg-[#EDF5F3] dark:bg-[#092825]/80 border border-[#D5E6E2] dark:border-[#14443F] text-[10px] font-medium text-[#4B6B67] dark:text-[#A9C0BD] tabular-nums">
                           {t('coffeeLotsCountLabel', { count: coffeeProducts.length })}
                         </span>
                       </div>
@@ -499,8 +502,8 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                         }
                         className={`min-h-[36px] px-2.5 rounded-xl text-[11px] font-semibold transition-colors ${
                           isSelected
-                            ? 'bg-[#C68B59] text-[#1B110E]'
-                            : 'bg-[#4B2E24]/80 hover:bg-[#4B2E24] text-[#F8F4EE] border border-[#C68B59]/35'
+                            ? 'bg-[#8C5530] dark:bg-[#C68B59] text-white dark:text-[#1B110E]'
+                            : 'bg-[#F6ECE1] hover:bg-[#EDE0D0] dark:bg-[#4B2E24]/80 dark:hover:bg-[#4B2E24] text-[#4B2E24] dark:text-[#F8F4EE] border border-[#D9C2AC] dark:border-[#C68B59]/35'
                         }`}
                       >
                         {isSelected ? t('coffeeFilterAll') : t('coffeeFilterByTrader')}
@@ -508,7 +511,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                       <button
                         type="button"
                         onClick={() => navigate({ name: 'shop', shopId: shop.shopId })}
-                        className="min-h-[36px] px-2.5 rounded-xl bg-[#092825] hover:bg-[#0D3833] border border-[#14443F] text-[#F5FAFA] text-[11px] font-semibold transition-colors"
+                        className="min-h-[36px] px-2.5 rounded-xl bg-[#EDF5F3] hover:bg-[#DFEEEA] dark:bg-[#092825] dark:hover:bg-[#0D3833] border border-[#D5E6E2] dark:border-[#14443F] text-[#0C2624] dark:text-[#F5FAFA] text-[11px] font-semibold transition-colors"
                       >
                         {t('coffeeVisitTrader')}
                       </button>
@@ -529,8 +532,8 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
               aria-expanded={filtersExpanded}
               className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors ${
                 filtersExpanded || activeFilterCount > 0
-                  ? 'bg-[#4B2E24] border-[#C68B59] text-[#F8F4EE]'
-                  : 'bg-[#1D120E] border-[#C68B59]/30 text-[#D5C3B3] hover:text-[#F8F4EE]'
+                  ? 'bg-[#4B2E24] border-[#4B2E24] dark:border-[#C68B59] text-[#F8F4EE]'
+                  : 'bg-[#FCFBF8] dark:bg-[#1D120E] border-[#DFD0BF] dark:border-[#C68B59]/30 text-[#5A3B2E] dark:text-[#D5C3B3] hover:text-[#3A221A] dark:hover:text-[#F8F4EE]'
               }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-[#C68B59]" />
@@ -556,8 +559,8 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                   }
                   className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold shrink-0 transition-colors ${
                     active
-                      ? 'bg-[#C68B59] border-[#C68B59] text-[#1B110E]'
-                      : 'bg-[#1D120E] border-[#C68B59]/25 text-[#D5C3B3] hover:border-[#C68B59]/60'
+                      ? 'bg-[#8C5530] dark:bg-[#C68B59] border-[#8C5530] dark:border-[#C68B59] text-white dark:text-[#1B110E]'
+                      : 'bg-[#FCFBF8] dark:bg-[#1D120E] border-[#DFD0BF] dark:border-[#C68B59]/25 text-[#5A3B2E] dark:text-[#D5C3B3] hover:border-[#8C5530] dark:hover:border-[#C68B59]/60'
                   }`}
                 >
                   {form.value === 'whole_bean' ? t('coffeeWholeBeans') : t('coffeeGround')}
@@ -577,8 +580,8 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                   }
                   className={`min-h-[38px] px-3 rounded-xl border text-xs font-semibold shrink-0 transition-colors ${
                     active
-                      ? 'bg-[#C68B59] border-[#C68B59] text-[#1B110E]'
-                      : 'bg-[#1D120E] border-[#C68B59]/25 text-[#D5C3B3] hover:border-[#C68B59]/60'
+                      ? 'bg-[#8C5530] dark:bg-[#C68B59] border-[#8C5530] dark:border-[#C68B59] text-white dark:text-[#1B110E]'
+                      : 'bg-[#FCFBF8] dark:bg-[#1D120E] border-[#DFD0BF] dark:border-[#C68B59]/25 text-[#5A3B2E] dark:text-[#D5C3B3] hover:border-[#8C5530] dark:hover:border-[#C68B59]/60'
                   }`}
                 >
                   {origin}
@@ -590,7 +593,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="min-h-[38px] px-3 rounded-xl border border-rose-500/35 bg-rose-950/40 text-rose-200 text-xs font-semibold flex items-center gap-1 shrink-0 hover:bg-rose-950/70"
+                className="min-h-[38px] px-3 rounded-xl border border-rose-300 dark:border-rose-500/35 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-200 text-xs font-semibold flex items-center gap-1 shrink-0 hover:bg-rose-100 dark:hover:bg-rose-950/70"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>{t('coffeeResetFilters')}</span>
@@ -600,15 +603,15 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
 
           {/* Expandable Full Filter Panel */}
           {filtersExpanded && (
-            <div className="rounded-2xl bg-[#1D120E] border border-[#C68B59]/35 p-3.5 space-y-3 shadow-lg shadow-black/30">
+            <div className="rounded-2xl bg-[#FCFBF8] dark:bg-[#1D120E] border border-[#DFD0BF] dark:border-[#C68B59]/35 p-3.5 space-y-3 shadow-[0_4px_16px_-6px_rgba(75,46,36,0.14)] dark:shadow-lg dark:shadow-black/30">
               <div className="grid grid-cols-2 gap-2.5">
                 {/* Origin */}
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>{t('coffeeFilterOrigin')}</span>
                   <select
                     value={selectedOrigin}
                     onChange={(e) => setSelectedOrigin(e.target.value)}
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="all">{t('coffeeFilterAll')}</option>
                     {filterOptions.origins.map((origin) => (
@@ -620,12 +623,12 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                 </label>
 
                 {/* Brand */}
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>{t('coffeeFilterBrand')}</span>
                   <select
                     value={selectedBrand}
                     onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="all">{t('coffeeFilterAll')}</option>
                     {filterOptions.brands.map((brand) => (
@@ -637,14 +640,14 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                 </label>
 
                 {/* Roast Level */}
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>{t('coffeeFilterRoast')}</span>
                   <select
                     value={selectedRoast}
                     onChange={(e) =>
                       setSelectedRoast(e.target.value as CoffeeRoastLevel | 'all')
                     }
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="all">{t('coffeeFilterAll')}</option>
                     {COFFEE_ROAST_LEVELS.map((r) => (
@@ -656,12 +659,12 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                 </label>
 
                 {/* Package Size */}
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>{t('coffeeFilterWeight')}</span>
                   <select
                     value={selectedWeight}
                     onChange={(e) => setSelectedWeight(e.target.value)}
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="all">{t('coffeeFilterAll')}</option>
                     {filterOptions.weights.map((w) => (
@@ -673,14 +676,14 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                 </label>
 
                 {/* Bean Form */}
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>{t('coffeeFilterForm')}</span>
                   <select
                     value={selectedBeanForm}
                     onChange={(e) =>
                       setSelectedBeanForm(e.target.value as CoffeeBeanForm | 'all')
                     }
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="all">{t('coffeeFilterAll')}</option>
                     {COFFEE_BEAN_FORMS.map((f) => (
@@ -694,12 +697,12 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                 </label>
 
                 {/* Seller */}
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>{t('coffeeFilterSeller')}</span>
                   <select
                     value={selectedShopId}
                     onChange={(e) => setSelectedShopId(e.target.value)}
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="all">{t('coffeeFilterAll')}</option>
                     {filterOptions.sellers.map((s) => (
@@ -713,7 +716,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
 
               {/* Price Range + Sort */}
               <div className="grid grid-cols-3 gap-2">
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>Min ETB</span>
                   <input
                     type="number"
@@ -722,10 +725,10 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                     value={minPriceInput}
                     onChange={(e) => setMinPriceInput(e.target.value)}
                     placeholder="0"
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs tabular-nums text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs tabular-nums text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   />
                 </label>
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>Max ETB</span>
                   <input
                     type="number"
@@ -734,10 +737,10 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                     value={maxPriceInput}
                     onChange={(e) => setMaxPriceInput(e.target.value)}
                     placeholder="5000"
-                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs tabular-nums text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2.5 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs tabular-nums text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   />
                 </label>
-                <label className="space-y-1 text-[11px] font-semibold text-[#D5C3B3]">
+                <label className="space-y-1 text-[11px] font-semibold text-[#5A3B2E] dark:text-[#D5C3B3]">
                   <span>Sort</span>
                   <select
                     value={sortBy}
@@ -751,7 +754,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                           | 'newest'
                       )
                     }
-                    className="w-full min-h-[40px] px-2 rounded-xl bg-[#120B09] border border-[#C68B59]/30 text-xs text-[#F8F4EE] focus:outline-none focus:border-[#C68B59]"
+                    className="w-full min-h-[40px] px-2 rounded-xl bg-[#FAF6F0] dark:bg-[#120B09] border border-[#DEC9B3] dark:border-[#C68B59]/30 text-xs text-[#3A221A] dark:text-[#F8F4EE] focus:outline-none focus:border-[#8C5530] dark:focus:border-[#C68B59]"
                   >
                     <option value="featured">Featured</option>
                     <option value="price_asc">Price ↑</option>
@@ -770,13 +773,13 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
           <div className="flex items-center justify-between gap-2">
             <h2
               id="coffee-products-heading"
-              className="text-sm font-bold text-[#F8F4EE] truncate"
+              className="text-sm font-bold text-[#3A221A] dark:text-[#F8F4EE] truncate"
             >
               {selectedShopObj
                 ? t('coffeeShowingTrader', { name: selectedShopObj.name })
                 : t('coffeeProductsSectionTitle')}
             </h2>
-            <span className="text-[11px] font-semibold text-[#C68B59] tabular-nums shrink-0">
+            <span className="text-[11px] font-semibold text-[#8C5530] dark:text-[#C68B59] tabular-nums shrink-0">
               {filteredCoffeeProducts.length}
             </span>
           </div>
@@ -786,20 +789,20 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-64 rounded-2xl bg-[#1F1410] border border-[#C68B59]/20 animate-pulse"
+                  className="h-64 rounded-2xl bg-[#EFE5D8] dark:bg-[#1F1410] border border-[#E6D5C3] dark:border-[#C68B59]/20 animate-pulse"
                 />
               ))}
             </div>
           ) : filteredCoffeeProducts.length === 0 ? (
-            <div className="rounded-2xl bg-[#1D120E] border border-[#C68B59]/30 p-6 text-center space-y-3">
-              <Coffee className="w-7 h-7 text-[#C68B59] mx-auto" />
+            <div className="rounded-2xl bg-[#FCFBF8] dark:bg-[#1D120E] border border-[#DFD0BF] dark:border-[#C68B59]/30 p-6 text-center space-y-3 shadow-[0_2px_10px_-3px_rgba(75,46,36,0.10)] dark:shadow-none">
+              <Coffee className="w-7 h-7 text-[#8C5530] dark:text-[#C68B59] mx-auto" />
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-[#F8F4EE]">
+                <h3 className="text-xs font-bold text-[#3A221A] dark:text-[#F8F4EE]">
                   {allActiveCoffeeProducts.length === 0
                     ? t('coffeeEmptyNoCatalogTitle')
                     : t('coffeeEmptyTitle')}
                 </h3>
-                <p className="text-[11px] text-[#D5C3B3] leading-relaxed">
+                <p className="text-[11px] text-[#6E5144] dark:text-[#D5C3B3] leading-relaxed">
                   {allActiveCoffeeProducts.length === 0
                     ? t('coffeeEmptyNoCatalogDesc')
                     : t('coffeeEmptyDesc')}
@@ -810,7 +813,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    className="min-h-[40px] px-4 rounded-xl bg-[#C68B59] text-[#1B110E] text-xs font-bold"
+                    className="min-h-[40px] px-4 rounded-xl bg-[#8C5530] dark:bg-[#C68B59] text-white dark:text-[#1B110E] text-xs font-bold"
                   >
                     {t('coffeeResetFilters')}
                   </button>
@@ -818,7 +821,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                 <button
                   type="button"
                   onClick={() => navigate({ name: 'home' })}
-                  className="min-h-[40px] px-4 rounded-xl bg-[#092825] border border-[#14443F] text-[#F5FAFA] text-xs font-semibold"
+                  className="min-h-[40px] px-4 rounded-xl bg-[#E5F2EE] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#0F4C44] dark:text-[#F5FAFA] text-xs font-semibold"
                 >
                   {t('coffeeBackToMarketplace')}
                 </button>
@@ -856,10 +859,10 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                     onClick={() =>
                       navigate({ name: 'product', productId: product.productId })
                     }
-                    className="group cursor-pointer rounded-2xl bg-gradient-to-b from-[#231611] to-[#130D0B] border border-[#C68B59]/25 hover:border-[#C68B59]/65 overflow-hidden flex flex-col shadow-md shadow-black/30 transition-all"
+                    className="group cursor-pointer rounded-2xl bg-[#FCFBF8] dark:bg-gradient-to-b dark:from-[#231611] dark:to-[#130D0B] border border-[#DFD0BF] dark:border-[#C68B59]/25 hover:border-[#8C5530]/60 dark:hover:border-[#C68B59]/65 overflow-hidden flex flex-col shadow-[0_2px_10px_-3px_rgba(75,46,36,0.10)] dark:shadow-md dark:shadow-black/30 transition-all"
                   >
                     {/* Product Image */}
-                    <div className="relative aspect-[4/3] bg-[#0F0907] overflow-hidden">
+                    <div className="relative aspect-[4/3] bg-[#F5ECE2] dark:bg-[#0F0907] overflow-hidden">
                       <ResilientImage
                         src={product.imageUrl}
                         alt={product.name}
@@ -902,16 +905,16 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                     {/* Details */}
                     <div className="p-2.5 flex-1 flex flex-col justify-between gap-2">
                       <div className="space-y-1.5">
-                        <h3 className="text-xs font-bold text-[#F8F4EE] leading-snug line-clamp-2">
+                        <h3 className="text-xs font-bold text-[#3A221A] dark:text-[#F8F4EE] leading-snug line-clamp-2">
                           {product.name}
                         </h3>
 
                         {/* Trader name + verification ONLY when verified */}
-                        <div className="flex items-center gap-1 text-[10px] text-[#D5C3B3] truncate">
+                        <div className="flex items-center gap-1 text-[10px] text-[#6E5144] dark:text-[#D5C3B3] truncate">
                           <span className="truncate">{shop?.name ?? product.shopName}</span>
                           {isVerified && (
                             <BadgeCheck
-                              className="w-3 h-3 text-[#00D68F] shrink-0"
+                              className="w-3 h-3 text-[#047857] dark:text-[#00D68F] shrink-0"
                               aria-label={t('verifiedMerchantLabel')}
                             />
                           )}
@@ -921,21 +924,21 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                         {(roastLabel || formLabel || weightLabel || processLabel) && (
                           <div className="flex flex-wrap gap-1 pt-0.5">
                             {roastLabel && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#4B2E24]/75 text-[9.5px] font-medium text-[#F3D9BF]">
-                                <Flame className="w-2.5 h-2.5 text-[#C68B59]" />
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#F6ECE1] dark:bg-[#4B2E24]/75 text-[9.5px] font-medium text-[#5A3626] dark:text-[#F3D9BF]">
+                                <Flame className="w-2.5 h-2.5 text-[#8C5530] dark:text-[#C68B59]" />
                                 {roastLabel.replace(' Roast', '')}
                               </span>
                             )}
                             {formLabel && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#2B1B15] border border-[#C68B59]/25 text-[9.5px] font-medium text-[#D5C3B3]">
+                              <span className="px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#2B1B15] border border-[#E2CEBA] dark:border-[#C68B59]/25 text-[9.5px] font-medium text-[#6E5144] dark:text-[#D5C3B3]">
                                 {formLabel === 'Whole Beans'
                                   ? t('coffeeWholeBeans')
                                   : t('coffeeGround')}
                               </span>
                             )}
                             {weightLabel && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#2B1B15] border border-[#C68B59]/25 text-[9.5px] font-medium text-[#D5C3B3] tabular-nums">
-                                <Package className="w-2.5 h-2.5 text-[#C68B59]" />
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#FAF6F0] dark:bg-[#2B1B15] border border-[#E2CEBA] dark:border-[#C68B59]/25 text-[9.5px] font-medium text-[#6E5144] dark:text-[#D5C3B3] tabular-nums">
+                                <Package className="w-2.5 h-2.5 text-[#8C5530] dark:text-[#C68B59]" />
                                 {weightLabel}
                               </span>
                             )}
@@ -943,8 +946,8 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                         )}
 
                         {roastDate && (
-                          <div className="flex items-center gap-1 text-[9.5px] text-[#D5C3B3]/80 tabular-nums">
-                            <Calendar className="w-2.5 h-2.5 text-[#C68B59]" />
+                          <div className="flex items-center gap-1 text-[9.5px] text-[#6E5144] dark:text-[#D5C3B3]/80 tabular-nums">
+                            <Calendar className="w-2.5 h-2.5 text-[#8C5530] dark:text-[#C68B59]" />
                             <span>
                               {t('coffeeRoastDate')}: {roastDate}
                             </span>
@@ -953,13 +956,13 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                       </div>
 
                       {/* Price & Cart Button */}
-                      <div className="space-y-2 pt-1 border-t border-[#C68B59]/15">
+                      <div className="space-y-2 pt-1 border-t border-[#E6D5C3] dark:border-[#C68B59]/15">
                         <div className="flex items-baseline justify-between gap-1">
-                          <span className="text-xs font-bold text-[#00D68F] tabular-nums">
+                          <span className="text-xs font-bold text-[#047857] dark:text-[#00D68F] tabular-nums">
                             {formatETB(product.price)}
                           </span>
                           {product.previousPrice && product.previousPrice > product.price && (
-                            <span className="text-[10px] text-[#D5C3B3]/60 line-through tabular-nums">
+                            <span className="text-[10px] text-[#8C6D5D] dark:text-[#D5C3B3]/60 line-through tabular-nums">
                               {formatETB(product.previousPrice)}
                             </span>
                           )}
@@ -970,7 +973,7 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
                           disabled={unavailable}
                           onClick={(e) => handleQuickAddToCart(e, product)}
                           aria-label={`${t('addToCart')} ${product.name}`}
-                          className="w-full min-h-[34px] px-2.5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 disabled:from-[#261915] disabled:to-[#261915] disabled:text-[#A9C0BD]/60 text-[#031719] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                          className="w-full min-h-[34px] px-2.5 rounded-xl bg-gradient-to-r from-[#047857] to-[#0D9488] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 disabled:from-[#E5DDD5] disabled:to-[#E5DDD5] dark:disabled:from-[#261915] dark:disabled:to-[#261915] disabled:text-[#8C6D5D] dark:disabled:text-[#A9C0BD]/60 text-white dark:text-[#031719] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
                         >
                           {unavailable ? (
                             <span>{t('outOfStock')}</span>
@@ -1000,9 +1003,9 @@ export const CoffeeTradersScreen: React.FC<{ initialShopId?: string }> = ({
           <button
             type="button"
             onClick={() => navigate({ name: 'home' })}
-            className="w-full min-h-[44px] px-4 rounded-2xl bg-[#092825] hover:bg-[#0C3531] border border-[#14443F] text-[#F5FAFA] text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full min-h-[44px] px-4 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] hover:bg-[#E5F2EE] dark:hover:bg-[#0C3531] border border-[#D2E0DC] dark:border-[#14443F] text-[#0F4C44] dark:text-[#F5FAFA] text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-[0_2px_10px_-3px_rgba(15,76,68,0.08)] dark:shadow-none"
           >
-            <ArrowLeft className="w-4 h-4 text-[#00D68F]" />
+            <ArrowLeft className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
             <span>{t('coffeeBackToMarketplace')}</span>
           </button>
         </div>

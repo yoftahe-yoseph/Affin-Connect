@@ -25,6 +25,7 @@ import {
   ProductCard,
   ShopCard,
 } from '../components/SharedUI';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import {
   buildHomeCategories,
@@ -233,12 +234,12 @@ export const HomeScreen: React.FC = () => {
     .join('');
 
   return (
-    <div className="min-h-full bg-[#031719] text-[#F5FAFA] pb-8">
+    <div className="min-h-full bg-[#F3F6F4] dark:bg-[#031719] text-[#0E2421] dark:text-[#F5FAFA] pb-8 transition-colors">
       {/* A. Compact Sticky Mobile Header */}
-      <header className="sticky top-0 z-20 bg-[#031719]/92 backdrop-blur-md border-b border-white/10 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
-        <div className="flex items-center justify-between gap-2.5">
+      <header className="sticky top-0 z-20 bg-[#FCFDFC]/95 dark:bg-[#031719]/92 backdrop-blur-md border-b border-[#D2E0DC] dark:border-white/10 shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#092825] border border-[#14443F] shrink-0 shadow-sm">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#FCFDFC] dark:bg-[#092825] border border-[#0F4C44]/25 dark:border-[#14443F] shrink-0 shadow-xs">
               <img
                 src={BRAND_ASSETS.logo}
                 alt="Affin Connect"
@@ -247,23 +248,25 @@ export const HomeScreen: React.FC = () => {
               />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-display font-bold tracking-tight text-[#F5FAFA] truncate">
+              <h1 className="text-sm font-display font-bold tracking-tight text-[#0F4C44] dark:text-[#F5FAFA] truncate">
                 Affin Connect
               </h1>
-              <p className="text-[11px] text-[#A9C0BD] truncate">
+              <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
                 {t('authHeaderSubtitle')}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <ThemeToggleButton />
+
             <button
               type="button"
               onClick={handleRefreshApp}
               disabled={isRefreshingApp}
               aria-label="Refresh app"
               title="Refresh app"
-              className="min-w-[44px] min-h-[44px] rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#00C8D7] hover:text-[#00D68F] disabled:opacity-70 active:scale-95 transition-all"
+              className="min-w-[40px] min-h-[40px] rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/55 dark:hover:border-[#00D68F]/50 hover:bg-[#E7F1ED] dark:hover:bg-[#0C332F] flex items-center justify-center text-[#0F4C44] dark:text-[#00C8D7] hover:text-[#047857] dark:hover:text-[#00D68F] shadow-[0_1px_4px_rgba(15,76,68,0.06)] dark:shadow-none disabled:opacity-70 active:scale-95 transition-all"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshingApp ? 'animate-spin' : ''}`} />
             </button>
@@ -272,11 +275,11 @@ export const HomeScreen: React.FC = () => {
               type="button"
               onClick={() => navigate({ name: 'notifications' })}
               aria-label={t('notifications')}
-              className="relative min-w-[44px] min-h-[44px] rounded-xl bg-[#092825] border border-[#14443F] hover:border-[#00D68F]/50 flex items-center justify-center text-[#F5FAFA] transition-colors"
+              className="relative min-w-[40px] min-h-[40px] rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/55 dark:hover:border-[#00D68F]/50 hover:bg-[#E7F1ED] dark:hover:bg-[#0C332F] flex items-center justify-center text-[#0E2421] dark:text-[#F5FAFA] shadow-[0_1px_4px_rgba(15,76,68,0.06)] dark:shadow-none transition-colors"
             >
-              <Bell className="w-5 h-5 text-[#00D68F]" />
+              <Bell className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
               {unreadNotificationCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#00D68F] text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] text-[10px] font-bold flex items-center justify-center tabular-nums">
                   {unreadNotificationCount}
                 </span>
               )}
@@ -286,9 +289,9 @@ export const HomeScreen: React.FC = () => {
               type="button"
               onClick={() => navigate({ name: 'profile' })}
               aria-label={t('openProfileAria')}
-              className="min-w-[44px] min-h-[44px] rounded-full p-0.5 bg-gradient-to-br from-[#00D68F] to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#00D68F]/20 active:scale-95 transition-transform"
+              className="min-w-[40px] min-h-[40px] rounded-full p-0.5 bg-gradient-to-br from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] flex items-center justify-center shadow-md shadow-[#0F4C44]/20 dark:shadow-[#00D68F]/20 active:scale-95 transition-transform"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#F5FAFA]">
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-[#FCFDFC] dark:bg-[#061D1B] flex items-center justify-center text-xs font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
                 {firebaseUser?.photoURL ? (
                   <img
                     src={firebaseUser.photoURL}
@@ -299,7 +302,7 @@ export const HomeScreen: React.FC = () => {
                 ) : avatarInitials ? (
                   <span>{avatarInitials}</span>
                 ) : (
-                  <User className="w-4 h-4 text-[#00D68F]" />
+                  <User className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F]" />
                 )}
               </div>
             </button>
@@ -310,23 +313,23 @@ export const HomeScreen: React.FC = () => {
         <form
           onSubmit={handleSearchSubmit}
           role="search"
-          className="mt-3 relative flex items-center rounded-2xl bg-[#092825] border border-[#14443F] focus-within:border-[#00D68F] focus-within:ring-2 focus-within:ring-[#00D68F]/20 transition-all"
+          className="mt-3 relative flex items-center rounded-2xl bg-[#F3F6F4] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] focus-within:border-[#0F4C44] dark:focus-within:border-[#00D68F] focus-within:ring-2 focus-within:ring-[#0F4C44]/15 dark:focus-within:ring-[#00D68F]/20 transition-all"
         >
-          <Search className="w-4 h-4 text-[#00D68F] ml-3.5 shrink-0 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#0F4C44] dark:text-[#00D68F] ml-3.5 shrink-0 pointer-events-none" />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('homeSearchPlaceholder')}
             aria-label={t('homeSearchPlaceholder')}
-            className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#F5FAFA] placeholder:text-[#A9C0BD]/70 focus:outline-none"
+            className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#0E2421] dark:text-[#F5FAFA] placeholder:text-[#46635E]/75 dark:placeholder:text-[#A9C0BD]/70 focus:outline-none"
           />
           {searchQuery ? (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
               aria-label={t('filterClearAllBtn')}
-              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#A9C0BD] hover:text-[#F5FAFA]"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#46635E] hover:text-[#0E2421] dark:text-[#A9C0BD] dark:hover:text-[#F5FAFA]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -334,7 +337,7 @@ export const HomeScreen: React.FC = () => {
           <button
             type="submit"
             aria-label={t('navSearch')}
-            className="mr-1.5 min-w-[36px] min-h-[36px] rounded-xl bg-[#00D68F]/15 hover:bg-[#00D68F] text-[#00D68F] hover:text-[#031719] flex items-center justify-center transition-colors shrink-0"
+            className="mr-1.5 min-w-[36px] min-h-[36px] rounded-xl bg-[#0F4C44] dark:bg-[#00D68F]/15 hover:bg-[#047857] dark:hover:bg-[#00D68F] text-[#FCFDFC] dark:text-[#00D68F] hover:text-[#FCFDFC] dark:hover:text-[#031719] flex items-center justify-center transition-colors shrink-0 shadow-xs dark:shadow-none"
           >
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -343,13 +346,13 @@ export const HomeScreen: React.FC = () => {
 
       <div className="px-4 pt-4 space-y-6">
         {governanceConfig.orderingPaused && (
-          <div className="p-3 rounded-2xl bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-xs text-[#FDE68A] font-medium">
+          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-[#F59E0B]/15 border border-amber-300 dark:border-[#F59E0B]/40 text-xs text-amber-900 dark:text-[#FDE68A] font-medium">
             {governanceConfig.maintenanceBanner?.trim() || t('governanceOrderingPaused')}
           </div>
         )}
 
         {/* C. Hero Banner */}
-        <section className="relative rounded-2xl overflow-hidden border border-[#14443F] bg-gradient-to-br from-[#062825] via-[#051F22] to-[#031719] shadow-lg shadow-black/30">
+        <section className="relative rounded-2xl overflow-hidden border border-[#0F4C44]/40 dark:border-[#14443F] bg-gradient-to-br from-[#0F4C44] via-[#093430] to-[#041E1F] dark:from-[#062825] dark:via-[#051F22] dark:to-[#031719] shadow-[0_14px_30px_-14px_rgba(15,76,68,0.34)] dark:shadow-lg dark:shadow-black/30">
           {!heroBannerFailed ? (
             <img
               src={BRAND_ASSETS.banner}
@@ -430,14 +433,14 @@ export const HomeScreen: React.FC = () => {
 
         {/* D. Categories Horizontally Scrollable Strip */}
         <section aria-labelledby="home-categories-heading">
-          <div className="flex items-center justify-between mb-3">
-            <h2 id="home-categories-heading" className="text-sm font-bold text-[#F5FAFA]">
+          <div className="flex items-center justify-between mb-3 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
+            <h2 id="home-categories-heading" className="text-sm font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
               {t('categories')}
             </h2>
             <button
               type="button"
               onClick={() => navigate({ name: 'categories' })}
-              className="min-h-[36px] px-1 text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
+              className="min-h-[36px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors"
             >
               {t('viewAll')}
             </button>
@@ -448,7 +451,7 @@ export const HomeScreen: React.FC = () => {
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-[124px] h-[112px] rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse shrink-0"
+                  className="w-[124px] h-[112px] rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse shrink-0"
                 />
               ))}
             </div>
@@ -464,7 +467,7 @@ export const HomeScreen: React.FC = () => {
                     key={cat.slug}
                     type="button"
                     onClick={() => navigate({ name: 'search', initialCategory: cat.slug })}
-                    className={`snap-start shrink-0 relative overflow-hidden w-[124px] min-h-[112px] rounded-2xl bg-gradient-to-br ${theme.surface} border ${theme.border} p-3 flex flex-col justify-between text-left shadow-lg shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00D68F]`}
+                    className={`snap-start shrink-0 relative overflow-hidden w-[124px] min-h-[112px] rounded-2xl bg-gradient-to-br ${theme.surface} border ${theme.border} p-3 flex flex-col justify-between text-left shadow-[0_2px_10px_-4px_rgba(15,76,68,0.10)] hover:shadow-[0_8px_18px_-8px_rgba(15,76,68,0.16)] dark:shadow-lg dark:shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C44] dark:focus-visible:ring-[#00D68F]`}
                   >
                     <span
                       aria-hidden="true"
@@ -472,7 +475,7 @@ export const HomeScreen: React.FC = () => {
                     />
                     <span
                       aria-hidden="true"
-                      className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
+                      className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[#FCFDFC]/80 dark:via-white/25 to-transparent pointer-events-none"
                     />
 
                     <div className="relative z-10 w-full flex items-start justify-between gap-2">
@@ -488,7 +491,7 @@ export const HomeScreen: React.FC = () => {
                     </div>
 
                     <div className="relative z-10 w-full pt-2.5 space-y-1.5">
-                      <span className="block text-[12px] font-bold text-[#F5FAFA] leading-tight line-clamp-2">
+                      <span className="block text-[12px] font-bold text-[#0E2421] dark:text-[#F5FAFA] leading-tight line-clamp-2">
                         {getCategoryLabel(cat)}
                       </span>
                       <div className="flex items-center justify-between gap-1.5">
@@ -497,7 +500,7 @@ export const HomeScreen: React.FC = () => {
                           className={`h-0.5 w-6 group-hover:w-10 rounded-full bg-gradient-to-r ${theme.accentBar} transition-all duration-200`}
                         />
                         {itemCount > 0 && (
-                          <span className="text-[10px] font-semibold tabular-nums text-[#A9C0BD]">
+                          <span className="text-[10px] font-semibold tabular-nums text-[#46635E] dark:text-[#A9C0BD]">
                             {itemCount}
                           </span>
                         )}
@@ -566,14 +569,14 @@ export const HomeScreen: React.FC = () => {
 
         {/* E. Featured Shops Horizontally Scrollable Cards */}
         <section aria-labelledby="home-shops-heading">
-          <div className="flex items-center justify-between mb-3">
-            <h2 id="home-shops-heading" className="text-sm font-bold text-[#F5FAFA]">
+          <div className="flex items-center justify-between mb-3 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
+            <h2 id="home-shops-heading" className="text-sm font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
               {t('homeFeaturedShopsTitle')}
             </h2>
             <button
               type="button"
               onClick={() => navigate({ name: 'shops' })}
-              className="min-h-[36px] px-1 text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
+              className="min-h-[36px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors"
             >
               {t('viewAll')}
             </button>
@@ -584,14 +587,14 @@ export const HomeScreen: React.FC = () => {
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="w-56 h-52 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse shrink-0"
+                  className="w-56 h-52 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse shrink-0"
                 />
               ))}
             </div>
           ) : approvedShops.length === 0 ? (
-            <div className="rounded-2xl bg-[#092825] border border-[#14443F] p-5 text-center">
-              <Store className="w-6 h-6 text-[#00D68F] mx-auto mb-2" />
-              <p className="text-xs text-[#A9C0BD]">{t('noFollowedShopsDesc')}</p>
+            <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] p-5 text-center shadow-[0_2px_10px_-4px_rgba(15,76,68,0.08)] dark:shadow-none">
+              <Store className="w-6 h-6 text-[#0F4C44] dark:text-[#00D68F] mx-auto mb-2" />
+              <p className="text-xs text-[#46635E] dark:text-[#A9C0BD]">{t('noFollowedShopsDesc')}</p>
             </div>
           ) : (
             <div className="flex gap-3 overflow-x-auto pb-1 mobile-scroll">
@@ -609,8 +612,8 @@ export const HomeScreen: React.FC = () => {
 
         {/* F. Popular Products 2-Column Grid */}
         <section aria-labelledby="home-products-heading">
-          <div className="flex items-center justify-between gap-2 mb-2.5">
-            <h2 id="home-products-heading" className="text-sm font-bold text-[#F5FAFA] truncate">
+          <div className="flex items-center justify-between gap-2 mb-2.5 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
+            <h2 id="home-products-heading" className="text-sm font-bold text-[#0F4C44] dark:text-[#F5FAFA] truncate">
               {t('homePopularProductsTitle')}
             </h2>
 
@@ -627,8 +630,8 @@ export const HomeScreen: React.FC = () => {
                 disabled={detectingLocation}
                 className={`min-h-[34px] px-2.5 rounded-xl border text-[11px] font-semibold flex items-center gap-1 transition-colors ${
                   productSort === 'nearest'
-                    ? 'bg-[#00D68F]/15 border-[#00D68F] text-[#00D68F]'
-                    : 'bg-[#092825] border-[#14443F] text-[#A9C0BD] hover:text-[#F5FAFA] hover:border-[#00D68F]/50'
+                    ? 'bg-[#0F4C44] dark:bg-[#00D68F]/15 border-[#0F4C44] dark:border-[#00D68F] text-[#FCFDFC] dark:text-[#00D68F]'
+                    : 'bg-[#FCFDFC] dark:bg-[#092825] border-[#D2E0DC] dark:border-[#14443F] text-[#46635E] dark:text-[#A9C0BD] hover:text-[#0F4C44] dark:hover:text-[#F5FAFA] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50'
                 }`}
               >
                 {detectingLocation ? (
@@ -642,7 +645,7 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate({ name: 'search' })}
-                className="min-h-[36px] px-1 text-xs font-semibold text-[#00D68F] hover:text-[#00C8D7] transition-colors"
+                className="min-h-[36px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors"
               >
                 {t('viewAll')}
               </button>
@@ -650,8 +653,8 @@ export const HomeScreen: React.FC = () => {
           </div>
 
           {selectedNeighborhood !== 'All Hawassa' && (
-            <div className="mb-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#092825] border border-[#14443F] text-[11px]">
-              <span className="text-[#A9C0BD] truncate">
+            <div className="mb-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[11px] shadow-[0_2px_8px_-4px_rgba(15,76,68,0.08)] dark:shadow-none">
+              <span className="text-[#46635E] dark:text-[#A9C0BD] truncate">
                 {activeProducts.length === 0
                   ? t('noNeighborhoodListings', {
                       neighborhood: getLocalizedNeighborhood(selectedNeighborhood, language),
@@ -663,7 +666,7 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedNeighborhood('All Hawassa')}
-                className="text-[#00D68F] font-semibold shrink-0 hover:underline"
+                className="text-[#0F4C44] dark:text-[#00D68F] font-semibold shrink-0 hover:underline"
               >
                 {t('showAll')}
               </button>
@@ -675,12 +678,12 @@ export const HomeScreen: React.FC = () => {
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-60 rounded-2xl bg-[#092825] border border-[#14443F] animate-pulse"
+                  className="h-60 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
           ) : displayProducts.length === 0 ? (
-            <div className="rounded-2xl bg-[#092825] border border-[#14443F]">
+            <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F]">
               <EmptyState
                 title={t('noMatchingProducts')}
                 description={t('noMatchingDesc')}
@@ -702,23 +705,23 @@ export const HomeScreen: React.FC = () => {
         </section>
 
         {/* G. Compact Local Business Banner */}
-        <section className="rounded-2xl bg-gradient-to-r from-[#092825] via-[#061D1B] to-[#092825] border border-[#14443F] p-4 shadow-md shadow-black/25 flex items-center justify-between gap-3">
+        <section className="rounded-2xl bg-gradient-to-br from-[#E6F1ED] via-[#FCFDFC] to-[#F3F6F4] dark:from-[#092825] dark:via-[#061D1B] dark:to-[#092825] border border-[#0F4C44]/25 dark:border-[#14443F] p-4 shadow-[0_6px_22px_-12px_rgba(15,76,68,0.18)] dark:shadow-md dark:shadow-black/25 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00D68F]">
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0F4C44] dark:text-[#00D68F]">
               <Sparkles className="w-3.5 h-3.5 shrink-0" />
               <span>{t('homeLocationBadge')}</span>
             </div>
-            <h2 className="text-sm font-display font-bold text-[#F5FAFA] leading-snug">
+            <h2 className="text-sm font-display font-bold text-[#0E2421] dark:text-[#F5FAFA] leading-snug">
               {t('localBusinessTitle')}
             </h2>
-            <p className="text-[11px] text-[#A9C0BD] leading-relaxed">
+            <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] leading-relaxed">
               {t('localBusinessDesc')}
             </p>
             <div className="pt-1">
               <button
                 type="button"
                 onClick={() => navigate({ name: 'profile', section: 'help' })}
-                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-md shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
+                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-[0_6px_16px_-6px_rgba(15,76,68,0.35)] dark:shadow-md dark:shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
               >
                 <span>{t('learnMore')}</span>
                 <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -726,7 +729,7 @@ export const HomeScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-20 h-24 rounded-2xl overflow-hidden bg-[#031719] border border-[#14443F] shrink-0 relative">
+          <div className="w-20 h-24 rounded-2xl overflow-hidden bg-[#E8EFEA] dark:bg-[#031719] border border-[#0F4C44]/20 dark:border-[#14443F] shrink-0 relative shadow-xs">
             <img
               src={BRAND_ASSETS.coffee}
               alt="Support Hawassa Local Merchants"
