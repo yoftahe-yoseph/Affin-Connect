@@ -49,6 +49,14 @@ import {
   handleListingEligibility,
   handlePublishListingDraft,
 } from './listingAssistant.ts';
+import {
+  handleCreateShopProfile,
+  handleGetMyShops,
+  handleGetPublicShopById,
+  handleListPublicShops,
+  handleUpdateShopAvailabilityStatus,
+  handleUpdateShopProfile,
+} from './shops.ts';
 
 dotenv.config();
 
@@ -70,6 +78,7 @@ export function createApiApp(): express.Express {
   app.use('/api/chat', express.json({ limit: '64kb' }));
   app.use('/api/payments', express.json({ limit: '128kb' }));
   app.use('/api/products', express.json({ limit: '350kb' }));
+  app.use('/api/shops', express.json({ limit: '512kb' }));
   app.use('/api/video/caption', express.json({ limit: '1mb' }));
   app.use(express.json({ limit: '256kb' }));
 
@@ -124,6 +133,11 @@ export function createApiApp(): express.Express {
     windowMs: 60_000,
     maxRequests: 25,
     keyPrefix: 'chat-listing',
+  });
+  const shopWriteRateLimiter = createRateLimiter({
+    windowMs: 60_000,
+    maxRequests: 25,
+    keyPrefix: 'shops-write',
   });
 
   // Public runtime Maps config (avoids exposing hardcoded keys while supporting server secrets)
@@ -575,6 +589,19 @@ export function createApiApp(): express.Express {
     productWriteRateLimiter.middleware,
     requireAuth,
     handleUpdateProduct
+  );
+
+  // Discover Shops / Shop Directory public & seller profile management endpoints
+  app.get('/api/shops', handleListPublicShops);
+  app.get('/api/shops/me', requireAuth, handleGetMyShops);
+  app.get('/api/shops/:shopId', handleGetPublicShopById);
+  app.post('/api/shops', shopWriteRateLimiter.middleware, requireAuth, handleCreateShopProfile);
+  app.put('/api/shops/:shopId', shopWriteRateLimiter.middleware, requireAuth, handleUpdateShopProfile);
+  app.patch(
+    '/api/shops/:shopId/status',
+    shopWriteRateLimiter.middleware,
+    requireAuth,
+    handleUpdateShopAvailabilityStatus
   );
 
   app.get('/api/health', (_req, res) => {

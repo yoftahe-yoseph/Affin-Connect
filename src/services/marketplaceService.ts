@@ -1758,3 +1758,115 @@ export async function adminMediateChatInFirestore(params: {
     );
   }
 }
+
+export class ShopDirectoryApiError extends Error {
+  status: number;
+  code?: string;
+  fieldErrors?: Record<string, string>;
+
+  constructor(
+    message: string,
+    status: number,
+    options?: { code?: string; fieldErrors?: Record<string, string> }
+  ) {
+    super(message);
+    this.name = 'ShopDirectoryApiError';
+    this.status = status;
+    this.code = options?.code;
+    this.fieldErrors = options?.fieldErrors;
+  }
+}
+
+export async function createShopProfileViaApi(
+  payload: Partial<Shop>,
+  idToken: string
+): Promise<{ shop: Shop; verificationRequired: boolean }> {
+  const res = await fetch('/api/shops', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    shop?: Shop;
+    verificationRequired?: boolean;
+    error?: string;
+    code?: string;
+    fieldErrors?: Record<string, string>;
+  };
+  if (!res.ok || !data.shop) {
+    throw new ShopDirectoryApiError(
+      data.error || 'Unable to create shop profile.',
+      res.status,
+      { code: data.code, fieldErrors: data.fieldErrors }
+    );
+  }
+  return {
+    shop: data.shop,
+    verificationRequired: Boolean(data.verificationRequired),
+  };
+}
+
+export async function updateShopProfileViaApi(
+  shopId: string,
+  payload: Partial<Shop>,
+  idToken: string
+): Promise<{ shop: Shop }> {
+  const res = await fetch(`/api/shops/${encodeURIComponent(shopId)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    shop?: Shop;
+    error?: string;
+    code?: string;
+    fieldErrors?: Record<string, string>;
+  };
+  if (!res.ok || !data.shop) {
+    throw new ShopDirectoryApiError(
+      data.error || 'Unable to update shop profile.',
+      res.status,
+      { code: data.code, fieldErrors: data.fieldErrors }
+    );
+  }
+  return { shop: data.shop };
+}
+
+export async function updateShopAvailabilityViaApi(
+  shopId: string,
+  availabilityStatus: 'active' | 'temporarily_closed' | 'inactive',
+  idToken: string,
+  isPublished?: boolean
+): Promise<{ shop: Shop }> {
+  const res = await fetch(`/api/shops/${encodeURIComponent(shopId)}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      availabilityStatus,
+      ...(isPublished !== undefined ? { isPublished } : {}),
+    }),
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    shop?: Shop;
+    error?: string;
+    code?: string;
+  };
+  if (!res.ok || !data.shop) {
+    throw new ShopDirectoryApiError(
+      data.error || 'Unable to update shop status.',
+      res.status,
+      { code: data.code }
+    );
+  }
+  return { shop: data.shop };
+}
+

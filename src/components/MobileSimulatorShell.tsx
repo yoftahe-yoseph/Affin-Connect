@@ -206,7 +206,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
             <button
               type="button"
               onClick={() => navigate({ name: 'shops' })}
-              aria-label={t('navShops')}
+              aria-label={t('discoverShopsTitle')}
               aria-current={route.name === 'shops' || route.name === 'map' || route.name === 'shop' ? 'page' : undefined}
               className={`min-h-[48px] flex flex-col items-center justify-center gap-1 rounded-xl transition-colors ${
                 route.name === 'shops' || route.name === 'map' || route.name === 'shop'
@@ -215,7 +215,7 @@ export const MobileSimulatorShell: React.FC<{ children: React.ReactNode }> = ({ 
               }`}
             >
               <Store className="w-5 h-5" />
-              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('navShops')}</span>
+              <span className="text-[10px] leading-none truncate max-w-full px-1">{t('discoverShopsNavLabel')}</span>
             </button>
 
             <button

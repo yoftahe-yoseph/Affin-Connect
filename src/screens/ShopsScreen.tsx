@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -7,52 +7,30 @@ import {
   ChevronDown,
   ChevronRight,
   Coffee,
-  LayoutGrid,
   MapPin,
   Search,
   Sparkles,
   Store,
-  Truck,
   User,
   X,
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
-import { BRAND_ASSETS, SEED_CATEGORIES } from '../data/seedData';
-import { CategoryIcon, getCategoryCardTheme, ShopCard } from '../components/SharedUI';
+import { BRAND_ASSETS } from '../data/seedData';
+import {
+  CategoryIcon,
+  DiscoverShopCard,
+  getCategoryCardTheme,
+} from '../components/SharedUI';
 import { ThemeToggleButton } from '../components/ThemeToggleButton';
 import { getLocalizedNeighborhood } from '../constants/translations';
+import { HAWASSA_NEIGHBORHOODS } from '../utils/marketplaceLogic';
 import {
-  buildHomeCategories,
-  filterShopsForDirectory,
-  HAWASSA_NEIGHBORHOODS,
-} from '../utils/marketplaceLogic';
+  filterAndPaginateDiscoverShops,
+  normalizeShopMainCategory,
+  SHOP_DIRECTORY_CATEGORIES,
+} from '../utils/shopDirectory';
 
-const SHOPS_CATEGORY_SLUGS = [
-  'clothing-fashion',
-  'electronics',
-  'home-living',
-  'groceries',
-  'food-spices',
-  'beauty-cosmetics',
-  'sports',
-] as const;
-
-const SHOPS_CATEGORY_LABEL_KEYS: Record<string, string> = {
-  'clothing-fashion': 'homeCategoryFashion',
-  electronics: 'homeCategoryElectronics',
-  'home-living': 'homeCategoryHomeLiving',
-  groceries: 'homeCategoryGroceries',
-  'food-spices': 'homeCategoryFoodDrinks',
-  'beauty-cosmetics': 'homeCategoryBeautyHealth',
-  sports: 'homeCategorySports',
-};
-
-const SHOPS_CATEGORY_ICON_OVERRIDES: Record<string, string> = {
-  groceries: 'ShoppingBasket',
-  'food-spices': 'UtensilsCrossed',
-  'beauty-cosmetics': 'HeartPulse',
-  sports: 'Dumbbell',
-};
+const SHOPS_PAGE_SIZE = 8;
 
 export const ShopsScreen: React.FC<{
   initialCategory?: string;
@@ -70,73 +48,84 @@ export const ShopsScreen: React.FC<{
     userLocation,
     proximityRankings,
     unreadNotificationCount,
-    categories,
     shops,
     products,
     governanceConfig,
   } = useMarketplace();
 
+  const resolvedInitialCategory = useMemo(() => {
+    if (showAll || !initialCategory || initialCategory === 'all') return 'all';
+    return normalizeShopMainCategory(initialCategory);
+  }, [initialCategory, showAll]);
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    showAll ? 'all' : initialCategory || 'all'
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string>(resolvedInitialCategory);
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'active' | 'temporarily_closed'>('all');
+  const [visibleCount, setVisibleCount] = useState<number>(SHOPS_PAGE_SIZE);
   const [heroBannerFailed, setHeroBannerFailed] = useState(false);
   const shopsGridRef = useRef<HTMLElement | null>(null);
 
-  const shopCategories = useMemo(() => {
-    const ordered = buildHomeCategories(categories, SEED_CATEGORIES);
-    const bySlug = new Map(ordered.map((c) => [c.slug, c]));
-    return SHOPS_CATEGORY_SLUGS.map((slug) => bySlug.get(slug)).filter(
-      (cat): cat is NonNullable<typeof cat> => Boolean(cat)
-    );
-  }, [categories]);
+  useEffect(() => {
+    setSelectedCategory(resolvedInitialCategory);
+  }, [resolvedInitialCategory]);
 
-  const filteredShops = useMemo(() => {
-    const base = filterShopsForDirectory(shops, products, {
-      searchQuery,
-      categorySlug: selectedCategory,
-      neighborhood: selectedNeighborhood,
-      strictShopVerification: governanceConfig.strictShopVerification,
-      excludeCoffee: true,
-    });
+  // Reset pagination whenever filters change
+  useEffect(() => {
+    setVisibleCount(SHOPS_PAGE_SIZE);
+  }, [searchQuery, selectedCategory, selectedNeighborhood, availabilityFilter]);
 
+  const shopDistanceById = useMemo(() => {
+    const map: Record<string, number> = {};
     if (userLocation?.source === 'gps' && proximityRankings.length > 0) {
-      const rankIndex = new Map<string, number>(
-        proximityRankings.map((entry, idx) => [entry.shop.shopId, idx])
-      );
-      return [...base].sort((a, b) => {
-        const ra = rankIndex.get(a.shopId) ?? Number.MAX_SAFE_INTEGER;
-        const rb = rankIndex.get(b.shopId) ?? Number.MAX_SAFE_INTEGER;
-        if (ra !== rb) return ra - rb;
-        return Number(Boolean(b.featured)) - Number(Boolean(a.featured));
-      });
-    }
-
-    return [...base].sort((a, b) => {
-      if (Boolean(b.featured) !== Boolean(a.featured)) {
-        return Number(Boolean(b.featured)) - Number(Boolean(a.featured));
+      for (const entry of proximityRankings) {
+        map[entry.shop.shopId] = entry.distanceKm;
       }
-      return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
-    });
-  }, [
-    shops,
-    products,
-    searchQuery,
-    selectedCategory,
-    selectedNeighborhood,
-    governanceConfig.strictShopVerification,
-    userLocation?.source,
-    proximityRankings,
-  ]);
+    }
+    return map;
+  }, [userLocation?.source, proximityRankings]);
+
+  const directoryResult = useMemo(
+    () =>
+      filterAndPaginateDiscoverShops(shops, products, {
+        searchQuery,
+        category: selectedCategory,
+        location: selectedNeighborhood === 'All Hawassa' ? 'all' : selectedNeighborhood,
+        availability: availabilityFilter,
+        strictShopVerification: governanceConfig.strictShopVerification,
+        sortBy: userLocation?.source === 'gps' && proximityRankings.length > 0 ? 'nearest' : 'featured',
+        shopDistanceById,
+        page: 1,
+        pageSize: visibleCount,
+      }),
+    [
+      shops,
+      products,
+      searchQuery,
+      selectedCategory,
+      selectedNeighborhood,
+      availabilityFilter,
+      governanceConfig.strictShopVerification,
+      visibleCount,
+      userLocation?.source,
+      proximityRankings.length,
+      shopDistanceById,
+    ]
+  );
+
+  const visibleShops = directoryResult.items;
+  const totalMatchingShops = directoryResult.total;
+  const hasMoreShops = directoryResult.hasMore;
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     selectedCategory !== 'all' ||
+    availabilityFilter !== 'all' ||
     selectedNeighborhood !== 'All Hawassa';
 
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
+    setAvailabilityFilter('all');
     if (selectedNeighborhood !== 'All Hawassa') {
       setSelectedNeighborhood('All Hawassa');
     }
@@ -144,15 +133,6 @@ export const ShopsScreen: React.FC<{
 
   const scrollToShops = () => {
     shopsGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const getCategoryLabel = (cat: (typeof shopCategories)[number]) => {
-    const key = SHOPS_CATEGORY_LABEL_KEYS[cat.slug];
-    if (key) return t(key);
-    if (language === 'am') return cat.nameAm;
-    if (language === 'om') return cat.nameOm;
-    if (language === 'sid') return cat.nameSid || cat.name;
-    return cat.name;
   };
 
   const displayName =
@@ -184,10 +164,10 @@ export const ShopsScreen: React.FC<{
             </div>
             <div className="min-w-0">
               <h1 className="text-sm font-display font-bold tracking-tight text-[#0F4C44] dark:text-[#F5FAFA] truncate">
-                Affin Connect
+                {t('discoverShopsTitle')}
               </h1>
               <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] truncate">
-                {t('authHeaderSubtitle')}
+                Affin Connect · {t('location')}
               </p>
             </div>
           </div>
@@ -244,8 +224,8 @@ export const ShopsScreen: React.FC<{
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('shopsSearchPlaceholder')}
-              aria-label={t('shopsSearchPlaceholder')}
+              placeholder={t('discoverShopsSearchPlaceholder')}
+              aria-label={t('discoverShopsSearchPlaceholder')}
               className="w-full min-h-[44px] bg-transparent px-2.5 text-xs text-[#0E2421] dark:text-[#F5FAFA] placeholder:text-[#46635E]/75 dark:placeholder:text-[#A9C0BD]/70 focus:outline-none"
             />
             {searchQuery ? (
@@ -282,39 +262,21 @@ export const ShopsScreen: React.FC<{
         </div>
       </header>
 
-      <div className="px-4 pt-4 space-y-6">
-        {/* Hero Banner */}
+      <div className="px-4 pt-4 space-y-5">
+        {/* Discover Shops Editorial Hero Banner */}
         <section className="relative rounded-2xl overflow-hidden border border-[#0F4C44]/40 dark:border-[#14443F] bg-gradient-to-br from-[#0F4C44] via-[#093430] to-[#041E1F] dark:from-[#062825] dark:via-[#051F22] dark:to-[#031719] shadow-[0_14px_30px_-14px_rgba(15,76,68,0.34)] dark:shadow-lg dark:shadow-black/30">
-          {!heroBannerFailed ? (
+          {!heroBannerFailed && (
             <img
               src={BRAND_ASSETS.banner}
-              alt="Hawassa local shops"
+              alt="Hawassa verified shops directory"
               referrerPolicy="no-referrer"
               onError={() => setHeroBannerFailed(true)}
-              className="absolute inset-0 w-full h-full object-cover object-[center_40%] opacity-40 mix-blend-luminosity"
+              className="absolute inset-0 w-full h-full object-cover object-[center_40%] opacity-35 mix-blend-luminosity"
             />
-          ) : (
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 400 220"
-              className="absolute inset-0 w-full h-full opacity-45"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M0 150 Q 95 110, 200 145 T 400 130 L 400 220 L 0 220 Z"
-                fill="#00D68F"
-                fillOpacity="0.16"
-              />
-              <path
-                d="M0 175 Q 110 140, 220 172 T 400 165 L 400 220 L 0 220 Z"
-                fill="#00C8D7"
-                fillOpacity="0.14"
-              />
-            </svg>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#031719] via-[#031719]/75 to-[#062E2B]/40" />
 
-          <div className="relative p-4 pt-5 flex flex-col gap-3">
+          <div className="relative p-4 pt-4.5 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#031719]/80 backdrop-blur-xs border border-[#00D68F]/35 text-[11px] font-semibold text-[#00D68F]">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
@@ -331,31 +293,40 @@ export const ShopsScreen: React.FC<{
               </button>
             </div>
 
-            <div className="space-y-1.5 pt-0.5">
+            <div className="space-y-1">
               <h2 className="text-xl font-display font-bold text-[#F5FAFA] leading-tight text-balance">
-                {t('shopsHeroTitle')}
+                {t('discoverShopsTitle')}
               </h2>
-              <p className="text-xs text-[#A9C0BD] leading-relaxed max-w-[300px]">
-                {t('shopsHeroDesc')}
+              <p className="text-xs text-[#A9C0BD] leading-relaxed max-w-[320px]">
+                {t('discoverShopsSubtitle')}
               </p>
             </div>
 
-            <div className="pt-1 flex items-center gap-2.5">
+            <div className="pt-0.5 flex items-center gap-2.5 flex-wrap">
               <button
                 type="button"
                 onClick={scrollToShops}
-                className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-2 shadow-lg shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
+                className="min-h-[42px] px-4.5 rounded-xl bg-gradient-to-r from-[#00D68F] to-[#00C8D7] hover:brightness-105 text-[#031719] text-xs font-bold inline-flex items-center gap-2 shadow-lg shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
               >
                 <span>{t('exploreShops')}</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate({ name: 'seller', tab: 'shop' })}
+                className="min-h-[42px] px-3.5 rounded-xl bg-[#031719]/75 hover:bg-[#092825] border border-white/15 hover:border-[#00D68F]/50 text-[#F5FAFA] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+              >
+                <Store className="w-3.5 h-3.5 text-[#00D68F] shrink-0" />
+                <span>{t('createShopProfileBtn')}</span>
               </button>
             </div>
           </div>
         </section>
 
-        {/* Horizontally Scrollable Shop Categories */}
+        {/* Horizontally Scrollable Shop Directory Categories */}
         <section aria-labelledby="shops-categories-heading">
-          <div className="flex items-center justify-between mb-3 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
+          <div className="flex items-center justify-between mb-2.5 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
             <h2 id="shops-categories-heading" className="text-sm font-bold text-[#0F4C44] dark:text-[#F5FAFA]">
               {t('categories')}
             </h2>
@@ -363,18 +334,55 @@ export const ShopsScreen: React.FC<{
               <button
                 type="button"
                 onClick={() => setSelectedCategory('all')}
-                className="min-h-[36px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors"
+                className="min-h-[32px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors"
               >
-                {t('all')}
+                {t('shopDirCatAll')}
               </button>
             )}
           </div>
 
-          <div className="flex gap-3 overflow-x-auto pb-2.5 snap-x snap-mandatory mobile-scroll">
-            {shopCategories.map((cat, idx) => {
+          <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory mobile-scroll">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              aria-pressed={selectedCategory === 'all'}
+              className={`snap-start shrink-0 relative overflow-hidden w-[108px] min-h-[96px] rounded-2xl bg-gradient-to-br from-[#E6F1ED] via-[#FCFDFC] to-[#FCFDFC] dark:from-[#0F2F2E] dark:via-[#092123] dark:to-[#051518] border p-2.5 flex flex-col justify-between text-left transition-all cursor-pointer ${
+                selectedCategory === 'all'
+                  ? 'border-[#0F4C44] ring-2 ring-[#0F4C44]/25 dark:border-[#00D68F] dark:ring-[#00D68F]/35'
+                  : 'border-[#BFD6CE] hover:border-[#0F4C44]/60 dark:border-[#14443F] dark:hover:border-[#00D68F]/60'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    selectedCategory === 'all'
+                      ? 'bg-[#0F4C44] text-[#FCFDFC] dark:bg-[#00D68F] dark:text-[#031719]'
+                      : 'bg-[#E2F1EC] dark:bg-[#00D68F]/15 text-[#0F4C44] dark:text-[#00D68F]'
+                  }`}
+                >
+                  <Store className="w-4.5 h-4.5" />
+                </div>
+                {selectedCategory === 'all' && (
+                  <span className="w-4.5 h-4.5 rounded-full bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </span>
+                )}
+              </div>
+              <span
+                className={`block text-[11px] font-bold leading-tight ${
+                  selectedCategory === 'all'
+                    ? 'text-[#0F4C44] dark:text-[#00D68F]'
+                    : 'text-[#0E2421] dark:text-[#F5FAFA]'
+                }`}
+              >
+                {t('shopDirCatAll')}
+              </span>
+            </button>
+
+            {SHOP_DIRECTORY_CATEGORIES.map((cat, idx) => {
               const isSelected = selectedCategory === cat.slug;
-              const iconKey = SHOPS_CATEGORY_ICON_OVERRIDES[cat.slug] ?? cat.iconName;
               const theme = getCategoryCardTheme(cat.slug, idx);
+              const label = t(cat.labelKey);
 
               return (
                 <button
@@ -384,9 +392,9 @@ export const ShopsScreen: React.FC<{
                     setSelectedCategory((prev) => (prev === cat.slug ? 'all' : cat.slug))
                   }
                   aria-pressed={isSelected}
-                  className={`snap-start shrink-0 relative overflow-hidden w-[120px] min-h-[108px] rounded-2xl bg-gradient-to-br ${theme.surface} border ${
+                  className={`snap-start shrink-0 relative overflow-hidden w-[114px] min-h-[96px] rounded-2xl bg-gradient-to-br ${theme.surface} border ${
                     isSelected ? theme.selectedBorder : theme.border
-                  } p-3 flex flex-col justify-between text-left shadow-[0_2px_10px_-4px_rgba(15,76,68,0.10)] hover:shadow-[0_8px_18px_-8px_rgba(15,76,68,0.16)] dark:shadow-lg dark:shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C44] dark:focus-visible:ring-[#00D68F]`}
+                  } p-2.5 flex flex-col justify-between text-left shadow-[0_2px_10px_-4px_rgba(15,76,68,0.10)] hover:shadow-[0_8px_18px_-8px_rgba(15,76,68,0.16)] dark:shadow-lg dark:shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C44] dark:focus-visible:ring-[#00D68F]`}
                 >
                   <span
                     aria-hidden="true"
@@ -394,87 +402,48 @@ export const ShopsScreen: React.FC<{
                       isSelected ? 'opacity-100' : 'opacity-75 group-hover:opacity-100'
                     } ${theme.glow}`}
                   />
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[#FCFDFC]/80 dark:via-white/25 to-transparent pointer-events-none"
-                  />
 
                   <div className="relative z-10 w-full flex items-start justify-between gap-2">
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${
                         isSelected ? theme.selectedIconBox : theme.iconBox
                       }`}
                     >
-                      <CategoryIcon iconName={iconKey} className="w-5 h-5" />
+                      <CategoryIcon iconName={cat.iconName} className="w-4.5 h-4.5" />
                     </div>
                     {isSelected ? (
                       <span
                         aria-hidden="true"
-                        className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${theme.selectedIconBox}`}
+                        className={`w-4.5 h-4.5 rounded-full flex items-center justify-center shrink-0 ${theme.selectedIconBox}`}
                       >
-                        <Check className="w-3 h-3 stroke-[3]" />
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
                       </span>
                     ) : (
                       <ArrowUpRight
                         aria-hidden="true"
-                        className={`w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 ${theme.arrow}`}
+                        className={`w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-all shrink-0 ${theme.arrow}`}
                       />
                     )}
                   </div>
 
-                  <div className="relative z-10 w-full pt-2.5 space-y-1.5">
+                  <div className="relative z-10 w-full pt-2 space-y-1">
                     <span
-                      className={`block text-[12px] font-bold leading-tight line-clamp-2 ${
+                      className={`block text-[11px] font-bold leading-tight line-clamp-2 ${
                         isSelected ? theme.activeText : 'text-[#0E2421] dark:text-[#F5FAFA]'
                       }`}
                     >
-                      {getCategoryLabel(cat)}
+                      {label}
                     </span>
                     <span
                       aria-hidden="true"
                       className={`block h-0.5 rounded-full bg-gradient-to-r transition-all duration-200 ${
-                        isSelected ? 'w-11' : 'w-6 group-hover:w-10'
+                        isSelected ? 'w-10' : 'w-5 group-hover:w-9'
                       } ${theme.accentBar}`}
                     />
                   </div>
                 </button>
               );
             })}
-
-            <button
-              type="button"
-              onClick={() => navigate({ name: 'categories' })}
-              className="snap-start shrink-0 relative overflow-hidden w-[116px] min-h-[108px] rounded-2xl bg-gradient-to-br from-[#E6F1ED] via-[#FCFDFC] to-[#FCFDFC] dark:from-[#0F2F2E] dark:via-[#092123] dark:to-[#051518] border border-[#BFD6CE] hover:border-[#0F4C44]/60 dark:border-[#00D68F]/35 dark:hover:border-[#00C8D7]/80 p-3 flex flex-col justify-between text-left shadow-[0_2px_10px_-4px_rgba(15,76,68,0.10)] hover:shadow-[0_8px_18px_-8px_rgba(15,76,68,0.16)] dark:shadow-lg dark:shadow-black/25 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C44] dark:focus-visible:ring-[#00D68F]"
-            >
-              <span
-                aria-hidden="true"
-                className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-xl opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none bg-teal-300/30 dark:bg-[#00C8D7]/25"
-              />
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[#FCFDFC]/80 dark:via-white/25 to-transparent pointer-events-none"
-              />
-
-              <div className="relative z-10 w-full flex items-start justify-between gap-2">
-                <div className="w-10 h-10 rounded-xl bg-[#E2F1EC] dark:bg-[#00D68F]/15 text-[#0F4C44] dark:text-[#00D68F] flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-                  <LayoutGrid className="w-5 h-5" />
-                </div>
-                <ArrowUpRight
-                  aria-hidden="true"
-                  className="w-3.5 h-3.5 text-[#0F4C44] dark:text-[#00C8D7] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0"
-                />
-              </div>
-
-              <div className="relative z-10 w-full pt-2.5 space-y-1.5">
-                <span className="block text-[12px] font-bold text-[#0E2421] dark:text-[#F5FAFA] leading-tight line-clamp-2">
-                  {t('shopsCategoryMore')}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="block h-0.5 w-6 group-hover:w-10 rounded-full bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] transition-all duration-200"
-                />
-              </div>
-            </button>
           </div>
         </section>
 
@@ -482,7 +451,7 @@ export const ShopsScreen: React.FC<{
         <button
           type="button"
           onClick={() => navigate({ name: 'coffee_traders' })}
-          className="w-full rounded-2xl bg-gradient-to-r from-[#4B2E24] via-[#342019] to-[#1D120E] border border-[#C68B59]/40 hover:border-[#C68B59]/75 px-3.5 py-3 flex items-center justify-between gap-3 text-left shadow-md shadow-black/25 transition-all"
+          className="w-full rounded-2xl bg-gradient-to-r from-[#4B2E24] via-[#342019] to-[#1D120E] border border-[#C68B59]/40 hover:border-[#C68B59]/75 px-3.5 py-3 flex items-center justify-between gap-3 text-left shadow-md shadow-black/20 transition-all"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#C68B59] to-[#8F5A32] text-[#1F120E] flex items-center justify-center shrink-0">
@@ -500,37 +469,56 @@ export const ShopsScreen: React.FC<{
           <ChevronRight className="w-4 h-4 text-[#C68B59] shrink-0" />
         </button>
 
-        {/* Nearby Shops Section */}
-        <section ref={shopsGridRef} aria-labelledby="nearby-shops-heading">
-          <div className="flex items-center justify-between gap-2 mb-3 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
+        {/* Verified Shop Directory Listing */}
+        <section ref={shopsGridRef} aria-labelledby="discover-shops-list-heading" className="space-y-3">
+          <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
-              <h2 id="nearby-shops-heading" className="text-sm font-bold text-[#0F4C44] dark:text-[#F5FAFA] truncate">
-                {t('nearbyShopsTitle')}
+              <h2
+                id="discover-shops-list-heading"
+                className="text-sm font-bold text-[#0F4C44] dark:text-[#F5FAFA] truncate"
+              >
+                {t('discoverShopsTitle')}
               </h2>
               <span className="px-2 py-0.5 rounded-lg bg-[#E7F1ED] dark:bg-[#092825] border border-[#BFD6CE] dark:border-[#14443F] text-[11px] font-semibold text-[#0F4C44] dark:text-[#00D68F] tabular-nums shrink-0">
-                {filteredShops.length}
+                {totalMatchingShops}
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="min-h-[36px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors shrink-0"
-            >
-              {t('viewAll')}
-            </button>
+            <div className="flex items-center gap-1.5">
+              {(
+                [
+                  { id: 'all', label: t('shopFilterStatusAll') },
+                  { id: 'active', label: t('shopFilterStatusActive') },
+                  { id: 'temporarily_closed', label: t('shopFilterStatusTempClosed') },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setAvailabilityFilter(opt.id)}
+                  aria-pressed={availabilityFilter === opt.id}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${
+                    availabilityFilter === opt.id
+                      ? 'bg-[#0F4C44] dark:bg-[#00D68F] text-[#FCFDFC] dark:text-[#031719] border-[#0F4C44] dark:border-[#00D68F]'
+                      : 'bg-[#FCFDFC] dark:bg-[#092825] text-[#46635E] dark:text-[#A9C0BD] border-[#D2E0DC] dark:border-[#14443F] hover:border-[#0F4C44]/50'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {authLoading && filteredShops.length === 0 ? (
-            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
+          {authLoading && visibleShops.length === 0 ? (
+            <div className="grid grid-cols-1 gap-3">
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-56 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse"
+                  className="h-44 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] animate-pulse"
                 />
               ))}
             </div>
-          ) : filteredShops.length === 0 ? (
+          ) : visibleShops.length === 0 ? (
             <div className="rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] py-10 px-5 text-center flex flex-col items-center justify-center shadow-[0_2px_10px_-4px_rgba(15,76,68,0.08)] dark:shadow-none">
               <div className="w-12 h-12 rounded-2xl bg-[#E7F1ED] dark:bg-[#031719] border border-[#BFD6CE] dark:border-[#14443F] text-[#0F4C44] dark:text-[#00D68F] flex items-center justify-center mb-3">
                 <Store className="w-6 h-6" />
@@ -552,50 +540,37 @@ export const ShopsScreen: React.FC<{
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
-              {filteredShops.map((shop) => (
-                <ShopCard
-                  key={shop.shopId}
-                  shop={shop}
-                  variant="emeraldDark"
-                  fullWidth
-                  showFavorite
-                  showDistance={userLocation?.source === 'gps'}
-                  highlightNearest={userLocation?.source === 'gps'}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                {visibleShops.map((shop) => (
+                  <DiscoverShopCard
+                    key={shop.shopId}
+                    shop={shop}
+                    showDistance={userLocation?.source === 'gps'}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination / Lazy Load More */}
+              <div className="pt-2 flex flex-col items-center gap-2">
+                <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] tabular-nums">
+                  {t('showingShopsCount', {
+                    shown: visibleShops.length,
+                    total: totalMatchingShops,
+                  })}
+                </p>
+                {hasMoreShops && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((prev) => prev + SHOPS_PAGE_SIZE)}
+                    className="min-h-[42px] px-5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] hover:bg-[#E7F1ED] dark:hover:bg-[#0D332F] border border-[#BFD6CE] dark:border-[#14443F] text-[#0F4C44] dark:text-[#00D68F] text-xs font-bold transition-colors shadow-xs"
+                  >
+                    {t('loadMoreShopsBtn')}
+                  </button>
+                )}
+              </div>
+            </>
           )}
-        </section>
-
-        {/* Fast & Reliable Delivery Promotional Banner */}
-        <section className="rounded-2xl bg-gradient-to-br from-[#E6F1ED] via-[#FCFDFC] to-[#F3F6F4] dark:from-[#092825] dark:via-[#061D1B] dark:to-[#092825] border border-[#0F4C44]/25 dark:border-[#14443F] p-4 shadow-[0_6px_22px_-12px_rgba(15,76,68,0.18)] dark:shadow-md dark:shadow-black/25 flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0F4C44] dark:text-[#00D68F]">
-              <Truck className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('homeLocationBadge')}</span>
-            </div>
-            <h2 className="text-sm font-display font-bold text-[#0E2421] dark:text-[#F5FAFA] leading-snug">
-              {t('shopsDeliveryTitle')}
-            </h2>
-            <p className="text-[11px] text-[#46635E] dark:text-[#A9C0BD] leading-relaxed">
-              {t('shopsDeliveryDesc')}
-            </p>
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => navigate({ name: 'profile', section: 'help' })}
-                className="min-h-[40px] px-4 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-xs font-bold inline-flex items-center gap-1.5 shadow-[0_6px_16px_-6px_rgba(15,76,68,0.35)] dark:shadow-md dark:shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
-              >
-                <span>{t('learnMore')}</span>
-                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-              </button>
-            </div>
-          </div>
-
-          <div className="w-16 h-16 rounded-2xl bg-[#FCFDFC] dark:bg-[#031719] border border-[#0F4C44]/20 dark:border-[#14443F] flex items-center justify-center text-[#0F4C44] dark:text-[#00D68F] shrink-0 shadow-xs">
-            <Truck className="w-7 h-7" />
-          </div>
         </section>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
+import { ResilientImage } from './SharedUI';
 import { formatETB } from '../utils/marketplaceLogic';
 import type { ChatSupervisionStatus, TradeChatThread } from '../types';
 
@@ -59,6 +60,7 @@ export const BuyerSellerChatModal: React.FC = () => {
     firebaseUser,
     userProfile,
     activeRoleView,
+    shopsById,
     tradeChats,
     tradeChatModalOpen,
     activeTradeChatThreadId,
@@ -155,23 +157,28 @@ export const BuyerSellerChatModal: React.FC = () => {
         <div className="bg-[#FCFDFC] dark:bg-[#1C2420] border-b border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_12px_-6px_rgba(15,76,68,0.12)] dark:shadow-none px-4 py-3 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {activeTradeChatThread ? (
-              <button
-                type="button"
-                onClick={() => setActiveTradeChatThreadId(null)}
-                className="min-w-[44px] min-h-[44px] -ml-1 rounded-xl flex items-center justify-center hover:bg-[#EBF1EE] dark:hover:bg-[#232D28] text-[#0F4C44] dark:text-[#F3F5F4] transition-colors"
-                aria-label={t('tradeChatInboxTitle')}
-              >
-                <ArrowLeft size={20} />
-              </button>
-            ) : (
-              <div className="w-10 h-10 rounded-xl bg-[#E5F2EE] dark:bg-[#064E3B]/40 text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0">
-                <MessageSquare size={20} />
-              </div>
-            )}
-
-            <div className="min-w-0">
-              {activeTradeChatThread ? (
-                <>
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveTradeChatThreadId(null)}
+                  className="min-w-[40px] min-h-[40px] -ml-1 rounded-xl flex items-center justify-center hover:bg-[#EBF1EE] dark:hover:bg-[#232D28] text-[#0F4C44] dark:text-[#F3F5F4] transition-colors shrink-0"
+                  aria-label={t('tradeChatInboxTitle')}
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#E5F2EE] dark:bg-[#064E3B]/40 border border-[#D2E0DC] dark:border-[#2A3630] text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0">
+                  {shopsById[activeTradeChatThread.shopId]?.logoUrl ? (
+                    <ResilientImage
+                      src={shopsById[activeTradeChatThread.shopId].logoUrl}
+                      alt={activeTradeChatThread.shopName}
+                      fallbackTitle={activeTradeChatThread.shopName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Store size={18} />
+                  )}
+                </div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-sm font-extrabold text-[#0F4C44] dark:text-[#F3F5F4] truncate">
                       {activeTradeChatThread.orderCode
@@ -187,16 +194,21 @@ export const BuyerSellerChatModal: React.FC = () => {
                   <p className="text-xs text-[#46635E] dark:text-[#A8B5AE] truncate">
                     {activeTradeChatThread.shopName} · {activeTradeChatThread.buyerName}
                   </p>
-                </>
-              ) : (
-                <>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-xl bg-[#E5F2EE] dark:bg-[#064E3B]/40 text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0">
+                  <MessageSquare size={20} />
+                </div>
+                <div className="min-w-0">
                   <h2 className="text-base font-extrabold text-[#0F4C44] dark:text-[#F3F5F4] truncate">{t('tradeChatInboxTitle')}</h2>
                   <p className="text-xs text-[#46635E] dark:text-[#A8B5AE] truncate">
                     {t('tradeChatInboxSubtitle')}
                   </p>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
 
           <button
@@ -254,8 +266,19 @@ export const BuyerSellerChatModal: React.FC = () => {
                     onClick={() => setActiveTradeChatThreadId(thread.threadId)}
                     className="w-full text-left bg-[#FCFDFC] dark:bg-[#1C2420] hover:border-[#0F4C44] dark:hover:border-[#10B981] rounded-2xl border border-[#D2E0DC] dark:border-[#2A3630] shadow-[0_2px_10px_-3px_rgba(15,76,68,0.09)] dark:shadow-none p-3.5 transition-colors flex items-start gap-3 min-h-[72px]"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#E5F2EE] dark:bg-[#064E3B]/40 text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0 mt-0.5">
-                      {thread.threadType === 'order' ? <Package size={18} /> : <Store size={18} />}
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#E5F2EE] dark:bg-[#064E3B]/40 border border-[#D2E0DC] dark:border-[#2A3630] text-[#0F4C44] dark:text-[#10B981] flex items-center justify-center shrink-0 mt-0.5">
+                      {shopsById[thread.shopId]?.logoUrl ? (
+                        <ResilientImage
+                          src={shopsById[thread.shopId].logoUrl}
+                          alt={thread.shopName}
+                          fallbackTitle={thread.shopName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : thread.threadType === 'order' ? (
+                        <Package size={18} />
+                      ) : (
+                        <Store size={18} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center justify-between gap-2">

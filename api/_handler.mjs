@@ -148,10 +148,10 @@ async function tryLoadFirebaseAdminAuth() {
       import("firebase-admin/app"),
       import("firebase-admin/auth")
     ]);
-    const firebaseConfig3 = loadFirebaseAppletConfig();
+    const firebaseConfig4 = loadFirebaseAppletConfig();
     if (!getApps().length) {
       initializeApp({
-        projectId: firebaseConfig3.projectId || void 0
+        projectId: firebaseConfig4.projectId || void 0
       });
     }
     cachedAdminAuth = getAuth();
@@ -1894,6 +1894,31 @@ function calculateCartSummary(items, fulfillmentMethod, deliveryFeePerOrder = DE
     stockIssues
   };
 }
+function buildShopSlug(name, fallbackId) {
+  const ascii = (name ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (ascii.length >= 2) return ascii.slice(0, 64);
+  const cleanFallback = (fallbackId ?? "shop").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return cleanFallback || `shop-${Date.now()}`;
+}
+function validateImageDataUrlSize(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== "string") return false;
+  if (!/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(dataUrl)) {
+    return false;
+  }
+  return validateImagePayloadSize(
+    dataUrl,
+    MAX_IMAGE_FILE_BYTES,
+    MAX_IMAGE_UPLOAD_DATA_URL_LENGTH
+  ).valid;
+}
+function validateProductImageUrl(url) {
+  const clean = (url ?? "").trim();
+  if (!clean) return false;
+  if (clean.startsWith("data:image/")) {
+    return validateImageDataUrlSize(clean);
+  }
+  return clean.length <= 2048 && (clean.startsWith("https://") || clean.startsWith("/"));
+}
 function validateOrderAgainstGovernance(params) {
   if (params.userProfile?.accountStatus === "suspended") {
     return { allowed: false, errorKey: "governanceUserSuspended" };
@@ -2033,6 +2058,11 @@ function validatePaymentReference(method, ref) {
     normalizedRef: live.normalizedRef,
     errorKey: live.errorKey ?? "paymentReferenceInvalidError"
   };
+}
+function isVerifiedMerchantShop(shop) {
+  if (shop.status !== "approved") return false;
+  if (shop.verificationStatus && shop.verificationStatus !== "approved") return false;
+  return true;
 }
 function reconcileCartWithCatalog(cartItems, liveProducts, shopsById = {}, strictShopVerification = true) {
   const productById = new Map(
@@ -4639,6 +4669,1210 @@ async function handlePublishListingDraft(req, res) {
   }
 }
 
+// src/utils/shopDirectory.ts
+var SHOP_DIRECTORY_CATEGORIES = [
+  {
+    slug: "coffee",
+    label: "Coffee Traders",
+    labelKey: "shopDirCatCoffee",
+    iconName: "Coffee",
+    aliases: ["coffee", "coffee-traders", "coffee-honey", "coffee traders", "roaster", "roasters"]
+  },
+  {
+    slug: "electronics",
+    label: "Electronics",
+    labelKey: "shopDirCatElectronics",
+    iconName: "Smartphone",
+    aliases: ["electronics", "phones", "mobile", "tech", "computers"]
+  },
+  {
+    slug: "clothing-fashion",
+    label: "Clothing",
+    labelKey: "shopDirCatClothing",
+    iconName: "Shirt",
+    aliases: ["clothing-fashion", "clothing", "fashion", "habesha", "apparel", "shoes", "textile"]
+  },
+  {
+    slug: "groceries",
+    label: "Groceries",
+    labelKey: "shopDirCatGroceries",
+    iconName: "ShoppingBasket",
+    aliases: ["groceries", "food-spices", "supermarket", "spices", "honey", "food", "bakery"]
+  },
+  {
+    slug: "beauty-cosmetics",
+    label: "Beauty",
+    labelKey: "shopDirCatBeauty",
+    iconName: "Sparkles",
+    aliases: ["beauty-cosmetics", "beauty", "cosmetics", "skincare", "personal-care", "salon"]
+  },
+  {
+    slug: "home-living",
+    label: "Home & Furniture",
+    labelKey: "shopDirCatHomeFurniture",
+    iconName: "Home",
+    aliases: ["home-living", "home", "furniture", "household", "kitchenware", "decor"]
+  },
+  {
+    slug: "agriculture",
+    label: "Agriculture",
+    labelKey: "shopDirCatAgriculture",
+    iconName: "ShoppingBasket",
+    aliases: ["agriculture", "farming", "produce", "grains", "livestock", "seeds", "farm"]
+  },
+  {
+    slug: "other",
+    label: "Other",
+    labelKey: "shopDirCatOther",
+    iconName: "Package",
+    aliases: ["other", "sports", "automotive", "services", "general", "books", "stationery"]
+  }
+];
+var VALID_SHOP_DIRECTORY_CATEGORY_SLUGS = new Set(
+  SHOP_DIRECTORY_CATEGORIES.map((c) => c.slug)
+);
+var SHOP_AVAILABILITY_STATUSES = [
+  "active",
+  "temporarily_closed",
+  "inactive"
+];
+var MAX_SHOP_PRODUCT_TYPES = 12;
+var MAX_SHOP_PRODUCT_TYPE_LENGTH = 60;
+function normalizeShopMainCategory(raw) {
+  const clean = (raw ?? "").trim().toLowerCase();
+  if (!clean) return "other";
+  if (VALID_SHOP_DIRECTORY_CATEGORY_SLUGS.has(clean)) return clean;
+  for (const cat of SHOP_DIRECTORY_CATEGORIES) {
+    if (cat.aliases.includes(clean)) return cat.slug;
+  }
+  return "other";
+}
+function getShopDirectoryCategoryLabel(slug) {
+  const normalized = normalizeShopMainCategory(slug);
+  return SHOP_DIRECTORY_CATEGORIES.find((c) => c.slug === normalized)?.label ?? "Other";
+}
+function inferShopMainCategory(shop, shopProducts = []) {
+  if (shop.mainCategory && shop.mainCategory.trim()) {
+    return normalizeShopMainCategory(shop.mainCategory);
+  }
+  if (shop.traderType === "coffee") {
+    return "coffee";
+  }
+  if (shopProducts.length > 0) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const p of shopProducts) {
+      const cat = normalizeShopMainCategory(p.category);
+      counts.set(cat, (counts.get(cat) ?? 0) + 1);
+    }
+    let best = "other";
+    let bestCount = 0;
+    for (const [cat, count] of counts.entries()) {
+      if (count > bestCount) {
+        best = cat;
+        bestCount = count;
+      }
+    }
+    if (bestCount > 0) return best;
+  }
+  const text2 = `${shop.name ?? ""} ${shop.description ?? ""}`.toLowerCase();
+  if (/\b(coffee|roast|buna|espresso|arabica)\b/.test(text2)) return "coffee";
+  if (/\b(phone|smartphone|electronics|laptop|tech|charger)\b/.test(text2)) return "electronics";
+  if (/\b(kemis|cloth|fashion|shoe|dress|handloom|tibeb|cotton|boutique)\b/.test(text2)) {
+    return "clothing-fashion";
+  }
+  if (/\b(spice|honey|grocery|berbere|supermarket|food|grain)\b/.test(text2)) return "groceries";
+  if (/\b(beauty|cosmetic|skincare|salon|perfume)\b/.test(text2)) return "beauty-cosmetics";
+  if (/\b(furniture|home|kitchen|jebena|mesob|household)\b/.test(text2)) return "home-living";
+  if (/\b(agricult|farm|seed|fertilizer|harvest|livestock)\b/.test(text2)) return "agriculture";
+  return "other";
+}
+function getShopAvailabilityStatus(shop) {
+  if (!shop) return "inactive";
+  if (shop.status === "suspended") return "inactive";
+  if (shop.availabilityStatus === "active" || shop.availabilityStatus === "temporarily_closed" || shop.availabilityStatus === "inactive") {
+    return shop.availabilityStatus;
+  }
+  return "active";
+}
+function sanitizeProductTypesList(raw) {
+  let items = [];
+  if (Array.isArray(raw)) {
+    items = raw.filter((v) => typeof v === "string");
+  } else if (typeof raw === "string") {
+    items = raw.split(/[,\n;]+/);
+  }
+  const seen = /* @__PURE__ */ new Set();
+  const cleaned = [];
+  for (const entry of items) {
+    const trimmed = entry.trim().replace(/\s+/g, " ").slice(0, MAX_SHOP_PRODUCT_TYPE_LENGTH);
+    if (trimmed.length < 2) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push(trimmed);
+    if (cleaned.length >= MAX_SHOP_PRODUCT_TYPES) break;
+  }
+  return cleaned;
+}
+function resolveShopCallablePhone(shop, ownerRegisteredPhone) {
+  if (!shop) {
+    return {
+      callable: false,
+      e164: null,
+      telHref: null,
+      displayPhone: null,
+      source: "none",
+      reason: "Shop contact phone is unavailable."
+    };
+  }
+  const useBusiness = Boolean(shop.publishBusinessPhone && shop.businessPhoneNumber?.trim());
+  const rawCandidate = useBusiness ? shop.businessPhoneNumber.trim() : (shop.phoneNumber ?? "").trim() || (ownerRegisteredPhone ?? "").trim();
+  if (!rawCandidate) {
+    return {
+      callable: false,
+      e164: null,
+      telHref: null,
+      displayPhone: null,
+      source: "none",
+      reason: "This shop has not published a phone number yet."
+    };
+  }
+  const digitsOnly = rawCandidate.replace(/\D/g, "");
+  if (/^0+$/.test(digitsOnly) || /^2510+$/.test(digitsOnly)) {
+    return {
+      callable: false,
+      e164: null,
+      telHref: null,
+      displayPhone: null,
+      source: "none",
+      reason: "Shop phone number is invalid."
+    };
+  }
+  const normalized = normalizePhoneToE164(rawCandidate);
+  if (!normalized.valid || !normalized.e164) {
+    return {
+      callable: false,
+      e164: null,
+      telHref: null,
+      displayPhone: null,
+      source: "none",
+      reason: "Shop phone number is not in a valid dialable format."
+    };
+  }
+  return {
+    callable: true,
+    e164: normalized.e164,
+    telHref: `tel:${normalized.e164}`,
+    displayPhone: formatDisplayPhoneNumber(normalized.e164),
+    source: useBusiness ? "business" : "account"
+  };
+}
+function formatDisplayPhoneNumber(e164) {
+  const clean = (e164 ?? "").trim();
+  if (/^\+251[79]\d{8}$/.test(clean)) {
+    return `+251 ${clean.slice(4, 6)} ${clean.slice(6, 9)} ${clean.slice(9)}`;
+  }
+  return clean;
+}
+function isShopPubliclyDiscoverable(shop, options = {}) {
+  if (!shop) return false;
+  if (shop.status === "suspended") return false;
+  const strict = options.strictShopVerification !== false;
+  if (strict) {
+    if (!isVerifiedMerchantShop(shop)) return false;
+    if (options.verification && options.verification.status !== "approved") return false;
+  }
+  if (shop.isPublished === false) return false;
+  const availability = getShopAvailabilityStatus(shop);
+  if (availability === "inactive") return false;
+  if (availability === "temporarily_closed" && options.includeTemporarilyClosed === false) {
+    return false;
+  }
+  return true;
+}
+function sanitizePublicShopProfile(shop, shopProducts = []) {
+  const callablePhone = resolveShopCallablePhone(shop);
+  const availabilityStatus = getShopAvailabilityStatus(shop);
+  const mainCategory = inferShopMainCategory(shop, shopProducts);
+  const preferredContactMethod = shop.preferredContactMethod === "phone" || shop.preferredContactMethod === "chat" || shop.preferredContactMethod === "both" ? shop.preferredContactMethod : "both";
+  const item = {
+    shopId: shop.shopId,
+    ownerUid: shop.ownerUid,
+    name: shop.name,
+    slug: shop.slug || buildShopSlug(shop.name, shop.shopId),
+    description: shop.description ?? "",
+    logoUrl: shop.logoUrl ?? "",
+    coverImageUrl: shop.coverImageUrl ?? "",
+    mainCategory,
+    productTypes: sanitizeProductTypesList(shop.productTypes ?? []),
+    region: (shop.region ?? "").trim() || "Sidama Region",
+    city: (shop.city ?? "").trim() || "Hawassa",
+    ...shop.subCity?.trim() ? { subCity: shop.subCity.trim() } : {},
+    neighborhood: (shop.neighborhood ?? "").trim(),
+    address: (shop.address ?? "").trim(),
+    ...typeof shop.latitude === "number" && Number.isFinite(shop.latitude) ? { latitude: shop.latitude } : {},
+    ...typeof shop.longitude === "number" && Number.isFinite(shop.longitude) ? { longitude: shop.longitude } : {},
+    ...shop.operatingHours?.trim() ? { operatingHours: shop.operatingHours.trim() } : {},
+    phoneNumber: callablePhone.displayPhone,
+    telHref: callablePhone.telHref,
+    preferredContactMethod,
+    availabilityStatus,
+    deliveryAvailable: Boolean(shop.deliveryAvailable),
+    pickupAvailable: Boolean(shop.pickupAvailable),
+    ...shop.traderType ? { traderType: shop.traderType } : {},
+    verified: isVerifiedMerchantShop(shop),
+    rating: Number.isFinite(shop.rating) ? shop.rating : 0,
+    reviewCount: Number.isFinite(shop.reviewCount) ? shop.reviewCount : 0,
+    featured: Boolean(shop.featured),
+    createdAt: shop.createdAt,
+    updatedAt: shop.updatedAt
+  };
+  return item;
+}
+function validateShopProfilePayload(input) {
+  const errors = {};
+  const name = (input.name ?? "").trim();
+  if (name.length < 3 || name.length > 100) {
+    errors.name = "Shop name must be between 3 and 100 characters.";
+  }
+  const rawCategory = (input.mainCategory ?? "").trim();
+  const mainCategory = normalizeShopMainCategory(rawCategory || "other");
+  if (!rawCategory || !VALID_SHOP_DIRECTORY_CATEGORY_SLUGS.has(mainCategory)) {
+    errors.mainCategory = "Please select a main shop category.";
+  }
+  const productTypes = sanitizeProductTypesList(input.productTypes ?? []);
+  if (productTypes.length === 0) {
+    errors.productTypes = "Add at least one product type your shop offers (e.g. Roasted Coffee, Smartphones).";
+  }
+  const description = (input.description ?? "").trim();
+  if (description.length < 10) {
+    errors.description = "Shop description must be at least 10 characters.";
+  } else if (description.length > 1e3) {
+    errors.description = "Shop description must be 1,000 characters or fewer.";
+  }
+  const region = (input.region ?? "").trim() || "Sidama Region";
+  if (region.length > 80) {
+    errors.region = "Region name must be 80 characters or fewer.";
+  }
+  const city = (input.city ?? "").trim() || "Hawassa";
+  if (city.length < 2 || city.length > 60) {
+    errors.city = "City must be between 2 and 60 characters.";
+  }
+  const subCity = (input.subCity ?? "").trim();
+  if (subCity.length > 80) {
+    errors.subCity = "Sub-city must be 80 characters or fewer.";
+  }
+  const neighborhood = (input.neighborhood ?? "").trim();
+  if (neighborhood.length < 2 || neighborhood.length > 100) {
+    errors.neighborhood = "Select or enter a neighborhood.";
+  }
+  const address = (input.address ?? "").trim();
+  if (address.length < 4 || address.length > 200) {
+    errors.address = "Enter a specific street, building, or market stall location (4\u2013200 characters).";
+  }
+  let latitude;
+  let longitude;
+  if (input.latitude != null || input.longitude != null) {
+    if (typeof input.latitude !== "number" || typeof input.longitude !== "number" || !Number.isFinite(input.latitude) || !Number.isFinite(input.longitude) || input.latitude < -90 || input.latitude > 90 || input.longitude < -180 || input.longitude > 180) {
+      errors.coordinates = "Map coordinates must include valid latitude (-90..90) and longitude (-180..180).";
+    } else {
+      latitude = Number(input.latitude.toFixed(6));
+      longitude = Number(input.longitude.toFixed(6));
+    }
+  }
+  const operatingHours = (input.operatingHours ?? "").trim();
+  if (operatingHours.length > 140) {
+    errors.operatingHours = "Opening hours must be 140 characters or fewer.";
+  }
+  const publishBusinessPhone = Boolean(input.publishBusinessPhone);
+  const rawAccountPhone = (input.phoneNumber ?? "").trim();
+  const normalizedAccountPhone = rawAccountPhone ? normalizePhoneToE164(rawAccountPhone) : { valid: false, e164: "" };
+  let normalizedBusinessPhone;
+  if (publishBusinessPhone) {
+    const bizCheck = normalizePhoneToE164(input.businessPhoneNumber ?? "");
+    if (!bizCheck.valid) {
+      errors.businessPhoneNumber = "Enter a valid business phone number (e.g. 0911234567 or +251911234567).";
+    } else {
+      normalizedBusinessPhone = bizCheck.e164;
+    }
+  } else if (input.businessPhoneNumber?.trim()) {
+    const bizCheck = normalizePhoneToE164(input.businessPhoneNumber);
+    if (!bizCheck.valid) {
+      errors.businessPhoneNumber = "Enter a valid business phone number (e.g. 0911234567 or +251911234567).";
+    } else {
+      normalizedBusinessPhone = bizCheck.e164;
+    }
+  }
+  const effectivePhone = publishBusinessPhone && normalizedBusinessPhone ? normalizedBusinessPhone : normalizedAccountPhone.valid ? normalizedAccountPhone.e164 : "";
+  if (!effectivePhone) {
+    errors.phoneNumber = "A valid registered seller phone number (e.g. +251911234567) is required for your shop profile.";
+  }
+  const rawContact = (input.preferredContactMethod ?? "both").trim().toLowerCase();
+  const preferredContactMethod = rawContact === "phone" || rawContact === "chat" || rawContact === "both" ? rawContact : "both";
+  if (input.preferredContactMethod && !["phone", "chat", "both"].includes(rawContact)) {
+    errors.preferredContactMethod = "Preferred contact method must be Phone, In-App Chat, or Both.";
+  }
+  const rawStatus = (input.availabilityStatus ?? "active").trim().toLowerCase();
+  const availabilityStatus = rawStatus === "active" || rawStatus === "temporarily_closed" || rawStatus === "inactive" ? rawStatus : "active";
+  if (input.availabilityStatus && !["active", "temporarily_closed", "inactive"].includes(rawStatus)) {
+    errors.availabilityStatus = "Shop status must be Active, Temporarily Closed, or Inactive.";
+  }
+  const logoUrl = (input.logoUrl ?? "").trim();
+  if (logoUrl && !validateProductImageUrl(logoUrl)) {
+    errors.logoUrl = "Shop logo must be a valid HTTPS URL, app asset path, or uploaded image under 150 KB.";
+  }
+  const coverImageUrl = (input.coverImageUrl ?? "").trim();
+  if (coverImageUrl && !validateProductImageUrl(coverImageUrl)) {
+    errors.coverImageUrl = "Shop cover image must be a valid HTTPS URL, app asset path, or uploaded image under 150 KB.";
+  }
+  const deliveryAvailable = input.deliveryAvailable !== false;
+  const pickupAvailable = input.pickupAvailable !== false;
+  if (Object.keys(errors).length > 0) {
+    return { valid: false, errors };
+  }
+  return {
+    valid: true,
+    errors: {},
+    normalized: {
+      name,
+      mainCategory,
+      productTypes,
+      description,
+      region,
+      city,
+      ...subCity ? { subCity } : {},
+      neighborhood,
+      address,
+      ...latitude !== void 0 && longitude !== void 0 ? { latitude, longitude } : {},
+      ...operatingHours ? { operatingHours } : {},
+      phoneNumber: normalizedAccountPhone.valid ? normalizedAccountPhone.e164 : effectivePhone,
+      ...normalizedBusinessPhone ? { businessPhoneNumber: normalizedBusinessPhone } : {},
+      publishBusinessPhone,
+      preferredContactMethod,
+      availabilityStatus,
+      ...logoUrl ? { logoUrl } : {},
+      ...coverImageUrl ? { coverImageUrl } : {},
+      deliveryAvailable,
+      pickupAvailable
+    }
+  };
+}
+function filterAndPaginateDiscoverShops(shops, products = [], options = {}) {
+  const {
+    searchQuery = "",
+    category = "all",
+    location = "All Hawassa",
+    availability = "all",
+    strictShopVerification = true,
+    sortBy = "featured",
+    shopDistanceById = {},
+    page = 1,
+    pageSize = 12
+  } = options;
+  const q = searchQuery.trim().toLowerCase();
+  const normalizedCategoryFilter = category && category !== "all" && category !== "more" ? normalizeShopMainCategory(category) : "all";
+  const normalizedLoc = location.trim().toLowerCase();
+  const filterByLocation = Boolean(
+    normalizedLoc && normalizedLoc !== "all" && normalizedLoc !== "all hawassa"
+  );
+  const activeProductsByShop = /* @__PURE__ */ new Map();
+  for (const p of products) {
+    if (p.status !== "active") continue;
+    const existing = activeProductsByShop.get(p.shopId);
+    if (existing) existing.push(p);
+    else activeProductsByShop.set(p.shopId, [p]);
+  }
+  const filtered = shops.filter((shop) => {
+    if (!isShopPubliclyDiscoverable(shop, {
+      strictShopVerification,
+      includeTemporarilyClosed: availability !== "active"
+    })) {
+      return false;
+    }
+    const shopAvailability = getShopAvailabilityStatus(shop);
+    if (availability === "active" && shopAvailability !== "active") return false;
+    if (availability === "temporarily_closed" && shopAvailability !== "temporarily_closed") {
+      return false;
+    }
+    const shopProducts = activeProductsByShop.get(shop.shopId) ?? [];
+    const shopMainCat = inferShopMainCategory(shop, shopProducts);
+    if (normalizedCategoryFilter !== "all") {
+      const matchesMain = shopMainCat === normalizedCategoryFilter;
+      const matchesProductCat = shopProducts.some(
+        (p) => normalizeShopMainCategory(p.category) === normalizedCategoryFilter
+      );
+      if (!matchesMain && !matchesProductCat) return false;
+    }
+    if (filterByLocation) {
+      const locHaystack = `${shop.region ?? ""} ${shop.city ?? ""} ${shop.subCity ?? ""} ${shop.neighborhood ?? ""} ${shop.address ?? ""}`.toLowerCase();
+      if (!locHaystack.includes(normalizedLoc)) return false;
+    }
+    if (q) {
+      const categoryLabel = getShopDirectoryCategoryLabel(shopMainCat);
+      const productTypesText = (shop.productTypes ?? []).join(" ");
+      const listedProductsText = shopProducts.map((p) => `${p.name} ${p.category}`).join(" ");
+      const haystack = [
+        shop.name,
+        shop.description,
+        shopMainCat,
+        categoryLabel,
+        productTypesText,
+        shop.region ?? "",
+        shop.city ?? "",
+        shop.subCity ?? "",
+        shop.neighborhood ?? "",
+        shop.address ?? "",
+        listedProductsText
+      ].join(" ").toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+  const sorted = [...filtered].sort((a, b) => {
+    const aAvail = getShopAvailabilityStatus(a) === "active" ? 1 : 0;
+    const bAvail = getShopAvailabilityStatus(b) === "active" ? 1 : 0;
+    if (sortBy === "nearest") {
+      const da = shopDistanceById[a.shopId] ?? Number.POSITIVE_INFINITY;
+      const db2 = shopDistanceById[b.shopId] ?? Number.POSITIVE_INFINITY;
+      if (da !== db2) return da - db2;
+    } else if (sortBy === "rating") {
+      if ((b.rating ?? 0) !== (a.rating ?? 0)) return (b.rating ?? 0) - (a.rating ?? 0);
+      if ((b.reviewCount ?? 0) !== (a.reviewCount ?? 0)) return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
+    } else if (sortBy === "newest") {
+      const ta = new Date(a.createdAt || 0).getTime();
+      const tb = new Date(b.createdAt || 0).getTime();
+      if (tb !== ta) return tb - ta;
+    } else {
+      if (bAvail !== aAvail) return bAvail - aAvail;
+      if (Boolean(b.featured) !== Boolean(a.featured)) {
+        return Number(Boolean(b.featured)) - Number(Boolean(a.featured));
+      }
+      if ((b.reviewCount ?? 0) !== (a.reviewCount ?? 0)) {
+        return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
+      }
+    }
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+  });
+  const safePageSize = Math.max(1, Math.min(50, Math.floor(pageSize)));
+  const safePage = Math.max(1, Math.floor(page));
+  const total = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(total / safePageSize));
+  const startIndex = (safePage - 1) * safePageSize;
+  const items = sorted.slice(startIndex, startIndex + safePageSize);
+  return {
+    items,
+    total,
+    page: safePage,
+    pageSize: safePageSize,
+    totalPages,
+    hasMore: startIndex + items.length < total
+  };
+}
+
+// src/server/shops.ts
+var firebaseConfig3 = loadFirebaseAppletConfig();
+var FIRESTORE_PROJECT_ID3 = firebaseConfig3.projectId;
+var FIRESTORE_DATABASE_ID3 = firebaseConfig3.firestoreDatabaseId || "(default)";
+var SUPER_ADMIN_EMAIL2 = "yoftaheyoseph5@gmail.com";
+function encodeFirestoreValue2(val) {
+  if (val === void 0) return void 0;
+  if (val === null) return { nullValue: null };
+  if (typeof val === "string") return { stringValue: val };
+  if (typeof val === "boolean") return { booleanValue: val };
+  if (typeof val === "number") {
+    if (!Number.isFinite(val)) return void 0;
+    if (Number.isInteger(val)) return { integerValue: String(val) };
+    return { doubleValue: val };
+  }
+  if (Array.isArray(val)) {
+    const values = val.map((item) => encodeFirestoreValue2(item)).filter((item) => item !== void 0);
+    return { arrayValue: { values } };
+  }
+  if (typeof val === "object") {
+    const fields = {};
+    for (const [k, v] of Object.entries(val)) {
+      const encoded = encodeFirestoreValue2(v);
+      if (encoded !== void 0) {
+        fields[k] = encoded;
+      }
+    }
+    return { mapValue: { fields } };
+  }
+  return void 0;
+}
+function decodeFirestoreValue3(value) {
+  if (!value) return void 0;
+  if ("stringValue" in value) return value.stringValue;
+  if ("booleanValue" in value) return value.booleanValue;
+  if ("integerValue" in value) return Number(value.integerValue);
+  if ("doubleValue" in value) return Number(value.doubleValue);
+  if ("nullValue" in value) return null;
+  if ("arrayValue" in value) {
+    return (value.arrayValue.values ?? []).map((item) => decodeFirestoreValue3(item));
+  }
+  if ("mapValue" in value) {
+    const obj = {};
+    for (const [k, v] of Object.entries(value.mapValue.fields ?? {})) {
+      obj[k] = decodeFirestoreValue3(v);
+    }
+    return obj;
+  }
+  return void 0;
+}
+function decodeFirestoreDoc2(doc, idField) {
+  if (!doc.fields) return null;
+  const raw = {};
+  for (const [k, v] of Object.entries(doc.fields)) {
+    raw[k] = decodeFirestoreValue3(v);
+  }
+  if (typeof raw[idField] !== "string" && typeof doc.name === "string") {
+    raw[idField] = doc.name.split("/").pop() ?? "";
+  }
+  return raw;
+}
+function firestoreDocumentsRoot2() {
+  return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+    FIRESTORE_PROJECT_ID3
+  )}/databases/${encodeURIComponent(FIRESTORE_DATABASE_ID3)}/documents`;
+}
+function extractBearerToken2(req) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith("Bearer ")) return null;
+  const token = header.slice("Bearer ".length).trim();
+  return token || null;
+}
+function isAdminIdentity(params) {
+  return params.userProfile?.role === "admin" || Boolean(params.emailVerified) && typeof params.email === "string" && params.email.trim().toLowerCase() === SUPER_ADMIN_EMAIL2;
+}
+async function firestoreGetDoc2(collectionPath, docId, idField, idToken) {
+  const url = `${firestoreDocumentsRoot2()}/${collectionPath}/${encodeURIComponent(docId)}`;
+  const headers = { Accept: "application/json" };
+  if (idToken) headers.Authorization = `Bearer ${idToken}`;
+  const res = await fetch(url, { method: "GET", headers });
+  if (res.status === 404 || res.status === 403) return null;
+  if (!res.ok) {
+    throw new Error(`Firestore read ${collectionPath}/${docId} failed (${res.status})`);
+  }
+  const json = await res.json();
+  return decodeFirestoreDoc2(json, idField);
+}
+async function firestoreListCollection(collectionPath, idField, idToken) {
+  const results = [];
+  let pageToken;
+  let pages = 0;
+  do {
+    const query = new URLSearchParams({ pageSize: "200" });
+    if (pageToken) query.set("pageToken", pageToken);
+    const url = `${firestoreDocumentsRoot2()}/${collectionPath}?${query.toString()}`;
+    const headers = { Accept: "application/json" };
+    if (idToken) headers.Authorization = `Bearer ${idToken}`;
+    const res = await fetch(url, { method: "GET", headers });
+    if (!res.ok) {
+      throw new Error(`Firestore list ${collectionPath} failed (${res.status})`);
+    }
+    const json = await res.json();
+    for (const doc of json.documents ?? []) {
+      const parsed = decodeFirestoreDoc2(doc, idField);
+      if (parsed && parsed[idField]) {
+        results.push(parsed);
+      }
+    }
+    pageToken = json.nextPageToken;
+    pages += 1;
+  } while (pageToken && pages < 10);
+  return results;
+}
+async function firestoreWriteShopDoc(shop, idToken, mode) {
+  const fields = {};
+  for (const [k, v] of Object.entries(shop)) {
+    const encoded = encodeFirestoreValue2(v);
+    if (encoded !== void 0) {
+      fields[k] = encoded;
+    }
+  }
+  const baseUrl = `${firestoreDocumentsRoot2()}/shops/${encodeURIComponent(shop.shopId)}`;
+  const url = mode === "create" ? `${baseUrl}?currentDocument.exists=false` : baseUrl;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify({ fields })
+  });
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => "");
+    const err = new Error(
+      `Firestore shop ${mode} failed (${res.status}): ${bodyText.slice(0, 240)}`
+    );
+    err.status = res.status === 403 ? 403 : res.status === 409 ? 409 : 500;
+    throw err;
+  }
+}
+function evaluateShopCreateAuthorization(params) {
+  const uid = (params.uid ?? "").trim();
+  if (!uid) {
+    return {
+      allowed: false,
+      status: 401,
+      isAdmin: false,
+      code: "UNAUTHENTICATED",
+      error: "Authentication is required to create a shop profile."
+    };
+  }
+  if (params.userProfile?.accountStatus === "suspended") {
+    return {
+      allowed: false,
+      status: 403,
+      isAdmin: false,
+      code: "ACCOUNT_SUSPENDED",
+      error: "Your account is suspended and cannot create or manage shop profiles."
+    };
+  }
+  const isAdmin = isAdminIdentity(params);
+  const ownsAnyShop = params.existingShops.some((s) => s.ownerUid === uid);
+  const isSeller = isAdmin || params.userProfile?.role === "seller" || ownsAnyShop;
+  if (!isSeller) {
+    return {
+      allowed: false,
+      status: 403,
+      isAdmin: false,
+      code: "CUSTOMER_NOT_SELLER",
+      error: "Only registered sellers can create and manage shop profiles."
+    };
+  }
+  return { allowed: true, status: 200, isAdmin };
+}
+function evaluateShopUpdateAuthorization(params) {
+  const uid = (params.uid ?? "").trim();
+  if (!uid) {
+    return {
+      allowed: false,
+      status: 401,
+      isAdmin: false,
+      code: "UNAUTHENTICATED",
+      error: "Authentication is required to edit a shop profile."
+    };
+  }
+  if (params.userProfile?.accountStatus === "suspended") {
+    return {
+      allowed: false,
+      status: 403,
+      isAdmin: false,
+      code: "ACCOUNT_SUSPENDED",
+      error: "Your account is suspended and cannot modify shop profiles."
+    };
+  }
+  const isAdmin = isAdminIdentity(params);
+  if (!params.existingShop) {
+    return {
+      allowed: false,
+      status: 404,
+      isAdmin,
+      code: "SHOP_NOT_FOUND",
+      error: "Shop profile not found."
+    };
+  }
+  if (!isAdmin && params.existingShop.ownerUid !== uid) {
+    return {
+      allowed: false,
+      status: 403,
+      isAdmin: false,
+      code: "SHOP_NOT_OWNED",
+      error: "You can only edit shop profiles owned by your seller account."
+    };
+  }
+  if (!isAdmin && params.existingShop.status === "suspended") {
+    return {
+      allowed: false,
+      status: 403,
+      isAdmin: false,
+      code: "SHOP_SUSPENDED",
+      error: "This shop is currently suspended and cannot be updated."
+    };
+  }
+  return { allowed: true, status: 200, isAdmin };
+}
+function buildUniqueShopSlug(name, shopId, existingShops) {
+  const baseSlug = buildShopSlug(name, shopId);
+  const taken = new Set(
+    existingShops.filter((s) => s.shopId !== shopId).map((s) => (s.slug || "").trim().toLowerCase())
+  );
+  if (!taken.has(baseSlug)) return baseSlug;
+  const suffix = shopId.replace(/[^a-zA-Z0-9]/g, "").slice(-5).toLowerCase() || String(Date.now()).slice(-4);
+  return `${baseSlug.slice(0, 56)}-${suffix}`;
+}
+function buildCreatedShopDocument(params) {
+  const effectiveAccountPhone = (params.accountPhone ?? "").trim() || (params.input.phoneNumber ?? "").trim();
+  const validation = validateShopProfilePayload({
+    ...params.input,
+    phoneNumber: effectiveAccountPhone
+  });
+  if (!validation.valid || !validation.normalized) {
+    return {
+      ok: false,
+      status: 400,
+      error: Object.values(validation.errors)[0] || "Invalid shop profile details.",
+      fieldErrors: validation.errors
+    };
+  }
+  const normalized = validation.normalized;
+  const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
+  const requestedId = (params.input.shopId ?? "").trim();
+  const shopId = requestedId && /^[a-zA-Z0-9_-]{3,128}$/.test(requestedId) ? requestedId : `shop-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  if (params.existingShops.some((s) => s.shopId === shopId)) {
+    return {
+      ok: false,
+      status: 409,
+      error: "A shop profile with this ID already exists.",
+      fieldErrors: { shopId: "Duplicate shop ID." }
+    };
+  }
+  const slug = buildUniqueShopSlug(normalized.name, shopId, params.existingShops);
+  const status = params.isAdmin ? "approved" : "pending";
+  const verificationStatus = params.isAdmin ? "approved" : "unverified";
+  const isPublished = params.isAdmin ? normalized.availabilityStatus !== "inactive" : false;
+  const shop = {
+    shopId,
+    ownerUid: params.uid,
+    name: normalized.name,
+    slug,
+    description: normalized.description,
+    logoUrl: normalized.logoUrl || params.defaultLogoUrl || "/assets/aistudio/image_703e5fa8.png",
+    coverImageUrl: normalized.coverImageUrl ?? params.defaultCoverUrl ?? "",
+    phoneNumber: normalized.phoneNumber,
+    ...normalized.businessPhoneNumber ? { businessPhoneNumber: normalized.businessPhoneNumber } : {},
+    publishBusinessPhone: normalized.publishBusinessPhone,
+    preferredContactMethod: normalized.preferredContactMethod,
+    mainCategory: normalized.mainCategory,
+    productTypes: normalized.productTypes,
+    region: normalized.region,
+    city: normalized.city,
+    ...normalized.subCity ? { subCity: normalized.subCity } : {},
+    neighborhood: normalized.neighborhood,
+    address: normalized.address,
+    ...normalized.latitude !== void 0 && normalized.longitude !== void 0 ? { latitude: normalized.latitude, longitude: normalized.longitude } : {},
+    ...normalized.operatingHours ? { operatingHours: normalized.operatingHours } : {},
+    deliveryAvailable: normalized.deliveryAvailable,
+    pickupAvailable: normalized.pickupAvailable,
+    status,
+    verificationStatus,
+    availabilityStatus: normalized.availabilityStatus,
+    isPublished,
+    traderType: normalized.mainCategory === "coffee" ? "coffee" : "general",
+    rating: 0,
+    reviewCount: 0,
+    featured: false,
+    createdAt: now,
+    updatedAt: now
+  };
+  return { ok: true, shop };
+}
+function buildUpdatedShopDocument(params) {
+  const mergedInput = {
+    name: params.input.name ?? params.existingShop.name,
+    mainCategory: params.input.mainCategory ?? params.existingShop.mainCategory ?? (params.existingShop.traderType === "coffee" ? "coffee" : "other"),
+    productTypes: params.input.productTypes ?? params.existingShop.productTypes ?? [params.existingShop.name],
+    description: params.input.description ?? params.existingShop.description,
+    region: params.input.region ?? params.existingShop.region ?? "Sidama Region",
+    city: params.input.city ?? params.existingShop.city ?? "Hawassa",
+    subCity: params.input.subCity ?? params.existingShop.subCity,
+    neighborhood: params.input.neighborhood ?? params.existingShop.neighborhood,
+    address: params.input.address ?? params.existingShop.address,
+    latitude: params.input.latitude !== void 0 ? params.input.latitude : params.existingShop.latitude,
+    longitude: params.input.longitude !== void 0 ? params.input.longitude : params.existingShop.longitude,
+    operatingHours: params.input.operatingHours !== void 0 ? params.input.operatingHours : params.existingShop.operatingHours,
+    phoneNumber: (params.accountPhone ?? "").trim() || (params.input.phoneNumber ?? "").trim() || params.existingShop.phoneNumber,
+    businessPhoneNumber: params.input.businessPhoneNumber !== void 0 ? params.input.businessPhoneNumber : params.existingShop.businessPhoneNumber,
+    publishBusinessPhone: params.input.publishBusinessPhone !== void 0 ? params.input.publishBusinessPhone : params.existingShop.publishBusinessPhone,
+    preferredContactMethod: params.input.preferredContactMethod ?? params.existingShop.preferredContactMethod ?? "both",
+    availabilityStatus: params.input.availabilityStatus ?? getShopAvailabilityStatus(params.existingShop),
+    logoUrl: params.input.logoUrl !== void 0 ? params.input.logoUrl : params.existingShop.logoUrl,
+    coverImageUrl: params.input.coverImageUrl !== void 0 ? params.input.coverImageUrl : params.existingShop.coverImageUrl,
+    deliveryAvailable: params.input.deliveryAvailable !== void 0 ? params.input.deliveryAvailable : params.existingShop.deliveryAvailable,
+    pickupAvailable: params.input.pickupAvailable !== void 0 ? params.input.pickupAvailable : params.existingShop.pickupAvailable
+  };
+  const validation = validateShopProfilePayload(mergedInput);
+  if (!validation.valid || !validation.normalized) {
+    return {
+      ok: false,
+      status: 400,
+      error: Object.values(validation.errors)[0] || "Invalid shop profile update.",
+      fieldErrors: validation.errors
+    };
+  }
+  const normalized = validation.normalized;
+  const isVerifiedShop = params.isAdmin || canShopListProducts(params.existingShop, params.verification);
+  const requestedPublish = params.input.isPublished !== void 0 ? Boolean(params.input.isPublished) : params.existingShop.isPublished ?? isVerifiedShop;
+  if (requestedPublish && !isVerifiedShop) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Only verified sellers can publish a shop profile to Discover Shops. Complete merchant verification first."
+    };
+  }
+  const now = params.now ?? (/* @__PURE__ */ new Date()).toISOString();
+  const slug = buildUniqueShopSlug(
+    normalized.name,
+    params.existingShop.shopId,
+    params.existingShops
+  );
+  const updated = {
+    ...params.existingShop,
+    name: normalized.name,
+    slug,
+    description: normalized.description,
+    logoUrl: normalized.logoUrl ?? params.existingShop.logoUrl,
+    coverImageUrl: normalized.coverImageUrl ?? params.existingShop.coverImageUrl,
+    phoneNumber: normalized.phoneNumber,
+    ...normalized.businessPhoneNumber ? { businessPhoneNumber: normalized.businessPhoneNumber } : {},
+    publishBusinessPhone: normalized.publishBusinessPhone,
+    preferredContactMethod: normalized.preferredContactMethod,
+    mainCategory: normalized.mainCategory,
+    productTypes: normalized.productTypes,
+    region: normalized.region,
+    city: normalized.city,
+    ...normalized.subCity ? { subCity: normalized.subCity } : {},
+    neighborhood: normalized.neighborhood,
+    address: normalized.address,
+    ...normalized.latitude !== void 0 && normalized.longitude !== void 0 ? { latitude: normalized.latitude, longitude: normalized.longitude } : {},
+    ...normalized.operatingHours ? { operatingHours: normalized.operatingHours } : {},
+    deliveryAvailable: normalized.deliveryAvailable,
+    pickupAvailable: normalized.pickupAvailable,
+    availabilityStatus: normalized.availabilityStatus,
+    isPublished: normalized.availabilityStatus === "inactive" ? false : requestedPublish && isVerifiedShop,
+    traderType: normalized.mainCategory === "coffee" ? "coffee" : "general",
+    // Strictly preserve moderation/admin-controlled fields
+    shopId: params.existingShop.shopId,
+    ownerUid: params.existingShop.ownerUid,
+    status: params.existingShop.status,
+    verificationStatus: params.existingShop.verificationStatus,
+    rating: params.existingShop.rating,
+    reviewCount: params.existingShop.reviewCount,
+    featured: params.existingShop.featured,
+    ...params.existingShop.suspensionReason ? { suspensionReason: params.existingShop.suspensionReason } : {},
+    createdAt: params.existingShop.createdAt,
+    updatedAt: now
+  };
+  if (!normalized.businessPhoneNumber) {
+    delete updated.businessPhoneNumber;
+  }
+  if (!normalized.subCity) {
+    delete updated.subCity;
+  }
+  if (!normalized.operatingHours) {
+    delete updated.operatingHours;
+  }
+  return { ok: true, shop: updated };
+}
+function buildStatusUpdatedShopDocument(params) {
+  const nextStatus = (params.availabilityStatus ?? "").trim().toLowerCase();
+  if (!SHOP_AVAILABILITY_STATUSES.includes(nextStatus)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "availabilityStatus must be one of: active, temporarily_closed, inactive."
+    };
+  }
+  const isVerifiedShop = params.isAdmin || canShopListProducts(params.existingShop, params.verification);
+  const wantsPublicActivation = params.isPublished === true || params.isPublished === void 0 && nextStatus !== "inactive";
+  if (wantsPublicActivation && !isVerifiedShop) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Only verified sellers can activate and publish a shop profile in Discover Shops. Complete verification first."
+    };
+  }
+  const nextPublished = nextStatus === "inactive" ? false : params.isPublished !== void 0 ? Boolean(params.isPublished) && isVerifiedShop : isVerifiedShop;
+  return {
+    ok: true,
+    shop: {
+      ...params.existingShop,
+      availabilityStatus: nextStatus,
+      isPublished: nextPublished,
+      updatedAt: params.now ?? (/* @__PURE__ */ new Date()).toISOString()
+    }
+  };
+}
+async function handleListPublicShops(req, res) {
+  try {
+    const searchQuery = typeof req.query.q === "string" ? req.query.q : typeof req.query.search === "string" ? req.query.search : "";
+    const category = typeof req.query.category === "string" ? req.query.category : "all";
+    const location = typeof req.query.location === "string" ? req.query.location : typeof req.query.neighborhood === "string" ? req.query.neighborhood : "All Hawassa";
+    const rawAvailability = typeof req.query.availability === "string" ? req.query.availability : "all";
+    const availability = rawAvailability === "active" || rawAvailability === "temporarily_closed" ? rawAvailability : "all";
+    const rawSort = typeof req.query.sortBy === "string" ? req.query.sortBy : "featured";
+    const sortBy = rawSort === "rating" || rawSort === "newest" ? rawSort : "featured";
+    const page = Number(req.query.page ?? 1) || 1;
+    const pageSize = Number(req.query.pageSize ?? req.query.limit ?? 12) || 12;
+    const [shops, products] = await Promise.all([
+      firestoreListCollection("shops", "shopId"),
+      firestoreListCollection("products", "productId").catch(() => [])
+    ]);
+    const productsByShop = /* @__PURE__ */ new Map();
+    for (const p of products) {
+      if (p.status !== "active") continue;
+      const list = productsByShop.get(p.shopId);
+      if (list) list.push(p);
+      else productsByShop.set(p.shopId, [p]);
+    }
+    const result = filterAndPaginateDiscoverShops(shops, products, {
+      searchQuery,
+      category,
+      location,
+      availability,
+      strictShopVerification: true,
+      sortBy,
+      page,
+      pageSize
+    });
+    const sanitized = result.items.map(
+      (shop) => sanitizePublicShopProfile(shop, productsByShop.get(shop.shopId) ?? [])
+    );
+    return res.json({
+      shops: sanitized,
+      pagination: {
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalPages: result.totalPages,
+        hasMore: result.hasMore
+      },
+      categories: SHOP_DIRECTORY_CATEGORIES
+    });
+  } catch (error) {
+    console.error("Public shop directory query error:", error);
+    return res.status(500).json({ error: "Unable to load Discover Shops directory right now." });
+  }
+}
+async function handleGetPublicShopById(req, res) {
+  try {
+    const shopId = (req.params.shopId ?? "").trim();
+    if (!shopId || !/^[a-zA-Z0-9_-]{1,128}$/.test(shopId)) {
+      return res.status(400).json({ error: "Invalid shop ID." });
+    }
+    const shop = await firestoreGetDoc2("shops", shopId, "shopId");
+    if (!shop || !isShopPubliclyDiscoverable(shop, { strictShopVerification: true })) {
+      return res.status(404).json({ error: "Shop profile not found." });
+    }
+    return res.json({
+      shop: sanitizePublicShopProfile(shop)
+    });
+  } catch (error) {
+    console.error("Public shop detail error:", error);
+    return res.status(500).json({ error: "Unable to load shop profile." });
+  }
+}
+async function handleGetMyShops(req, res) {
+  try {
+    const uid = req.user?.uid;
+    const idToken = extractBearerToken2(req);
+    if (!uid || !idToken) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    const [userProfile, allShops] = await Promise.all([
+      firestoreGetDoc2("users", uid, "uid", idToken),
+      firestoreListCollection("shops", "shopId", idToken)
+    ]);
+    const isAdmin = isAdminIdentity({
+      email: req.user?.email,
+      emailVerified: req.user?.email_verified,
+      userProfile
+    });
+    const ownedShops = isAdmin ? allShops : allShops.filter((s) => s.ownerUid === uid);
+    const verificationByShopId = {};
+    await Promise.all(
+      ownedShops.map(async (shop) => {
+        const verification = await firestoreGetDoc2(
+          "merchant_verifications",
+          shop.shopId,
+          "verificationId",
+          idToken
+        );
+        verificationByShopId[shop.shopId] = getEffectiveShopVerificationStatus(shop, verification);
+      })
+    );
+    const registeredPhoneNumber = (userProfile?.phoneNumber ?? "").trim() || (typeof req.user?.phone_number === "string" ? req.user.phone_number.trim() : "");
+    return res.json({
+      uid,
+      role: userProfile?.role ?? "customer",
+      isAdmin,
+      isSeller: isAdmin || userProfile?.role === "seller" || ownedShops.length > 0,
+      accountStatus: userProfile?.accountStatus ?? "active",
+      registeredPhoneNumber: registeredPhoneNumber || null,
+      shops: ownedShops,
+      verificationByShopId
+    });
+  } catch (error) {
+    console.error("Fetch seller shops error:", error);
+    return res.status(500).json({ error: "Unable to load your shop profiles." });
+  }
+}
+async function handleCreateShopProfile(req, res) {
+  try {
+    const uid = req.user?.uid;
+    const idToken = extractBearerToken2(req);
+    if (!uid || !idToken) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    const [userProfile, allShops] = await Promise.all([
+      firestoreGetDoc2("users", uid, "uid", idToken),
+      firestoreListCollection("shops", "shopId", idToken)
+    ]);
+    const authCheck = evaluateShopCreateAuthorization({
+      uid,
+      email: req.user?.email,
+      emailVerified: req.user?.email_verified,
+      userProfile,
+      existingShops: allShops
+    });
+    if (!authCheck.allowed) {
+      return res.status(authCheck.status).json({
+        error: authCheck.error,
+        code: authCheck.code
+      });
+    }
+    const registeredAccountPhone = (userProfile?.phoneNumber ?? "").trim() || (typeof req.user?.phone_number === "string" ? req.user.phone_number.trim() : "");
+    const built = buildCreatedShopDocument({
+      input: req.body ?? {},
+      uid,
+      isAdmin: authCheck.isAdmin,
+      accountPhone: registeredAccountPhone,
+      existingShops: allShops
+    });
+    if (built.ok === false) {
+      return res.status(built.status).json({
+        error: built.error,
+        fieldErrors: built.fieldErrors
+      });
+    }
+    await firestoreWriteShopDoc(built.shop, idToken, "create");
+    return res.status(201).json({
+      shop: built.shop,
+      publicProfile: sanitizePublicShopProfile(built.shop),
+      verificationRequired: !isVerifiedMerchantShop(built.shop)
+    });
+  } catch (error) {
+    console.error("Create shop profile error:", error);
+    const status = error?.status ?? 500;
+    return res.status(status).json({
+      error: error instanceof Error ? error.message : "Unable to create shop profile."
+    });
+  }
+}
+async function handleUpdateShopProfile(req, res) {
+  try {
+    const uid = req.user?.uid;
+    const idToken = extractBearerToken2(req);
+    const shopId = (req.params.shopId ?? "").trim();
+    if (!uid || !idToken) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    if (!shopId || !/^[a-zA-Z0-9_-]{1,128}$/.test(shopId)) {
+      return res.status(400).json({ error: "Invalid shop ID." });
+    }
+    const [userProfile, allShops, verification] = await Promise.all([
+      firestoreGetDoc2("users", uid, "uid", idToken),
+      firestoreListCollection("shops", "shopId", idToken),
+      firestoreGetDoc2("merchant_verifications", shopId, "verificationId", idToken)
+    ]);
+    const existingShop = allShops.find((s) => s.shopId === shopId) ?? null;
+    const authCheck = evaluateShopUpdateAuthorization({
+      uid,
+      email: req.user?.email,
+      emailVerified: req.user?.email_verified,
+      userProfile,
+      existingShop
+    });
+    if (!authCheck.allowed || !existingShop) {
+      return res.status(authCheck.status).json({
+        error: authCheck.error,
+        code: authCheck.code
+      });
+    }
+    const registeredAccountPhone = (userProfile?.phoneNumber ?? "").trim() || (typeof req.user?.phone_number === "string" ? req.user.phone_number.trim() : "");
+    const built = buildUpdatedShopDocument({
+      existingShop,
+      input: req.body ?? {},
+      isAdmin: authCheck.isAdmin,
+      accountPhone: registeredAccountPhone,
+      verification,
+      existingShops: allShops
+    });
+    if (built.ok === false) {
+      return res.status(built.status).json({
+        error: built.error,
+        fieldErrors: built.fieldErrors
+      });
+    }
+    await firestoreWriteShopDoc(built.shop, idToken, "update");
+    return res.json({
+      shop: built.shop,
+      publicProfile: sanitizePublicShopProfile(built.shop)
+    });
+  } catch (error) {
+    console.error("Update shop profile error:", error);
+    const status = error?.status ?? 500;
+    return res.status(status).json({
+      error: error instanceof Error ? error.message : "Unable to update shop profile."
+    });
+  }
+}
+async function handleUpdateShopAvailabilityStatus(req, res) {
+  try {
+    const uid = req.user?.uid;
+    const idToken = extractBearerToken2(req);
+    const shopId = (req.params.shopId ?? "").trim();
+    if (!uid || !idToken) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    if (!shopId || !/^[a-zA-Z0-9_-]{1,128}$/.test(shopId)) {
+      return res.status(400).json({ error: "Invalid shop ID." });
+    }
+    const [userProfile, existingShop, verification] = await Promise.all([
+      firestoreGetDoc2("users", uid, "uid", idToken),
+      firestoreGetDoc2("shops", shopId, "shopId", idToken),
+      firestoreGetDoc2("merchant_verifications", shopId, "verificationId", idToken)
+    ]);
+    const authCheck = evaluateShopUpdateAuthorization({
+      uid,
+      email: req.user?.email,
+      emailVerified: req.user?.email_verified,
+      userProfile,
+      existingShop
+    });
+    if (!authCheck.allowed || !existingShop) {
+      return res.status(authCheck.status).json({
+        error: authCheck.error,
+        code: authCheck.code
+      });
+    }
+    const body = req.body ?? {};
+    const built = buildStatusUpdatedShopDocument({
+      existingShop,
+      availabilityStatus: body.availabilityStatus,
+      isPublished: body.isPublished,
+      isAdmin: authCheck.isAdmin,
+      verification
+    });
+    if (built.ok === false) {
+      return res.status(built.status).json({ error: built.error });
+    }
+    await firestoreWriteShopDoc(built.shop, idToken, "update");
+    return res.json({
+      shop: built.shop,
+      publicProfile: sanitizePublicShopProfile(built.shop)
+    });
+  } catch (error) {
+    console.error("Update shop status error:", error);
+    const status = error?.status ?? 500;
+    return res.status(status).json({
+      error: error instanceof Error ? error.message : "Unable to update shop availability status."
+    });
+  }
+}
+
 // src/server/apiApp.ts
 dotenv.config();
 function isSqlUnavailableError(error) {
@@ -4652,6 +5886,7 @@ function createApiApp() {
   app.use("/api/chat", express.json({ limit: "64kb" }));
   app.use("/api/payments", express.json({ limit: "128kb" }));
   app.use("/api/products", express.json({ limit: "350kb" }));
+  app.use("/api/shops", express.json({ limit: "512kb" }));
   app.use("/api/video/caption", express.json({ limit: "1mb" }));
   app.use(express.json({ limit: "256kb" }));
   app.use(
@@ -4694,6 +5929,11 @@ function createApiApp() {
     windowMs: 6e4,
     maxRequests: 25,
     keyPrefix: "chat-listing"
+  });
+  const shopWriteRateLimiter = createRateLimiter({
+    windowMs: 6e4,
+    maxRequests: 25,
+    keyPrefix: "shops-write"
   });
   app.get("/api/maps-config", (_req, res) => {
     const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "";
@@ -5095,6 +6335,17 @@ function createApiApp() {
     productWriteRateLimiter.middleware,
     requireAuth,
     handleUpdateProduct
+  );
+  app.get("/api/shops", handleListPublicShops);
+  app.get("/api/shops/me", requireAuth, handleGetMyShops);
+  app.get("/api/shops/:shopId", handleGetPublicShopById);
+  app.post("/api/shops", shopWriteRateLimiter.middleware, requireAuth, handleCreateShopProfile);
+  app.put("/api/shops/:shopId", shopWriteRateLimiter.middleware, requireAuth, handleUpdateShopProfile);
+  app.patch(
+    "/api/shops/:shopId/status",
+    shopWriteRateLimiter.middleware,
+    requireAuth,
+    handleUpdateShopAvailabilityStatus
   );
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });

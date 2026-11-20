@@ -11,18 +11,23 @@ import {
   Heart,
   HeartPulse,
   Home,
+  LayoutGrid,
   MapPin,
+  MessageSquare,
   Package,
+  Phone,
   Plus,
   Shirt,
   ShoppingBag,
   ShoppingBasket,
   Smartphone,
   Sparkles,
+  Sprout,
   Star,
   Store,
   Truck,
   UtensilsCrossed,
+  X,
   XCircle,
 } from 'lucide-react';
 import type { OrderStatus, Product, Shop } from '../types';
@@ -31,8 +36,24 @@ import {
   formatETB,
   isVerifiedMerchantShop,
 } from '../utils/marketplaceLogic';
+import {
+  getShopAvailabilityStatus,
+  inferShopMainCategory,
+  resolveShopCallablePhone,
+} from '../utils/shopDirectory';
 import { getLocalizedNeighborhood } from '../constants/translations';
 import { useMarketplace } from '../context/MarketplaceContext';
+
+export const SHOP_DIR_CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
+  coffee: 'shopDirCatCoffee',
+  electronics: 'shopDirCatElectronics',
+  'clothing-fashion': 'shopDirCatClothing',
+  groceries: 'shopDirCatGroceries',
+  'beauty-cosmetics': 'shopDirCatBeauty',
+  'home-living': 'shopDirCatHomeFurniture',
+  agriculture: 'shopDirCatAgriculture',
+  other: 'shopDirCatOther',
+};
 
 export const CategoryIcon: React.FC<{ iconName: string; className?: string }> = ({
   iconName,
@@ -61,6 +82,12 @@ export const CategoryIcon: React.FC<{ iconName: string; className?: string }> = 
       return <Dumbbell className={className} />;
     case 'Car':
       return <Car className={className} />;
+    case 'Sprout':
+      return <Sprout className={className} />;
+    case 'Store':
+      return <Store className={className} />;
+    case 'LayoutGrid':
+      return <LayoutGrid className={className} />;
     default:
       return <Package className={className} />;
   }
@@ -177,6 +204,72 @@ export const CATEGORY_CARD_THEMES: Record<string, CategoryCardTheme> = {
     arrow: 'text-amber-800 dark:text-[#FCD34D]',
     accentBar: 'from-amber-600 to-yellow-500 dark:from-[#D97706] dark:to-[#FBBF24]',
     activeText: 'text-amber-900 dark:text-[#FCD34D]',
+  },
+  coffee: {
+    surface: 'from-amber-50/90 via-[#FCFDFC] to-[#FCFDFC] dark:from-[#3B2112] dark:via-[#26160C] dark:to-[#0B1617]',
+    border: 'border-[#E6D9C6] hover:border-amber-600 dark:border-[#C68B59]/40 dark:hover:border-[#C68B59]/85',
+    selectedBorder: 'border-amber-700 ring-2 ring-amber-600/25 dark:border-[#C68B59] dark:ring-[#C68B59]/35',
+    iconBox: 'bg-amber-100/90 text-amber-900 dark:bg-[#C68B59]/25 dark:text-[#FCD34D]',
+    selectedIconBox: 'bg-amber-800 text-white dark:bg-[#C68B59] dark:text-[#1F120E]',
+    glow: 'bg-amber-300/30 dark:bg-[#C68B59]/25',
+    arrow: 'text-amber-800 dark:text-[#FCD34D]',
+    accentBar: 'from-amber-700 to-amber-500 dark:from-[#C68B59] dark:to-[#FBBF24]',
+    activeText: 'text-amber-900 dark:text-[#FCD34D]',
+  },
+  clothing: {
+    surface: 'from-rose-50/90 via-[#FCFDFC] to-[#FCFDFC] dark:from-[#3A1624] dark:via-[#22101A] dark:to-[#0B1719]',
+    border: 'border-[#E6D4DA] hover:border-rose-400 dark:border-[#FB7185]/35 dark:hover:border-[#FB7185]/80',
+    selectedBorder: 'border-rose-500 ring-2 ring-rose-500/25 dark:border-[#FB7185] dark:ring-[#FB7185]/35',
+    iconBox: 'bg-rose-100/90 text-rose-700 dark:bg-[#F43F5E]/20 dark:text-[#FDA4AF]',
+    selectedIconBox: 'bg-rose-600 text-white dark:bg-[#F43F5E] dark:text-white',
+    glow: 'bg-rose-300/30 dark:bg-[#FB7185]/25',
+    arrow: 'text-rose-600 dark:text-[#FDA4AF]',
+    accentBar: 'from-rose-500 to-pink-400 dark:from-[#F43F5E] dark:to-[#FB7185]',
+    activeText: 'text-rose-700 dark:text-[#FDA4AF]',
+  },
+  beauty: {
+    surface: 'from-purple-50/90 via-[#FCFDFC] to-[#FCFDFC] dark:from-[#2C1842] dark:via-[#1C112B] dark:to-[#0A161B]',
+    border: 'border-[#DDD3E6] hover:border-purple-400 dark:border-[#C084FC]/35 dark:hover:border-[#C084FC]/80',
+    selectedBorder: 'border-purple-500 ring-2 ring-purple-500/25 dark:border-[#C084FC] dark:ring-[#C084FC]/35',
+    iconBox: 'bg-purple-100/90 text-purple-700 dark:bg-[#A855F7]/20 dark:text-[#E9D5FF]',
+    selectedIconBox: 'bg-purple-600 text-white dark:bg-[#A855F7] dark:text-white',
+    glow: 'bg-purple-300/30 dark:bg-[#C084FC]/25',
+    arrow: 'text-purple-600 dark:text-[#E9D5FF]',
+    accentBar: 'from-purple-500 to-fuchsia-400 dark:from-[#A855F7] dark:to-[#C084FC]',
+    activeText: 'text-purple-700 dark:text-[#E9D5FF]',
+  },
+  'home-furniture': {
+    surface: 'from-amber-50/90 via-[#FCFDFC] to-[#FCFDFC] dark:from-[#3B260F] dark:via-[#24180B] dark:to-[#0C1717]',
+    border: 'border-[#E6DCCB] hover:border-amber-400 dark:border-[#FBBF24]/35 dark:hover:border-[#FBBF24]/80',
+    selectedBorder: 'border-amber-500 ring-2 ring-amber-500/25 dark:border-[#FBBF24] dark:ring-[#FBBF24]/35',
+    iconBox: 'bg-amber-100/90 text-amber-800 dark:bg-[#F59E0B]/20 dark:text-[#FDE68A]',
+    selectedIconBox: 'bg-amber-600 text-white dark:bg-[#F59E0B] dark:text-[#031719]',
+    glow: 'bg-amber-300/30 dark:bg-[#FBBF24]/25',
+    arrow: 'text-amber-700 dark:text-[#FDE68A]',
+    accentBar: 'from-amber-500 to-yellow-400 dark:from-[#F59E0B] dark:to-[#FBBF24]',
+    activeText: 'text-amber-800 dark:text-[#FDE68A]',
+  },
+  agriculture: {
+    surface: 'from-lime-50/90 via-[#FCFDFC] to-[#FCFDFC] dark:from-[#12331E] dark:via-[#0B2316] dark:to-[#051817]',
+    border: 'border-[#CFE0CB] hover:border-emerald-600 dark:border-[#4ADE80]/35 dark:hover:border-[#4ADE80]/80',
+    selectedBorder: 'border-emerald-700 ring-2 ring-emerald-600/25 dark:border-[#4ADE80] dark:ring-[#4ADE80]/35',
+    iconBox: 'bg-emerald-100/90 text-emerald-800 dark:bg-[#22C55E]/20 dark:text-[#86EFAC]',
+    selectedIconBox: 'bg-emerald-700 text-white dark:bg-[#22C55E] dark:text-[#031719]',
+    glow: 'bg-emerald-300/30 dark:bg-[#4ADE80]/25',
+    arrow: 'text-emerald-700 dark:text-[#86EFAC]',
+    accentBar: 'from-emerald-600 to-lime-500 dark:from-[#22C55E] dark:to-[#4ADE80]',
+    activeText: 'text-emerald-800 dark:text-[#86EFAC]',
+  },
+  other: {
+    surface: 'from-teal-50/90 via-[#FCFDFC] to-[#FCFDFC] dark:from-[#0D303A] dark:via-[#092129] dark:to-[#05161B]',
+    border: 'border-[#C9DFE0] hover:border-[#0F4C44]/60 dark:border-[#22D3EE]/35 dark:hover:border-[#22D3EE]/80',
+    selectedBorder: 'border-[#0F4C44] ring-2 ring-[#0F4C44]/25 dark:border-[#22D3EE] dark:ring-[#22D3EE]/35',
+    iconBox: 'bg-teal-100/90 text-[#0F4C44] dark:bg-[#06B6D4]/20 dark:text-[#A5F3FC]',
+    selectedIconBox: 'bg-[#0F4C44] text-[#FCFDFC] dark:bg-[#06B6D4] dark:text-[#031719]',
+    glow: 'bg-teal-300/30 dark:bg-[#22D3EE]/25',
+    arrow: 'text-[#0F4C44] dark:text-[#A5F3FC]',
+    accentBar: 'from-[#0F4C44] to-teal-500 dark:from-[#06B6D4] dark:to-[#22D3EE]',
+    activeText: 'text-[#0F4C44] dark:text-[#A5F3FC]',
   },
 };
 
@@ -718,6 +811,236 @@ export const ShopCard: React.FC<{
         </span>
       </div>
     </button>
+  );
+};
+
+export const DiscoverShopCard: React.FC<{
+  shop: Shop;
+  showDistance?: boolean;
+  isPreview?: boolean;
+}> = ({ shop, showDistance = false, isPreview = false }) => {
+  const {
+    navigate,
+    openShopChat,
+    firebaseUser,
+    proximityByShopId,
+    language,
+    t,
+  } = useMarketplace();
+  const [connectOpen, setConnectOpen] = useState(false);
+
+  const proximity = showDistance ? proximityByShopId[shop.shopId] : undefined;
+  const isVerified = isVerifiedMerchantShop(shop);
+  const availability = getShopAvailabilityStatus(shop);
+  const isTempClosed = availability === 'temporarily_closed';
+  const mainCategory = inferShopMainCategory(shop);
+  const categoryLabel = t(SHOP_DIR_CATEGORY_TRANSLATION_KEYS[mainCategory] || 'shopDirCatOther');
+  const productTypes = (shop.productTypes ?? []).filter((item) => item.trim().length > 0);
+  const visibleProductTypes = productTypes.slice(0, 3);
+  const remainingTypesCount = Math.max(0, productTypes.length - visibleProductTypes.length);
+  const callablePhone = resolveShopCallablePhone(shop);
+  const isOwnShop = Boolean(firebaseUser?.uid && shop.ownerUid === firebaseUser.uid);
+
+  const locationLine = [
+    shop.neighborhood ? getLocalizedNeighborhood(shop.neighborhood, language) : '',
+    shop.city || '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  return (
+    <article className="w-full min-w-0 rounded-2xl bg-[#FCFDFC] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#123E39] hover:border-[#0F4C44]/50 dark:hover:border-[#00D68F]/50 shadow-[0_2px_12px_-4px_rgba(15,76,68,0.10)] hover:shadow-[0_10px_24px_-10px_rgba(15,76,68,0.18)] dark:shadow-md dark:shadow-black/25 overflow-hidden flex flex-col transition-all">
+      {/* Compact Header Strip with Logo, Name, Category & Status */}
+      <div className="p-3.5 pb-2.5 flex items-start gap-3">
+        <button
+          type="button"
+          disabled={isPreview}
+          onClick={() => !isPreview && navigate({ name: 'shop', shopId: shop.shopId })}
+          aria-label={shop.name}
+          className="w-13 h-13 rounded-2xl overflow-hidden bg-[#E8EFEA] dark:bg-[#061D1B] border border-[#D2E0DC] dark:border-[#14443F] shrink-0 shadow-xs focus-visible:outline-2 focus-visible:outline-[#0F4C44] dark:focus-visible:outline-[#00D68F]"
+        >
+          <ResilientImage
+            src={shop.logoUrl || shop.coverImageUrl}
+            alt={`${shop.name} logo`}
+            fallbackTitle={shop.name}
+            darkSurface
+          />
+        </button>
+
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <button
+              type="button"
+              disabled={isPreview}
+              onClick={() => !isPreview && navigate({ name: 'shop', shopId: shop.shopId })}
+              className="min-w-0 text-left flex items-center gap-1 group"
+            >
+              <h3 className="text-[14px] font-bold text-[#0E2421] dark:text-[#F5FAFA] truncate group-hover:text-[#0F4C44] dark:group-hover:text-[#00D68F] transition-colors">
+                {shop.name}
+              </h3>
+              {isVerified && (
+                <BadgeCheck
+                  className="w-3.5 h-3.5 text-[#047857] dark:text-[#00D68F] shrink-0"
+                  aria-label={t('verifiedMerchantLabel')}
+                />
+              )}
+            </button>
+
+            <span
+              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${
+                isTempClosed
+                  ? 'bg-amber-50 dark:bg-amber-500/15 border-amber-300/80 dark:border-amber-400/35 text-amber-800 dark:text-amber-300'
+                  : 'bg-[#E5F2EE] dark:bg-[#00D68F]/15 border-[#0F4C44]/20 dark:border-[#00D68F]/35 text-[#0F4C44] dark:text-[#00D68F]'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isTempClosed ? 'bg-amber-500 dark:bg-amber-400' : 'bg-[#047857] dark:bg-[#00D68F]'
+                }`}
+              />
+              <span>{isTempClosed ? t('shopStatusTempClosed') : t('shopStatusActive')}</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+            <span className="font-semibold text-[#0F4C44] dark:text-[#00C8D7]">
+              {categoryLabel}
+            </span>
+            {locationLine && (
+              <>
+                <span aria-hidden="true" className="text-[#9AB5AE] dark:text-[#35635D]">·</span>
+                <span className="inline-flex items-center gap-1 text-[#46635E] dark:text-[#A9C0BD] truncate">
+                  <MapPin className="w-3 h-3 text-[#047857] dark:text-[#00D68F] shrink-0" />
+                  <span className="truncate">{locationLine}</span>
+                </span>
+              </>
+            )}
+            {proximity && (
+              <span className="text-[10px] font-medium text-[#46635E] dark:text-[#A9C0BD] tabular-nums shrink-0">
+                ({proximity.distanceLabel})
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Product Types & Concise Description */}
+      <div className="px-3.5 pb-3 flex-1 flex flex-col justify-between gap-2.5">
+        <div className="space-y-2">
+          {visibleProductTypes.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {visibleProductTypes.map((typeTag) => (
+                <span
+                  key={typeTag}
+                  className="px-2 py-0.5 rounded-md bg-[#F3F6F4] dark:bg-[#061D1B] border border-[#D2E0DC] dark:border-[#14443F] text-[10px] font-medium text-[#2B4945] dark:text-[#CFE0DD] truncate max-w-[140px]"
+                >
+                  {typeTag}
+                </span>
+              ))}
+              {remainingTypesCount > 0 && (
+                <span className="text-[10px] font-semibold text-[#46635E] dark:text-[#A9C0BD]">
+                  +{remainingTypesCount}
+                </span>
+              )}
+            </div>
+          )}
+
+          {shop.description && (
+            <p className="text-xs text-[#46635E] dark:text-[#A9C0BD] leading-relaxed line-clamp-2">
+              {shop.description}
+            </p>
+          )}
+        </div>
+
+        {/* Clean 2-Action Bar: View Shop + Prominent Connect with Owner */}
+        <div className="pt-2.5 border-t border-[#E3ECE8] dark:border-white/10 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={isPreview}
+              onClick={() => !isPreview && navigate({ name: 'shop', shopId: shop.shopId })}
+              className="min-h-[40px] px-2.5 rounded-xl bg-[#F3F6F4] dark:bg-[#061D1B] hover:bg-[#E7F1ED] dark:hover:bg-[#0D332F] border border-[#D2E0DC] dark:border-[#14443F] text-[#0F4C44] dark:text-[#F5FAFA] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60"
+            >
+              <Store className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('viewShopBtn')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setConnectOpen((prev) => !prev)}
+              aria-expanded={connectOpen}
+              className="min-h-[40px] px-2.5 rounded-xl bg-gradient-to-r from-[#0F4C44] to-[#047857] dark:from-[#00D68F] dark:to-[#00C8D7] hover:brightness-105 text-[#FCFDFC] dark:text-[#031719] text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-[0_4px_12px_-4px_rgba(15,76,68,0.32)] dark:shadow-md dark:shadow-[#00D68F]/20 active:scale-[0.98] transition-all"
+            >
+              {connectOpen ? (
+                <>
+                  <X className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{t('close')}</span>
+                </>
+              ) : (
+                <>
+                  <Phone className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{t('connectWithOwnerBtn')}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {connectOpen && (
+            <div className="p-2.5 rounded-xl bg-[#F3F6F4] dark:bg-[#061D1B] border border-[#D2E0DC] dark:border-[#14443F] space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                {callablePhone.callable && callablePhone.telHref ? (
+                  <a
+                    href={isPreview ? undefined : callablePhone.telHref}
+                    onClick={isPreview ? (e) => e.preventDefault() : undefined}
+                    aria-label={`${t('callShopBtn')} ${shop.name}`}
+                    className="min-h-[38px] px-2.5 rounded-xl bg-[#0F4C44] hover:bg-[#047857] dark:bg-[#00D68F] dark:hover:bg-[#00C8D7] text-[#FCFDFC] dark:text-[#031719] text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{t('callShopBtn')}</span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    title={t('shopPhoneUnavailableHint')}
+                    className="min-h-[38px] px-2.5 rounded-xl bg-[#E8EFEA] dark:bg-[#092825] border border-[#D2E0DC] dark:border-[#14443F] text-[#5E7B76] dark:text-[#7E9E9A] text-[11px] font-semibold inline-flex items-center justify-center gap-1.5 cursor-not-allowed opacity-75"
+                  >
+                    <Phone className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{t('shopPhoneUnavailable')}</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  disabled={isPreview || isOwnShop}
+                  onClick={() => {
+                    if (!isPreview && !isOwnShop) {
+                      openShopChat(shop);
+                    }
+                  }}
+                  title={isOwnShop ? t('shopOwnProfileChatBlocked') : undefined}
+                  className="min-h-[38px] px-2.5 rounded-xl bg-[#FCFDFC] dark:bg-[#092825] hover:bg-[#E7F1ED] dark:hover:bg-[#0E3531] border border-[#BFD6CE] dark:border-[#00D68F]/35 text-[#0F4C44] dark:text-[#00D68F] text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors disabled:opacity-55 disabled:cursor-not-allowed"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{t('chatWithOwnerBtn')}</span>
+                </button>
+              </div>
+              {callablePhone.callable && callablePhone.displayPhone && (
+                <div className="text-[10px] text-[#46635E] dark:text-[#A9C0BD] text-center tabular-nums">
+                  {callablePhone.displayPhone}
+                </div>
+              )}
+              {isOwnShop && (
+                <div className="text-[10px] text-[#46635E] dark:text-[#A9C0BD] text-center">
+                  {t('shopOwnProfileChatBlocked')}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
   );
 };
 

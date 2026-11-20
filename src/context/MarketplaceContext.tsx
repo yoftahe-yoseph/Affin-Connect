@@ -47,6 +47,10 @@ import {
   saveProductInFirestore,
   saveSharedWishlistInFirestore,
   saveShopInFirestore,
+  createShopProfileViaApi,
+  updateShopProfileViaApi,
+  updateShopAvailabilityViaApi,
+  ShopDirectoryApiError,
   saveUserProfileInFirestore,
   seedCatalogToFirestore,
   submitMerchantVerificationInFirestore,
@@ -152,6 +156,7 @@ import {
   planCoffeeProductMigration,
   type CoffeeCategorizationResult,
 } from '../utils/marketplaceLogic';
+import { canStartShopChat } from '../utils/shopDirectory';
 import { getLocalizedNeighborhood, translations } from '../constants/translations';
 import {
   dispatchBrowserPushNotification,
@@ -186,6 +191,7 @@ import type {
   ReviewItem,
   SharedWishlist,
   Shop,
+  ShopAvailabilityStatus,
   ShopWithProximity,
   SupportedLanguage,
   ThemePreference,
@@ -524,7 +530,12 @@ interface MarketplaceContextValue {
     skipped: number;
     ambiguous: number;
   }>;
-  saveSellerShop: (shop: Shop) => Promise<void>;
+  saveSellerShop: (shop: Shop) => Promise<Shop>;
+  updateShopAvailabilityStatus: (
+    shopId: string,
+    availabilityStatus: ShopAvailabilityStatus,
+    isPublished?: boolean
+  ) => Promise<Shop>;
   moderateShopStatus: (shopId: string, status: 'approved' | 'suspended' | 'pending') => Promise<void>;
   moderateShopGovernance: (params: {
     shopId: string;
@@ -682,6 +693,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('wishlist')?.trim() || ''
       : '';
+  const initialShopId =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('shop')?.trim() || ''
+      : '';
   const initialFallbackIds =
     typeof window !== 'undefined' ? parseSharedWishlistFallbackIds(window.location.search) : [];
 
@@ -692,7 +707,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           shareId: initialWishlistId,
           fallbackProductIds: initialFallbackIds,
         }
-      : { name: 'home' },
+      : initialShopId && /^[a-zA-Z0-9_-]{1,128}$/.test(initialShopId)
+        ? { name: 'shop', shopId: initialShopId }
+        : { name: 'home' },
   ]);
   const route = history[history.length - 1];
 
@@ -3151,23 +3168,97 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   };
 
-  const saveSellerShop = async (shop: Shop) => {
+  const saveSellerShop = async (shop: Shop): Promise<Shop> => {
     if (userProfile?.accountStatus === 'suspended') {
       throw new Error(t('governanceUserSuspended'));
     }
+
+    const existsLocally = shops.some((s) => s.shopId === shop.shopId);
+    let savedShop = shop;
+
     if (firebaseUser) {
-      await saveShopInFirestore(shop);
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        if (existsLocally) {
+          const res = await updateShopProfileViaApi(shop.shopId, shop, idToken);
+          savedShop = res.shop;
+        } else {
+          const res = await createShopProfileViaApi(shop, idToken);
+          savedShop = res.shop;
+        }
+      } catch (err) {
+        if (err instanceof ShopDirectoryApiError) {
+          throw err;
+        }
+        // Fallback to direct Firestore write only if backend route is unreachable
+        await saveShopInFirestore(shop);
+      }
     }
+
     setShops((prev) => {
-      const exists = prev.some((s) => s.shopId === shop.shopId);
+      const exists = prev.some((s) => s.shopId === savedShop.shopId);
       const next = exists
-        ? prev.map((s) => (s.shopId === shop.shopId ? shop : s))
-        : [shop, ...prev];
+        ? prev.map((s) => (s.shopId === savedShop.shopId ? savedShop : s))
+        : [savedShop, ...prev];
       if (!firebaseUser) {
         localStorage.setItem(STORAGE_KEYS.LOCAL_SHOPS, JSON.stringify(next));
       }
       return next;
     });
+    return savedShop;
+  };
+
+  const updateShopAvailabilityStatus = async (
+    shopId: string,
+    availabilityStatus: ShopAvailabilityStatus,
+    isPublished?: boolean
+  ): Promise<Shop> => {
+    if (userProfile?.accountStatus === 'suspended') {
+      throw new Error(t('governanceUserSuspended'));
+    }
+    const existing = shops.find((s) => s.shopId === shopId);
+    if (!existing) {
+      throw new Error('Shop profile not found.');
+    }
+
+    let updatedShop: Shop = {
+      ...existing,
+      availabilityStatus,
+      isPublished:
+        availabilityStatus === 'inactive'
+          ? false
+          : isPublished !== undefined
+            ? isPublished
+            : existing.status === 'approved',
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (firebaseUser) {
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        const res = await updateShopAvailabilityViaApi(
+          shopId,
+          availabilityStatus,
+          idToken,
+          isPublished
+        );
+        updatedShop = res.shop;
+      } catch (err) {
+        if (err instanceof ShopDirectoryApiError) {
+          throw err;
+        }
+        await saveShopInFirestore(updatedShop);
+      }
+    }
+
+    setShops((prev) => {
+      const next = prev.map((s) => (s.shopId === updatedShop.shopId ? updatedShop : s));
+      if (!firebaseUser) {
+        localStorage.setItem(STORAGE_KEYS.LOCAL_SHOPS, JSON.stringify(next));
+      }
+      return next;
+    });
+    return updatedShop;
   };
 
   const submitMerchantVerification = async ({
@@ -4922,7 +5013,24 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const openShopChat = (shop: Shop) => {
-    const buyerUid = firebaseUser?.uid || userProfile?.uid || 'guest-customer';
+    const activeUid = firebaseUser?.uid || userProfile?.uid || '';
+    const guard = canStartShopChat({
+      currentUid: activeUid,
+      isSuspended: userProfile?.accountStatus === 'suspended',
+      shop,
+    });
+    if (!guard.allowed) {
+      setCartToast({
+        id: Date.now(),
+        message: guard.reason || 'Unable to start chat with this shop.',
+      });
+      if (guard.code === 'AUTH_REQUIRED') {
+        openAuthScreen();
+      }
+      return;
+    }
+
+    const buyerUid = activeUid;
     const threadId = buildShopChatThreadId(shop.shopId, buyerUid);
     const existing = tradeChats.find((th) => th.threadId === threadId);
     if (!existing) {
@@ -5475,6 +5583,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         saveSellerProduct,
         runCoffeeMigrationAsAdmin,
         saveSellerShop,
+        updateShopAvailabilityStatus,
         moderateShopStatus,
         moderateShopGovernance,
         deleteShopAsAdmin,

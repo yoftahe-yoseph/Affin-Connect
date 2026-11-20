@@ -45,6 +45,10 @@ export interface CoffeeProductDetails {
   roastDate?: string;
 }
 
+export type ShopAvailabilityStatus = 'active' | 'temporarily_closed' | 'inactive';
+
+export type PreferredContactMethod = 'phone' | 'chat' | 'both';
+
 export interface Shop {
   shopId: string;
   ownerUid: string;
@@ -54,19 +58,63 @@ export interface Shop {
   logoUrl: string;
   coverImageUrl: string;
   phoneNumber: string;
+  businessPhoneNumber?: string;
+  publishBusinessPhone?: boolean;
+  preferredContactMethod?: PreferredContactMethod;
+  mainCategory?: string;
+  productTypes?: string[];
+  region?: string;
   city: string;
+  subCity?: string;
   neighborhood: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   deliveryAvailable: boolean;
   pickupAvailable: boolean;
   status: 'pending' | 'approved' | 'suspended';
   verificationStatus?: DocumentVerificationStatus;
+  availabilityStatus?: ShopAvailabilityStatus;
+  isPublished?: boolean;
   traderType?: TraderType;
   rating: number;
   reviewCount: number;
   featured?: boolean;
   operatingHours?: string;
   suspensionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicShopDirectoryItem {
+  shopId: string;
+  ownerUid: string;
+  name: string;
+  slug: string;
+  description: string;
+  logoUrl: string;
+  coverImageUrl: string;
+  mainCategory: string;
+  productTypes: string[];
+  region: string;
+  city: string;
+  subCity?: string;
+  neighborhood: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  operatingHours?: string;
+  phoneNumber: string | null;
+  telHref: string | null;
+  preferredContactMethod: PreferredContactMethod;
+  availabilityStatus: ShopAvailabilityStatus;
+  deliveryAvailable: boolean;
+  pickupAvailable: boolean;
+  traderType?: TraderType;
+  verified: boolean;
+  rating: number;
+  reviewCount: number;
+  featured: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -567,6 +567,34 @@ export const HomeScreen: React.FC = () => {
           </button>
         </section>
 
+        {/* D3. Discover Shops Directory Card */}
+        <section aria-label={t('discoverShopsTitle')}>
+          <button
+            type="button"
+            onClick={() => navigate({ name: 'shops' })}
+            className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#0F4C44] via-[#0B3B35] to-[#062825] dark:from-[#0A2E2B] dark:via-[#072322] dark:to-[#041819] border border-[#0F4C44]/50 dark:border-[#00D68F]/35 hover:border-[#047857] dark:hover:border-[#00D68F]/75 p-3.5 text-left shadow-[0_10px_24px_-12px_rgba(15,76,68,0.4)] dark:shadow-lg dark:shadow-black/30 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99]"
+          >
+            <div className="relative z-10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-[#FCFDFC]/12 dark:bg-[#00D68F]/15 border border-[#00D68F]/35 text-[#6EE7B7] dark:text-[#00D68F] flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                  <Store className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <div className="text-sm font-display font-bold text-[#F5FAFA] leading-tight truncate">
+                    {t('shopDirectoryCtaHome')}
+                  </div>
+                  <p className="text-xs text-[#CFE6E1] dark:text-[#A9C0BD] line-clamp-1">
+                    {t('shopDirectoryCtaHomeDesc')}
+                  </p>
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-white/10 border border-[#00D68F]/35 text-[#F5FAFA] flex items-center justify-center shrink-0 group-hover:bg-[#00D68F] group-hover:text-[#031719] transition-colors">
+                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </div>
+          </button>
+        </section>
+
         {/* E. Featured Shops Horizontally Scrollable Cards */}
         <section aria-labelledby="home-shops-heading">
           <div className="flex items-center justify-between mb-3 pb-1.5 border-b border-[#D2E0DC]/70 dark:border-transparent">
@@ -578,7 +606,7 @@ export const HomeScreen: React.FC = () => {
               onClick={() => navigate({ name: 'shops' })}
               className="min-h-[36px] px-1 text-xs font-semibold text-[#047857] hover:text-[#0F4C44] dark:text-[#00D68F] dark:hover:text-[#00C8D7] transition-colors"
             >
-              {t('viewAll')}
+              {t('discoverShopsTitle')}
             </button>
           </div>
 

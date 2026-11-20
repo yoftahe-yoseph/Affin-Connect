@@ -100,6 +100,37 @@ service cloud.firestore {
       return !('traderType' in data) || data.traderType in ['general', 'coffee'];
     }
 
+    function isValidShopProfile(data) {
+      return isValidShopTraderType(data)
+        && data.shopId is string && data.shopId.size() >= 1 && data.shopId.size() <= 128
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.name is string && data.name.size() >= 3 && data.name.size() <= 120
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 60
+        && data.status in ['pending', 'approved', 'suspended']
+        && (!('description' in data) || (data.description is string && data.description.size() <= 1000))
+        && (!('neighborhood' in data) || (data.neighborhood is string && data.neighborhood.size() <= 100))
+        && (!('address' in data) || (data.address is string && data.address.size() <= 200))
+        && (!('region' in data) || (data.region is string && data.region.size() <= 80))
+        && (!('subCity' in data) || (data.subCity is string && data.subCity.size() <= 80))
+        && (!('operatingHours' in data) || (data.operatingHours is string && data.operatingHours.size() <= 140))
+        && (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30))
+        && (!('businessPhoneNumber' in data) || (data.businessPhoneNumber is string && data.businessPhoneNumber.size() <= 30))
+        && (!('publishBusinessPhone' in data) || data.publishBusinessPhone is bool)
+        && (!('preferredContactMethod' in data) || data.preferredContactMethod in ['phone', 'chat', 'both'])
+        && (!('mainCategory' in data) || data.mainCategory in ['coffee', 'electronics', 'clothing-fashion', 'groceries', 'beauty-cosmetics', 'home-living', 'agriculture', 'other'])
+        && (!('productTypes' in data) || (
+          data.productTypes is list &&
+          data.productTypes.size() <= 12 &&
+          (data.productTypes.size() == 0 || (data.productTypes[0] is string && data.productTypes[0].size() <= 60))
+        ))
+        && (!('availabilityStatus' in data) || data.availabilityStatus in ['active', 'temporarily_closed', 'inactive'])
+        && (!('isPublished' in data) || data.isPublished is bool)
+        && (!('latitude' in data) || (data.latitude is number && data.latitude >= -90 && data.latitude <= 90))
+        && (!('longitude' in data) || (data.longitude is number && data.longitude >= -180 && data.longitude <= 180))
+        && (!('logoUrl' in data) || data.logoUrl == '' || isValidProductImageUrl(data.logoUrl))
+        && (!('coverImageUrl' in data) || data.coverImageUrl == '' || isValidProductImageUrl(data.coverImageUrl));
+    }
+
     function isValidCoffeeDetails(data) {
       return !('coffeeDetails' in data) || (
         data.coffeeDetails is map &&
@@ -125,20 +156,33 @@ service cloud.firestore {
     // 2. Shops collection
     match /shops/{shopId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && isValidId(shopId) && isActiveUser() && isValidShopTraderType(request.resource.data) && (
+      allow create: if isSignedIn() && isValidId(shopId) && isActiveUser() && isValidShopProfile(request.resource.data) && (
         isAdmin() ||
         (
+          request.resource.data.shopId == shopId &&
           request.resource.data.ownerUid == request.auth.uid &&
           request.resource.data.status == 'pending' &&
-          (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus == 'unverified')
+          (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus == 'unverified') &&
+          (!('isPublished' in request.resource.data) || request.resource.data.isPublished == false)
         )
       );
-      allow update: if isSignedIn() && isValidShopTraderType(request.resource.data) && (
+      allow update: if isSignedIn() && isValidId(shopId) && isValidShopProfile(request.resource.data) && (
         isAdmin() ||
         (
           isActiveUser() &&
           resource.data.ownerUid == request.auth.uid &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'rating', 'reviewCount', 'featured', 'suspensionReason']) &&
+          resource.data.status != 'suspended' &&
+          request.resource.data.shopId == resource.data.shopId &&
+          request.resource.data.ownerUid == resource.data.ownerUid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerUid', 'status', 'rating', 'reviewCount', 'featured', 'suspensionReason']) &&
+          (
+            !('isPublished' in request.resource.data) ||
+            request.resource.data.isPublished == false ||
+            (
+              resource.data.status == 'approved' &&
+              (!('verificationStatus' in resource.data) || resource.data.verificationStatus == 'approved')
+            )
+          ) &&
           (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus']) ||
             (
@@ -1169,6 +1213,7 @@ service cloud.firestore {
           isAdmin() ||
           (
             (request.resource.data.buyerUid == request.auth.uid || request.resource.data.sellerUid == request.auth.uid)
+            && request.resource.data.buyerUid != request.resource.data.sellerUid
             && request.resource.data.supervisionStatus == 'none'
             && !('assignedAdminUid' in request.resource.data)
             && !('assignedAdminName' in request.resource.data)
